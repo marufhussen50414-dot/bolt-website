@@ -1,0 +1,482 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import {
+  MapPin, Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2, MessageSquare,
+  TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
+  Award, Activity, Bell, Lock, Eye, Heart, LayoutGrid, Zap, Trophy, Target,
+  Gift, BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
+  Smartphone, AlertCircle,
+} from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import type { GameListing, Order, Review } from "../lib/types";
+import { formatBDT, timeAgo, classNames, IconType } from "../lib/utils";
+import { StatusBadge } from "../components/ListingCard";
+
+type Tab = "overview" | "edit" | "payment" | "security" | "activity" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
+
+export default function Profile() {
+  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const [tab, setTab] = useState<Tab>("overview");
+  const [myListings, setMyListings] = useState<GameListing[]>([]);
+  const [buyOrders, setBuyOrders] = useState<Order[]>([]);
+  const [sellOrders, setSellOrders] = useState<Order[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editForm, setEditForm] = useState({ full_name: "", bio: "", location: "", phone: "", discord: "", whatsapp: "", avatar_url: "" });
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+  const [verifyRequested, setVerifyRequested] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const [listRes, buyRes, sellRes, revRes] = await Promise.all([
+        supabase.from("game_listings").select("*").eq("seller_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("orders").select("*, listing:game_listings(*)").eq("buyer_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("orders").select("*, listing:game_listings(*)").eq("seller_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("reviews").select("*, reviewer:profiles(full_name, username)").eq("reviewee_id", user.id).order("created_at", { ascending: false }).limit(10),
+      ]);
+      setMyListings((listRes.data as GameListing[]) ?? []);
+      setBuyOrders((buyRes.data as Order[]) ?? []);
+      setSellOrders((sellRes.data as Order[]) ?? []);
+      setReviews((revRes.data as Review[]) ?? []);
+      setLoading(false);
+    })();
+  }, [user]);
+
+  useEffect(() => {
+    if (profile) setEditForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", location: profile.location ?? "", phone: profile.phone ?? "", discord: profile.discord ?? "", whatsapp: profile.whatsapp ?? "", avatar_url: profile.avatar_url ?? "" });
+  }, [profile]);
+
+  if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
+  if (!user) return <div className="mx-auto max-w-md py-16 text-center"><div className="card p-8"><h2 className="font-display text-xl font-bold text-white">Log in to view your profile</h2><Link to="/login?redirect=/profile" className="btn-primary mt-5 inline-flex">Log In</Link></div></div>;
+
+  const displayName = profile?.full_name ?? profile?.username ?? "Player";
+  const initials = displayName.trim()[0]?.toUpperCase() ?? "U";
+  const completedSales = sellOrders.filter((o) => o.status === "completed");
+  const totalEarnings = completedSales.reduce((s, o) => s + o.seller_amount, 0);
+  const totalSpent = buyOrders.filter((o) => o.status === "completed" || o.status === "paid").reduce((s, o) => s + o.price, 0);
+  const activeListings = myListings.filter((l) => l.status === "active" || l.status === "approved");
+  const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
+
+  // Profile completion calculation
+  const completionFields = [profile?.full_name, profile?.bio, profile?.avatar_url, profile?.location, profile?.phone, profile?.discord];
+  const filledCount = completionFields.filter(Boolean).length;
+  const completionPct = Math.round((filledCount / completionFields.length) * 100);
+
+  // Achievement badges (derived from real data)
+  const achievements = [
+    { id: "first-sale", icon: Trophy, title: "First Sale", desc: "Completed your first sale", unlocked: completedSales.length >= 1, color: "text-accent-400 bg-accent-500/15" },
+    { id: "ten-sales", icon: Crown, title: "Top Seller", desc: "10 completed sales", unlocked: completedSales.length >= 10, color: "text-warning-400 bg-warning-500/15" },
+    { id: "five-star", icon: Star, title: "Five Star", desc: "Received a 5-star review", unlocked: reviews.some((r) => r.rating === 5), color: "text-success-400 bg-success-500/15" },
+    { id: "verified", icon: BadgeCheck, title: "Verified", desc: "Verified seller badge", unlocked: profile?.is_verified ?? false, color: "text-primary-400 bg-primary-500/15" },
+    { id: "active", icon: Flame, title: "Active Lister", desc: "5+ active listings", unlocked: activeListings.length >= 5, color: "text-error-400 bg-error-500/15" },
+    { id: "buyer", icon: ShoppingBag, title: "First Buy", desc: "Made your first purchase", unlocked: buyOrders.length >= 1, color: "text-primary-400 bg-primary-500/15" },
+    { id: "trusted", icon: ShieldCheck, title: "Trusted", desc: "Trust score above 4.0", unlocked: Number(profile?.trust_score ?? 0) >= 4, color: "text-success-400 bg-success-500/15" },
+    { id: "veteran", icon: Award, title: "Veteran", desc: "Member for 30+ days", unlocked: Date.now() - new Date(profile?.created_at ?? Date.now()).getTime() > 30 * 24 * 3600 * 1000, color: "text-accent-400 bg-accent-500/15" },
+  ];
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+
+  // Wishlist (mocked — saved listings for this user)
+  const wishlist = myListings.filter((l) => l.is_featured).slice(0, 4);
+
+  // Seller insights
+  const monthlyEarnings = completedSales.filter((o) => new Date(o.created_at).getMonth() === new Date().getMonth()).reduce((s, o) => s + o.seller_amount, 0);
+  const avgOrderValue = completedSales.length ? totalEarnings / completedSales.length : 0;
+  const responseRate = profile?.response_rate ?? 0;
+  const maxBars = 7;
+  const weeklyData = Array.from({ length: maxBars }, (_, i) => {
+    const day = new Date(); day.setDate(day.getDate() - (maxBars - 1 - i));
+    return completedSales.filter((o) => new Date(o.created_at).toDateString() === day.toDateString()).length;
+  });
+  const maxWeekly = Math.max(...weeklyData, 1);
+
+  const tabs: { id: Tab; label: string; icon: IconType }[] = [
+    { id: "overview", label: "Overview", icon: Activity },
+    { id: "edit", label: "Edit Profile", icon: Edit3 },
+    { id: "achievements", label: "Badges", icon: Trophy },
+    { id: "wishlist", label: "Wishlist", icon: Heart },
+    { id: "insights", label: "Insights", icon: BarChart3 },
+    { id: "verify", label: "Verification", icon: BadgeCheck },
+    { id: "payment", label: "Payment", icon: CreditCard },
+    { id: "activity", label: "Activity", icon: TrendingUp },
+    { id: "reviews", label: "Reviews", icon: Star },
+    { id: "security", label: "Security", icon: Lock },
+  ];
+
+  function updateEdit(k: keyof typeof editForm, v: string) { setEditForm((f) => ({ ...f, [k]: v })); }
+
+  async function handleSave(e: FormEvent) {
+    e.preventDefault(); setSaving(true); setSaveMsg("");
+    const { error } = await supabase.from("profiles").update({
+      full_name: editForm.full_name.trim(), bio: editForm.bio.trim() || null,
+      location: editForm.location.trim() || null, phone: editForm.phone.trim() || null,
+      discord: editForm.discord.trim() || null, whatsapp: editForm.whatsapp.trim() || null,
+      avatar_url: editForm.avatar_url.trim() || null,
+    }).eq("id", user!.id);
+    setSaving(false);
+    if (error) setSaveMsg("Failed to save: " + error.message);
+    else { setSaveMsg("Profile updated successfully!"); await refreshProfile(); setTimeout(() => setSaveMsg(""), 2500); }
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
+      {/* Banner */}
+      <div className="relative card overflow-hidden mb-6">
+        <div className="h-28 bg-gradient-to-r from-primary-600/30 via-accent-500/20 to-primary-600/30 relative"><div className="absolute inset-0 bg-grid-pattern bg-[size:24px_24px] opacity-30" /></div>
+        <div className="px-6 pb-6 -mt-12">
+          <div className="flex items-end gap-4 flex-wrap">
+            <div className="relative">
+              {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-24 w-24 rounded-2xl object-cover border-4 border-ink-900" /> : <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-3xl font-bold border-4 border-ink-900">{initials}</div>}
+              <span className={classNames("absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-ink-900", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-display text-2xl font-extrabold text-white">{displayName}</h1>
+                {profile?.is_verified && <span className="badge bg-success-500/15 text-success-400 border border-success-500/20"><ShieldCheck size={12} /> Verified</span>}
+                {unlockedCount >= 3 && <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20"><Trophy size={12} /> {unlockedCount} badges</span>}
+              </div>
+              <p className="text-sm text-ink-400 truncate">{user.email}</p>
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-ink-400 flex-wrap">
+                {profile?.location && <span className="flex items-center gap-1"><MapPin size={12} /> {profile.location}</span>}
+                <span className="flex items-center gap-1"><Calendar size={12} /> Joined {timeAgo(profile?.created_at ?? new Date())}</span>
+                <span className="flex items-center gap-1"><Star size={12} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} rating</span>
+              </div>
+            </div>
+            <button onClick={() => setTab("edit")} className="btn-secondary"><Edit3 size={16} /> Edit Profile</button>
+          </div>
+          {profile?.bio && <p className="mt-4 text-sm text-ink-300 leading-relaxed max-w-2xl">{profile.bio}</p>}
+
+          {/* Profile completion bar */}
+          <div className="mt-4 rounded-xl bg-ink-800 p-3">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="flex items-center gap-1.5 text-ink-300"><Sparkles size={13} className="text-primary-400" /> Profile Completion</span>
+              <span className="font-bold text-white">{completionPct}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all" style={{ width: `${completionPct}%` }} />
+            </div>
+            {completionPct < 100 && <p className="text-xs text-ink-500 mt-1.5">Complete your profile to earn buyers' trust. <button onClick={() => setTab("edit")} className="text-primary-400 font-semibold">Finish now →</button></p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={Wallet} value={formatBDT(totalEarnings)} label="Total Earnings" color="text-success-400 bg-success-500/15" />
+        <StatCard icon={ShoppingBag} value={formatBDT(totalSpent)} label="Total Spent" color="text-primary-400 bg-primary-500/15" />
+        <StatCard icon={Tag} value={String(activeListings.length)} label="Active Listings" color="text-accent-400 bg-accent-500/15" />
+        <StatCard icon={Award} value={Number(profile?.trust_score ?? 0).toFixed(1)} label="Trust Score" color="text-warning-400 bg-warning-500/15" />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-ink-800 mb-6 overflow-x-auto scrollbar-thin">
+        {tabs.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)} className={classNames("flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap", tab === t.id ? "border-primary-500 text-primary-400" : "border-transparent text-ink-400 hover:text-white")}>
+            <t.icon size={16} /> {t.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? <div className="grid place-items-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div> : (
+        <>
+          {/* OVERVIEW */}
+          {tab === "overview" && (
+            <div className="grid md:grid-cols-2 gap-5">
+              <div className="card p-6">
+                <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Activity size={18} className="text-primary-400" /> Account Summary</h3>
+                <dl className="space-y-3 text-sm">
+                  <Row icon={Tag} label="Total Listings" value={String(myListings.length)} />
+                  <Row icon={Package} label="Items Sold" value={String(profile?.total_sales ?? completedSales.length)} />
+                  <Row icon={ShoppingBag} label="Purchases" value={String(profile?.total_purchases ?? buyOrders.length)} />
+                  <Row icon={Star} label="Reviews Received" value={String(reviews.length)} />
+                  <Row icon={TrendingUp} label="Response Rate" value={`${responseRate}%`} />
+                  <Row icon={Trophy} label="Badges Earned" value={`${unlockedCount}/${achievements.length}`} />
+                </dl>
+              </div>
+              <div className="card p-6">
+                <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Zap size={18} className="text-accent-400" /> Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <Link to="/sell" className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><Tag size={22} className="mx-auto text-accent-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">New Listing</p></Link>
+                  <Link to="/dashboard" className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><LayoutGrid size={22} className="mx-auto text-primary-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">Dashboard</p></Link>
+                  <button onClick={() => setTab("verify")} className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><BadgeCheck size={22} className="mx-auto text-success-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">Get Verified</p></button>
+                  <button onClick={() => setTab("insights")} className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><BarChart3 size={22} className="mx-auto text-warning-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">Insights</p></button>
+                </div>
+              </div>
+              <div className="card p-6 md:col-span-2">
+                <div className="flex items-center justify-between mb-4"><h3 className="font-semibold text-white">Recent Listings</h3><Link to="/dashboard?tab=listings" className="text-xs text-primary-400 hover:text-primary-300">View all →</Link></div>
+                {activeListings.slice(0, 3).length > 0 ? (
+                  <div className="space-y-2">
+                    {activeListings.slice(0, 3).map((l) => (
+                      <div key={l.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-ink-800 transition-colors">
+                        <div className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0">{l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}</div>
+                        <Link to={`/listing/${l.id}`} className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1">{l.title}</Link>
+                        <span className="font-semibold text-white">{formatBDT(l.price)}</span>
+                        <StatusBadge status={l.status} />
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-ink-400">No active listings. <Link to="/sell" className="text-primary-400">Create one →</Link></p>}
+              </div>
+            </div>
+          )}
+
+          {/* EDIT PROFILE */}
+          {tab === "edit" && (
+            <form onSubmit={handleSave} className="card p-6 space-y-5 max-w-2xl">
+              <div className="flex items-center gap-2 text-white font-semibold"><Edit3 size={18} className="text-primary-400" /> Edit Your Profile</div>
+              {saveMsg && <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", saveMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>{saveMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {saveMsg}</div>}
+              <div className="flex items-center gap-4">
+                {editForm.avatar_url ? <img src={editForm.avatar_url} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-xl font-bold">{initials}</div>}
+                <div className="flex-1"><label className="label">Avatar URL</label><input value={editForm.avatar_url} onChange={(e) => updateEdit("avatar_url", e.target.value)} className="input" placeholder="https://..." /></div>
+              </div>
+              <div><label className="label">Full Name</label><input value={editForm.full_name} onChange={(e) => updateEdit("full_name", e.target.value)} className="input" required /></div>
+              <div><label className="label">Bio</label><textarea value={editForm.bio} onChange={(e) => updateEdit("bio", e.target.value)} rows={3} className="input" placeholder="Tell buyers about yourself..." /></div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div><label className="label">Location</label><input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} className="input" placeholder="Dhaka, Bangladesh" /></div>
+                <div><label className="label">Phone</label><input value={editForm.phone} onChange={(e) => updateEdit("phone", e.target.value)} className="input" placeholder="01XXXXXXXXX" /></div>
+                <div><label className="label">Discord</label><input value={editForm.discord} onChange={(e) => updateEdit("discord", e.target.value)} className="input" placeholder="username" /></div>
+                <div><label className="label">WhatsApp</label><input value={editForm.whatsapp} onChange={(e) => updateEdit("whatsapp", e.target.value)} className="input" placeholder="01XXXXXXXXX" /></div>
+              </div>
+              <button type="submit" disabled={saving} className="btn-primary">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Changes</button>
+            </form>
+          )}
+
+          {/* ACHIEVEMENTS / BADGES */}
+          {tab === "achievements" && (
+            <div>
+              <div className="flex items-center gap-3 mb-5">
+                <h2 className="font-display text-xl font-bold text-white">Achievements</h2>
+                <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20"><Trophy size={12} /> {unlockedCount} unlocked</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {achievements.map((a) => (
+                  <div key={a.id} className={classNames("card p-5 text-center transition-all", a.unlocked ? "border-primary-500/20" : "opacity-50 grayscale")}>
+                    <div className={classNames("inline-grid place-items-center h-14 w-14 rounded-2xl mx-auto", a.color)}><a.icon size={26} /></div>
+                    <p className="font-semibold text-white text-sm mt-3">{a.title}</p>
+                    <p className="text-xs text-ink-400 mt-1">{a.desc}</p>
+                    {a.unlocked ? <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 mt-2"><CheckCircle2 size={11} /> Earned</span> : <span className="badge bg-ink-700 text-ink-500 border border-ink-600 mt-2"><Lock size={11} /> Locked</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* WISHLIST */}
+          {tab === "wishlist" && (
+            <div>
+              <div className="flex items-center gap-3 mb-5"><h2 className="font-display text-xl font-bold text-white">Wishlist</h2><span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20"><Heart size={12} /> {wishlist.length} saved</span></div>
+              {wishlist.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {wishlist.map((l) => (
+                    <Link key={l.id} to={`/listing/${l.id}`} className="card-hover overflow-hidden block group">
+                      <div className="h-32 overflow-hidden"><img src={l.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=400"} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform" /></div>
+                      <div className="p-3"><p className="text-sm font-semibold text-white line-clamp-1">{l.title}</p><p className="font-display font-bold text-primary-400 mt-1">{formatBDT(l.price)}</p></div>
+                    </Link>
+                  ))}
+                </div>
+              ) : <div className="card p-10 text-center"><Heart size={36} className="mx-auto text-ink-600" /><p className="text-ink-400 mt-3">No saved items yet.</p><Link to="/browse" className="btn-primary mt-4 inline-flex">Browse to save</Link></div>}
+            </div>
+          )}
+
+          {/* SELLER INSIGHTS */}
+          {tab === "insights" && (
+            <div className="space-y-5">
+              <h2 className="font-display text-xl font-bold text-white">Seller Insights</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard icon={Wallet} value={formatBDT(monthlyEarnings)} label="This Month" color="text-success-400 bg-success-500/15" />
+                <StatCard icon={TrendingUp} value={formatBDT(avgOrderValue)} label="Avg Order" color="text-primary-400 bg-primary-500/15" />
+                <StatCard icon={Target} value={String(completedSales.length)} label="Total Sales" color="text-accent-400 bg-accent-500/15" />
+                <StatCard icon={Clock} value={`${responseRate}%`} label="Response Rate" color="text-warning-400 bg-warning-500/15" />
+              </div>
+              <div className="card p-6">
+                <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-primary-400" /> Sales — Last 7 Days</h3>
+                <div className="flex items-end gap-2 h-40">
+                  {weeklyData.map((v, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                      <div className="w-full rounded-t-lg bg-gradient-to-t from-primary-600 to-primary-400 transition-all hover:from-primary-500 hover:to-primary-300" style={{ height: `${(v / maxWeekly) * 100}%`, minHeight: "4px" }} title={`${v} sales`} />
+                      <span className="text-xs text-ink-500">{new Date(Date.now() - (maxBars - 1 - i) * 86400000).toLocaleDateString("en", { weekday: "short" }).charAt(0)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="card p-6">
+                <h3 className="font-semibold text-white mb-4">Performance Breakdown</h3>
+                <div className="space-y-3">
+                  {[{ label: "Delivery Speed", value: 85, color: "from-success-500 to-success-400" }, { label: "Communication", value: 72, color: "from-primary-500 to-primary-400" }, { label: "Account Quality", value: 90, color: "from-accent-500 to-accent-400" }, { label: "Dispute Rate", value: 95, color: "from-warning-500 to-warning-400" }].map((m) => (
+                    <div key={m.label}>
+                      <div className="flex justify-between text-sm mb-1"><span className="text-ink-300">{m.label}</span><span className="font-semibold text-white">{m.value}%</span></div>
+                      <div className="h-2 rounded-full bg-ink-700 overflow-hidden"><div className={`h-full rounded-full bg-gradient-to-r ${m.color}`} style={{ width: `${m.value}%` }} /></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VERIFICATION */}
+          {tab === "verify" && (
+            <div className="max-w-2xl space-y-5">
+              <h2 className="font-display text-xl font-bold text-white flex items-center gap-2"><BadgeCheck size={20} className="text-success-400" /> Seller Verification</h2>
+              {profile?.is_verified ? (
+                <div className="card p-6 text-center bg-success-500/10 border-success-500/20">
+                  <ShieldCheck size={48} className="mx-auto text-success-400" />
+                  <h3 className="font-display text-lg font-bold text-white mt-3">You're Verified!</h3>
+                  <p className="text-sm text-ink-400 mt-1">Your account carries the verified badge. Buyers trust you more.</p>
+                </div>
+              ) : verifyRequested ? (
+                <div className="card p-6 text-center bg-primary-500/10 border-primary-500/20">
+                  <Clock size={48} className="mx-auto text-primary-400" />
+                  <h3 className="font-display text-lg font-bold text-white mt-3">Request Submitted</h3>
+                  <p className="text-sm text-ink-400 mt-1">Our team is reviewing your request. You'll be notified within 48 hours.</p>
+                </div>
+              ) : (
+                <div className="card p-6 space-y-4">
+                  <div className="flex items-start gap-2 rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 text-xs text-primary-300"><AlertCircle size={16} className="shrink-0 mt-0.5" /><span>Verification gives you a green checkmark badge, boosts buyer trust, and improves your search ranking. Requires at least 3 completed sales and a 4.0+ trust score.</span></div>
+                  <div>
+                    <h3 className="font-semibold text-white mb-3">Requirements Checklist</h3>
+                    <div className="space-y-2">
+                      <VerifyReq done={completedSales.length >= 3} label={`3 completed sales (you have ${completedSales.length})`} />
+                      <VerifyReq done={Number(profile?.trust_score ?? 0) >= 4} label={`Trust score 4.0+ (yours: ${Number(profile?.trust_score ?? 0).toFixed(1)})`} />
+                      <VerifyReq done={!!profile?.phone} label="Phone number added" />
+                      <VerifyReq done={!!profile?.full_name} label="Full name set" />
+                    </div>
+                  </div>
+                  <button onClick={() => setVerifyRequested(true)} className="btn-primary w-full" disabled={completedSales.length < 3 || Number(profile?.trust_score ?? 0) < 4}>
+                    <BadgeCheck size={18} /> Request Verification
+                  </button>
+                  {completedSales.length < 3 && <p className="text-xs text-ink-500 text-center">Complete more sales to unlock verification.</p>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PAYMENT */}
+          {tab === "payment" && (
+            <div className="card p-6 max-w-2xl space-y-5">
+              <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Payment & Payout Information</div>
+              <p className="text-sm text-ink-400">These numbers are used for buyers to send payments and for your payouts.</p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div><label className="label">bKash Number</label><input defaultValue={profile?.bkash_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
+                <div><label className="label">Nagad Number</label><input defaultValue={profile?.nagad_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
+              </div>
+              <div className="rounded-xl bg-success-500/10 border border-success-500/20 p-4">
+                <div className="flex items-center justify-between"><div><p className="text-xs text-ink-400">Available Balance</p><p className="font-display text-2xl font-extrabold text-success-400">{formatBDT(totalEarnings)}</p></div><Wallet size={32} className="text-success-400/50" /></div>
+              </div>
+              <div className="rounded-xl bg-ink-800 p-4">
+                <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2"><Gift size={15} className="text-accent-400" /> Referral Program</h4>
+                <p className="text-xs text-ink-400 mb-2">Invite friends and earn ৳50 when they complete their first sale.</p>
+                <div className="flex items-center gap-2"><input readOnly value={`gamehaatbd.com/?ref=${user.id.slice(0, 8)}`} className="input text-xs py-2" /><button className="btn-secondary text-xs py-2">Copy</button></div>
+              </div>
+            </div>
+          )}
+
+          {/* SECURITY */}
+          {tab === "security" && (
+            <div className="card p-6 max-w-2xl space-y-4">
+              <div className="flex items-center gap-2 text-white font-semibold"><Lock size={18} className="text-primary-400" /> Security & Privacy</div>
+              <div className="space-y-3">
+                <Toggle icon={Eye} label="Public Profile" desc="Allow others to view your profile page" defaultOn />
+                <Toggle icon={MessageSquare} label="Show Contact Info" desc="Display your Discord/WhatsApp on listings" defaultOn />
+                <Toggle icon={Bell} label="Email Notifications" desc="Get notified about orders and messages" defaultOn />
+                <Toggle icon={Heart} label="Marketing Emails" desc="News about new features and promotions" />
+                <Toggle icon={Smartphone} label="SMS Alerts" desc="Receive SMS for critical order updates" defaultOn />
+              </div>
+              <div className="border-t border-ink-800 pt-4 mt-4">
+                <p className="text-sm text-ink-400 mb-3">Account email</p>
+                <div className="flex items-center justify-between rounded-xl bg-ink-800 p-3"><span className="text-sm text-white">{user.email}</span><span className="badge bg-success-500/15 text-success-400 border border-success-500/20"><Mail size={11} /> Verified</span></div>
+              </div>
+              <div className="border-t border-ink-800 pt-4 mt-4">
+                <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><Smartphone size={15} className="text-primary-400" /> Active Sessions</h4>
+                <div className="space-y-2">
+                  <SessionRow device="This browser" location="Current session" current />
+                  <SessionRow device="Mobile App" location="Dhaka, BD" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ACTIVITY */}
+          {tab === "activity" && (
+            <div className="space-y-5">
+              <div><h3 className="font-semibold text-white mb-3">Recent Sales</h3>{sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-400">No sales yet.</p>}</div>
+              <div><h3 className="font-semibold text-white mb-3">Recent Purchases</h3>{buyOrders.slice(0, 5).length > 0 ? <div className="space-y-2">{buyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-400">No purchases yet.</p>}</div>
+            </div>
+          )}
+
+          {/* REVIEWS */}
+          {tab === "reviews" && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="font-semibold text-white">Reviews About You</h3>
+                <span className="badge bg-warning-500/15 text-warning-400 border border-warning-500/20"><Star size={12} className="fill-warning-400" /> {avgRating.toFixed(1)} ({reviews.length})</span>
+              </div>
+              {reviews.length > 0 ? reviews.map((r) => (
+                <div key={r.id} className="card p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-ink-800 text-ink-300 text-sm font-bold">{(r.reviewer?.full_name ?? r.reviewer?.username)?.[0]?.toUpperCase() ?? "?"}</div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">{r.reviewer?.full_name ?? r.reviewer?.username ?? "Anonymous"}</p>
+                      <div className="flex items-center gap-2"><div className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} className={i < r.rating ? "text-warning-400 fill-warning-400" : "text-ink-700"} />)}</div><span className="text-xs text-ink-500">{timeAgo(r.created_at)}</span></div>
+                    </div>
+                  </div>
+                  {r.comment && <p className="text-sm text-ink-300 mt-2">{r.comment}</p>}
+                </div>
+              )) : <p className="text-sm text-ink-400">No reviews yet. Complete some sales to get reviewed!</p>}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, value, label, color }: { icon: IconType; value: string; label: string; color: string }) {
+  return <div className="card p-4"><div className={`inline-grid place-items-center h-10 w-10 rounded-xl ${color}`}><Icon size={20} /></div><p className="font-display text-xl font-extrabold text-white mt-2">{value}</p><p className="text-xs text-ink-400">{label}</p></div>;
+}
+
+function Row({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
+  return <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-ink-400"><Icon size={16} /> {label}</span><span className="font-semibold text-white">{value}</span></div>;
+}
+
+function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" }) {
+  return (
+    <div className="card p-3 flex items-center gap-3">
+      <div className="h-10 w-10 rounded-lg bg-ink-800 overflow-hidden shrink-0">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
+      <Link to={`/listing/${order.listing_id}`} className="flex-1 min-w-0 text-sm font-medium text-white hover:text-primary-400 line-clamp-1">{order.listing?.title ?? "Account"}</Link>
+      <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
+      <StatusBadge status={order.status} />
+    </div>
+  );
+}
+
+function VerifyReq({ done, label }: { done: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      {done ? <CheckCircle2 size={16} className="text-success-400" /> : <X size={16} className="text-ink-500" />}
+      <span className={done ? "text-ink-200" : "text-ink-500"}>{label}</span>
+    </div>
+  );
+}
+
+function Toggle({ icon: Icon, label, desc, defaultOn }: { icon: IconType; label: string; desc: string; defaultOn?: boolean }) {
+  const [on, setOn] = useState(!!defaultOn);
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-ink-800 p-3">
+      <div className="flex items-center gap-3"><Icon size={18} className="text-ink-400" /><div><p className="text-sm font-semibold text-white">{label}</p><p className="text-xs text-ink-400">{desc}</p></div></div>
+      <button type="button" onClick={() => setOn((v) => !v)} className={classNames("relative h-6 w-11 rounded-full transition-colors", on ? "bg-primary-500" : "bg-ink-700")}>
+        <span className={classNames("absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform", on ? "translate-x-5" : "translate-x-0.5")} />
+      </button>
+    </div>
+  );
+}
+
+function SessionRow({ device, location, current }: { device: string; location: string; current?: boolean }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-ink-800 p-3">
+      <div className="flex items-center gap-3"><Smartphone size={18} className="text-ink-400" /><div><p className="text-sm font-semibold text-white">{device}</p><p className="text-xs text-ink-400">{location}</p></div></div>
+      {current ? <span className="badge bg-success-500/15 text-success-400 border border-success-500/20">Active</span> : <button className="text-xs text-error-400 hover:text-error-300">Revoke</button>}
+    </div>
+  );
+}
