@@ -1,9 +1,9 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
-  Menu, X, Search, User, LogOut, LayoutDashboard, PlusCircle, ShieldCheck,
+  Search, User, LogOut, PlusCircle, ShieldCheck,
   Settings, Wallet, Star, LifeBuoy, ChevronRight, HelpCircle, Home as HomeIcon,
-  Compass, Tag, BookOpen,
+  Compass, Tag, BookOpen, MessageSquare,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
@@ -12,12 +12,11 @@ import { classNames } from "../lib/utils";
 export default function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     classNames(
-      "px-3 py-2 rounded-lg text-sm font-semibold transition-colors",
+      "px-3 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap",
       isActive ? "text-primary-400 bg-primary-500/10" : "text-ink-300 hover:text-white hover:bg-ink-800"
     );
 
@@ -27,12 +26,10 @@ export default function Header() {
   async function handleSignOut() {
     await signOut();
     setMenuOpen(false);
-    setOpen(false);
     navigate("/");
   }
 
   const menuItems = [
-    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { to: "/profile", icon: User, label: "My Profile" },
     { to: "/sell", icon: PlusCircle, label: "Sell an ID" },
     { to: "/dashboard?tab=listings", icon: Settings, label: "My Listings" },
@@ -44,21 +41,21 @@ export default function Header() {
     <header className="sticky top-0 z-40 glass border-b border-ink-800">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 min-w-0">
             <Link to="/" className="shrink-0"><Logo /></Link>
-            <nav className="hidden xl:flex items-center gap-1">
+            <nav className="flex items-center gap-1 overflow-x-auto scrollbar-thin">
               <NavLink to="/" end className={linkClass}><span className="flex items-center gap-1.5"><HomeIcon size={15} /> Home</span></NavLink>
               <NavLink to="/browse" className={linkClass}><span className="flex items-center gap-1.5"><Compass size={15} /> Browse IDs</span></NavLink>
               <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
               <NavLink to="/how-it-works" className={linkClass}><span className="flex items-center gap-1.5"><BookOpen size={15} /> How it Works</span></NavLink>
               <NavLink to="/faq" className={linkClass}><span className="flex items-center gap-1.5"><HelpCircle size={15} /> FAQ</span></NavLink>
               <NavLink to="/support" className={linkClass}><span className="flex items-center gap-1.5"><LifeBuoy size={15} /> Support</span></NavLink>
-              {user && <NavLink to="/dashboard" className={linkClass}><span className="flex items-center gap-1.5"><LayoutDashboard size={15} /> Dashboard</span></NavLink>}
+              <NavLink to="/messages" className={linkClass}><span className="flex items-center gap-1.5"><MessageSquare size={15} /> Message</span></NavLink>
               {user && <NavLink to="/profile" className={linkClass}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></NavLink>}
             </nav>
           </div>
 
-          <div className="hidden xl:flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => navigate("/browse")} className="btn-ghost" aria-label="Search"><Search size={18} /></button>
             {user ? (
               <div className="relative">
@@ -71,7 +68,7 @@ export default function Header() {
                     )}
                     <span className={classNames("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
                   </div>
-                  <span className="text-sm font-semibold text-white max-w-[100px] truncate">{displayName}</span>
+                  <span className="hidden sm:block text-sm font-semibold text-white max-w-[100px] truncate">{displayName}</span>
                 </button>
                 {menuOpen && (
                   <>
@@ -112,43 +109,12 @@ export default function Header() {
               </div>
             ) : (
               <>
-                <Link to="/login" className="btn-secondary">Log In</Link>
-                <Link to="/register" className="btn-primary">Sign Up</Link>
+                <Link to="/login" className="btn-secondary hidden sm:inline-flex">Log In</Link>
+                <Link to="/register" className="btn-primary hidden sm:inline-flex">Sign Up</Link>
               </>
             )}
           </div>
-
-          <button className="xl:hidden btn-ghost" onClick={() => setOpen((v) => !v)} aria-label="Menu">
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
-
-        {open && (
-          <div className="xl:hidden border-t border-ink-800 py-3 animate-slide-up">
-            <nav className="flex flex-col gap-1">
-              <NavLink to="/" end className={linkClass} onClick={() => setOpen(false)}>Home</NavLink>
-              <NavLink to="/browse" className={linkClass} onClick={() => setOpen(false)}>Browse IDs</NavLink>
-              <NavLink to="/sell" className={linkClass} onClick={() => setOpen(false)}>Sell ID</NavLink>
-              <NavLink to="/how-it-works" className={linkClass} onClick={() => setOpen(false)}>How it Works</NavLink>
-              <NavLink to="/faq" className={linkClass} onClick={() => setOpen(false)}>FAQ</NavLink>
-              <NavLink to="/support" className={linkClass} onClick={() => setOpen(false)}>Support</NavLink>
-              <div className="border-t border-ink-800 mt-2 pt-2 flex flex-col gap-2">
-                {user ? (
-                  <>
-                    <Link to="/dashboard" onClick={() => setOpen(false)} className="btn-secondary"><LayoutDashboard size={16} /> Dashboard</Link>
-                    <Link to="/profile" onClick={() => setOpen(false)} className="btn-secondary"><User size={16} /> My Profile</Link>
-                    <button onClick={handleSignOut} className="btn-danger"><LogOut size={16} /> Sign Out</button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" onClick={() => setOpen(false)} className="btn-secondary"><User size={16} /> Log In</Link>
-                    <Link to="/register" onClick={() => setOpen(false)} className="btn-primary">Sign Up</Link>
-                  </>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
       </div>
     </header>
   );

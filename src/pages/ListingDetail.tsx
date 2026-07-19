@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, Eye, Star, TrendingUp, Loader2 } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Eye, Star, TrendingUp, Loader2, MessageSquare } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { GameListing, Review, Profile } from "../lib/types";
@@ -69,7 +69,12 @@ export default function ListingDetail() {
               {listing.server_region && <Info label="Region" value={listing.server_region} />}
               <Info label="Views" value={String(listing.view_count)} icon={Eye} />
             </div>
-            {canBuy && <button onClick={() => navigate(`/checkout/${listing.id}`)} className="btn-primary w-full mt-5">Buy Now — {formatBDT(listing.price)}</button>}
+            {canBuy && (
+              <div className="mt-5 space-y-2">
+                <button onClick={() => navigate(`/checkout/${listing.id}`)} className="btn-primary w-full">Buy Now — {formatBDT(listing.price)}</button>
+                <Link to={`/messages?listing=${listing.id}`} className="btn-secondary w-full"><MessageSquare size={16} /> Message Seller</Link>
+              </div>
+            )}
             {isOwn && <div className="rounded-xl bg-warning-500/10 border border-warning-500/20 p-3 text-sm text-warning-400 mt-4">This is your own listing.</div>}
             {!user && <Link to="/login" className="btn-primary w-full mt-5">Log in to buy</Link>}
           </div>

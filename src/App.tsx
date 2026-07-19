@@ -13,6 +13,7 @@ import Register from "./pages/Register";
 import HowItWorks from "./pages/HowItWorks";
 import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
+import Messages from "./pages/Messages";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/messages" element={<Messages />} />
         </Routes>
       </main>
       <Footer />

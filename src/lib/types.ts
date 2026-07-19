@@ -90,3 +90,24 @@ export type Review = {
   created_at: string;
   reviewer?: Profile;
 };
+
+export type Conversation = {
+  id: string;
+  listing_id: string;
+  buyer_id: string;
+  seller_id: string;
+  last_message_at: string;
+  created_at: string;
+  listing?: GameListing;
+  buyer?: Profile;
+  seller?: Profile;
+};
+
+export type Message = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  read_at: string | null;
+  created_at: string;
+};
