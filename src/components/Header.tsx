@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Search, User, LogOut, PlusCircle, ShieldCheck,
   Settings, Wallet, Star, LifeBuoy, ChevronRight, HelpCircle, Home as HomeIcon,
-  Compass, Tag, BookOpen, MessageSquare,
+  Tag, MessageSquare,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
@@ -45,12 +45,10 @@ export default function Header() {
             <Link to="/" className="shrink-0"><Logo /></Link>
             <nav className="flex items-center gap-1 overflow-x-auto scrollbar-thin">
               <NavLink to="/" end className={linkClass}><span className="flex items-center gap-1.5"><HomeIcon size={15} /> Home</span></NavLink>
-              <NavLink to="/browse" className={linkClass}><span className="flex items-center gap-1.5"><Compass size={15} /> Browse IDs</span></NavLink>
               <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
-              <NavLink to="/how-it-works" className={linkClass}><span className="flex items-center gap-1.5"><BookOpen size={15} /> How it Works</span></NavLink>
+              <NavLink to="/messages" className={linkClass}><span className="flex items-center gap-1.5"><MessageSquare size={15} /> Message</span></NavLink>
               <NavLink to="/faq" className={linkClass}><span className="flex items-center gap-1.5"><HelpCircle size={15} /> FAQ</span></NavLink>
               <NavLink to="/support" className={linkClass}><span className="flex items-center gap-1.5"><LifeBuoy size={15} /> Support</span></NavLink>
-              <NavLink to="/messages" className={linkClass}><span className="flex items-center gap-1.5"><MessageSquare size={15} /> Message</span></NavLink>
               {user && <NavLink to="/profile" className={linkClass}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></NavLink>}
             </nav>
           </div>
