@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   MapPin, Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2, MessageSquare,
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
-  Award, Activity, Bell, Lock, Eye, Heart, LayoutGrid, Zap, Trophy, Target,
+  Award, Activity, Bell, Lock, Eye, Heart, Trophy, Target,
   Gift, BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
   Smartphone, AlertCircle,
 } from "lucide-react";
@@ -23,8 +23,9 @@ export default function Profile() {
   const [sellOrders, setSellOrders] = useState<Order[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editForm, setEditForm] = useState({ full_name: "", bio: "", location: "", phone: "", discord: "", whatsapp: "", avatar_url: "" });
+  const [editForm, setEditForm] = useState({ full_name: "", bio: "", location: "", phone: "", avatar_url: "" });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [verifyRequested, setVerifyRequested] = useState(false);
 
@@ -46,7 +47,7 @@ export default function Profile() {
   }, [user]);
 
   useEffect(() => {
-    if (profile) setEditForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", location: profile.location ?? "", phone: profile.phone ?? "", discord: profile.discord ?? "", whatsapp: profile.whatsapp ?? "", avatar_url: profile.avatar_url ?? "" });
+    if (profile) setEditForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", location: profile.location ?? "", phone: profile.phone ?? "", avatar_url: profile.avatar_url ?? "" });
   }, [profile]);
 
   if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
@@ -56,12 +57,11 @@ export default function Profile() {
   const initials = displayName.trim()[0]?.toUpperCase() ?? "U";
   const completedSales = sellOrders.filter((o) => o.status === "completed");
   const totalEarnings = completedSales.reduce((s, o) => s + o.seller_amount, 0);
-  const totalSpent = buyOrders.filter((o) => o.status === "completed" || o.status === "paid").reduce((s, o) => s + o.price, 0);
   const activeListings = myListings.filter((l) => l.status === "active" || l.status === "approved");
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   // Profile completion calculation
-  const completionFields = [profile?.full_name, profile?.bio, profile?.avatar_url, profile?.location, profile?.phone, profile?.discord];
+  const completionFields = [profile?.full_name, profile?.bio, profile?.avatar_url, profile?.location, profile?.phone];
   const filledCount = completionFields.filter(Boolean).length;
   const completionPct = Math.round((filledCount / completionFields.length) * 100);
 
@@ -94,7 +94,6 @@ export default function Profile() {
 
   const tabs: { id: Tab; label: string; icon: IconType }[] = [
     { id: "overview", label: "Overview", icon: Activity },
-    { id: "edit", label: "Edit Profile", icon: Edit3 },
     { id: "achievements", label: "Badges", icon: Trophy },
     { id: "wishlist", label: "Wishlist", icon: Heart },
     { id: "insights", label: "Insights", icon: BarChart3 },
@@ -107,12 +106,23 @@ export default function Profile() {
 
   function updateEdit(k: keyof typeof editForm, v: string) { setEditForm((f) => ({ ...f, [k]: v })); }
 
+  async function handleAvatarUpload(file: File) {
+    if (!user) return;
+    setUploading(true); setSaveMsg("");
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { cacheControl: "3600", upsert: false });
+    setUploading(false);
+    if (error) { setSaveMsg("Upload failed: " + error.message); return; }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    updateEdit("avatar_url", pub.publicUrl);
+  }
+
   async function handleSave(e: FormEvent) {
     e.preventDefault(); setSaving(true); setSaveMsg("");
     const { error } = await supabase.from("profiles").update({
       full_name: editForm.full_name.trim(), bio: editForm.bio.trim() || null,
       location: editForm.location.trim() || null, phone: editForm.phone.trim() || null,
-      discord: editForm.discord.trim() || null, whatsapp: editForm.whatsapp.trim() || null,
       avatar_url: editForm.avatar_url.trim() || null,
     }).eq("id", user!.id);
     setSaving(false);
@@ -162,10 +172,28 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Listings preview */}
+      <div className="card p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-white flex items-center gap-2"><Package size={18} className="text-primary-400" /> Your Listings</h3>
+          <Link to="/dashboard?tab=listings" className="text-xs font-semibold text-primary-400 hover:text-primary-300">View all →</Link>
+        </div>
+        {myListings.slice(0, 3).length > 0 ? (
+          <div className="space-y-2">
+            {myListings.slice(0, 3).map((l) => (
+              <div key={l.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-ink-800 transition-colors">
+                <div className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0">{l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}</div>
+                <Link to={`/listing/${l.id}`} className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1">{l.title}</Link>
+                <span className="font-semibold text-white">{formatBDT(l.price)}</span>
+                <StatusBadge status={l.status} />
+              </div>
+            ))}
+          </div>
+        ) : <p className="text-sm text-ink-400">No listings yet. <Link to="/sell" className="text-primary-400">Create one →</Link></p>}
+      </div>
+
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Wallet} value={formatBDT(totalEarnings)} label="Total Earnings" color="text-success-400 bg-success-500/15" />
-        <StatCard icon={ShoppingBag} value={formatBDT(totalSpent)} label="Total Spent" color="text-primary-400 bg-primary-500/15" />
+      <div className="grid grid-cols-2 gap-4 mb-6">
         <StatCard icon={Tag} value={String(activeListings.length)} label="Active Listings" color="text-accent-400 bg-accent-500/15" />
         <StatCard icon={Award} value={Number(profile?.trust_score ?? 0).toFixed(1)} label="Trust Score" color="text-warning-400 bg-warning-500/15" />
       </div>
@@ -183,42 +211,16 @@ export default function Profile() {
         <>
           {/* OVERVIEW */}
           {tab === "overview" && (
-            <div className="grid md:grid-cols-2 gap-5">
-              <div className="card p-6">
-                <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Activity size={18} className="text-primary-400" /> Account Summary</h3>
-                <dl className="space-y-3 text-sm">
-                  <Row icon={Tag} label="Total Listings" value={String(myListings.length)} />
-                  <Row icon={Package} label="Items Sold" value={String(profile?.total_sales ?? completedSales.length)} />
-                  <Row icon={ShoppingBag} label="Purchases" value={String(profile?.total_purchases ?? buyOrders.length)} />
-                  <Row icon={Star} label="Reviews Received" value={String(reviews.length)} />
-                  <Row icon={TrendingUp} label="Response Rate" value={`${responseRate}%`} />
-                  <Row icon={Trophy} label="Badges Earned" value={`${unlockedCount}/${achievements.length}`} />
-                </dl>
-              </div>
-              <div className="card p-6">
-                <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Zap size={18} className="text-accent-400" /> Quick Actions</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <Link to="/sell" className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><Tag size={22} className="mx-auto text-accent-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">New Listing</p></Link>
-                  <Link to="/dashboard" className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><LayoutGrid size={22} className="mx-auto text-primary-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">Dashboard</p></Link>
-                  <button onClick={() => setTab("verify")} className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><BadgeCheck size={22} className="mx-auto text-success-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">Get Verified</p></button>
-                  <button onClick={() => setTab("insights")} className="rounded-xl bg-ink-800 hover:bg-ink-700 p-4 text-center transition-colors group"><BarChart3 size={22} className="mx-auto text-warning-400 group-hover:scale-110 transition-transform" /><p className="text-sm font-semibold text-white mt-2">Insights</p></button>
-                </div>
-              </div>
-              <div className="card p-6 md:col-span-2">
-                <div className="flex items-center justify-between mb-4"><h3 className="font-semibold text-white">Recent Listings</h3><Link to="/dashboard?tab=listings" className="text-xs text-primary-400 hover:text-primary-300">View all →</Link></div>
-                {activeListings.slice(0, 3).length > 0 ? (
-                  <div className="space-y-2">
-                    {activeListings.slice(0, 3).map((l) => (
-                      <div key={l.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-ink-800 transition-colors">
-                        <div className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0">{l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}</div>
-                        <Link to={`/listing/${l.id}`} className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1">{l.title}</Link>
-                        <span className="font-semibold text-white">{formatBDT(l.price)}</span>
-                        <StatusBadge status={l.status} />
-                      </div>
-                    ))}
-                  </div>
-                ) : <p className="text-sm text-ink-400">No active listings. <Link to="/sell" className="text-primary-400">Create one →</Link></p>}
-              </div>
+            <div className="card p-6">
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Activity size={18} className="text-primary-400" /> Account Summary</h3>
+              <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                <Row icon={Tag} label="Total Listings" value={String(myListings.length)} />
+                <Row icon={Package} label="Items Sold" value={String(profile?.total_sales ?? completedSales.length)} />
+                <Row icon={ShoppingBag} label="Purchases" value={String(profile?.total_purchases ?? buyOrders.length)} />
+                <Row icon={Star} label="Reviews Received" value={String(reviews.length)} />
+                <Row icon={TrendingUp} label="Response Rate" value={`${responseRate}%`} />
+                <Row icon={Trophy} label="Badges Earned" value={`${unlockedCount}/${achievements.length}`} />
+              </dl>
             </div>
           )}
 
@@ -229,15 +231,17 @@ export default function Profile() {
               {saveMsg && <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", saveMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>{saveMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {saveMsg}</div>}
               <div className="flex items-center gap-4">
                 {editForm.avatar_url ? <img src={editForm.avatar_url} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-xl font-bold">{initials}</div>}
-                <div className="flex-1"><label className="label">Avatar URL</label><input value={editForm.avatar_url} onChange={(e) => updateEdit("avatar_url", e.target.value)} className="input" placeholder="https://..." /></div>
+                <div className="flex-1">
+                  <label className="label">Profile Picture</label>
+                  <input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} className="block w-full text-sm text-ink-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-500 file:text-white file:font-semibold hover:file:bg-primary-600 file:cursor-pointer cursor-pointer" />
+                  {uploading && <p className="text-xs text-ink-400 mt-1.5 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Uploading...</p>}
+                </div>
               </div>
               <div><label className="label">Full Name</label><input value={editForm.full_name} onChange={(e) => updateEdit("full_name", e.target.value)} className="input" required /></div>
               <div><label className="label">Bio</label><textarea value={editForm.bio} onChange={(e) => updateEdit("bio", e.target.value)} rows={3} className="input" placeholder="Tell buyers about yourself..." /></div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div><label className="label">Location</label><input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} className="input" placeholder="Dhaka, Bangladesh" /></div>
                 <div><label className="label">Phone</label><input value={editForm.phone} onChange={(e) => updateEdit("phone", e.target.value)} className="input" placeholder="01XXXXXXXXX" /></div>
-                <div><label className="label">Discord</label><input value={editForm.discord} onChange={(e) => updateEdit("discord", e.target.value)} className="input" placeholder="username" /></div>
-                <div><label className="label">WhatsApp</label><input value={editForm.whatsapp} onChange={(e) => updateEdit("whatsapp", e.target.value)} className="input" placeholder="01XXXXXXXXX" /></div>
               </div>
               <button type="submit" disabled={saving} className="btn-primary">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Changes</button>
             </form>
