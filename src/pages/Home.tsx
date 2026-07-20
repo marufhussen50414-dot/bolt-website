@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Sparkles, Users, Star } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star, SlidersHorizontal, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -17,78 +17,117 @@ export default function Home() {
   const [availableCount, setAvailableCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const [gameFilter, setGameFilter] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minLevel, setMinLevel] = useState("");
+
+  const activeFilters = [gameFilter, minPrice, maxPrice, minLevel].filter(Boolean).length;
+
+  const fetchListings = useCallback(async () => {
+    setLoading(true);
+    let query = supabase
+      .from("game_listings")
+      .select("*, seller:profiles(*), category:categories(*)")
+      .in("status", ["approved", "active"])
+      .order("created_at", { ascending: false })
+      .limit(8);
+
+    if (gameFilter) {
+      const cat = categories.find((c) => c.slug === gameFilter);
+      if (cat) query = query.eq("category_id", cat.id);
+    }
+    if (minPrice) query = query.gte("price", parseFloat(minPrice));
+    if (maxPrice) query = query.lte("price", parseFloat(maxPrice));
+    if (minLevel) query = query.gte("account_level", parseInt(minLevel));
+
+    const [recentRes, countRes] = await Promise.all([
+      query,
+      supabase.from("game_listings").select("id", { count: "exact", head: true }).in("status", ["approved", "active"]),
+    ]);
+    setRecent((recentRes.data as GameListing[]) ?? []);
+    setAvailableCount(countRes.count ?? 0);
+    setLoading(false);
+  }, [gameFilter, minPrice, maxPrice, minLevel, categories]);
+
   useEffect(() => {
     (async () => {
-      const [catRes, recentRes, countRes] = await Promise.all([
-        supabase.from("categories").select("*").order("sort_order"),
-        supabase.from("game_listings").select("*, seller:profiles(*), category:categories(*)").in("status", ["approved", "active"]).order("created_at", { ascending: false }).limit(8),
-        supabase.from("game_listings").select("id", { count: "exact", head: true }).in("status", ["approved", "active"]),
-      ]);
-      setCategories(catRes.data as Category[] ?? []);
-      setRecent((recentRes.data as GameListing[]) ?? []);
-      setAvailableCount(countRes.count ?? 0);
-      setLoading(false);
+      const catRes = await supabase.from("categories").select("*").order("sort_order");
+      setCategories((catRes.data as Category[]) ?? []);
     })();
   }, []);
 
+  useEffect(() => {
+    if (categories.length > 0) fetchListings();
+  }, [categories, fetchListings]);
+
+  const clearFilters = () => {
+    setGameFilter(""); setMinPrice(""); setMaxPrice(""); setMinLevel("");
+  };
+
   return (
     <div>
-      {/* WIDE 2-COLUMN HERO: text left, game categories right */}
-      <section className="relative overflow-hidden bg-ink-950">
-        <div className="absolute inset-0 bg-glow-radial" />
-        <div className="absolute inset-0 bg-grid-pattern bg-[size:40px_40px] opacity-30" />
-        <div className="absolute top-10 left-10 w-72 h-72 bg-primary-500/20 rounded-full blur-3xl animate-pulse-glow" />
-        <div className="absolute bottom-0 right-20 w-72 h-72 bg-accent-500/20 rounded-full blur-3xl animate-float" />
-
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 md:py-14">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            {/* LEFT — headline */}
-            <div className="animate-slide-up">
-              <span className="badge bg-primary-500/10 text-primary-300 border border-primary-500/20 backdrop-blur mb-4">
-                <Sparkles size={14} /> Bangladesh's #1 Game ID Marketplace
-              </span>
-              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.05] text-white">
-                Buy & Sell<br />
-                <span className="text-gradient">Game Accounts</span><br />
-                Safely
-              </h1>
-              <p className="mt-4 text-base md:text-lg text-ink-300 leading-relaxed max-w-lg">
-                Free Fire, PUBG, Call of Duty and more. Pay with bKash, Nagad, or card. Only 2% commission with full escrow protection.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link to="/browse" className="btn-primary">Browse IDs <ArrowRight size={16} /></Link>
-                <Link to="/sell" className="btn-secondary">Sell Your ID</Link>
+      {/* COMPACT FILTER BAR */}
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800">
+        <div className="absolute inset-0 bg-glow-radial opacity-60" />
+        <div className="absolute top-0 left-1/3 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-2 mb-3">
+            <SlidersHorizontal size={18} className="text-primary-400" />
+            <h2 className="font-display text-sm font-bold text-white uppercase tracking-wide">Find Your Game ID</h2>
+            {activeFilters > 0 && (
+              <button onClick={clearFilters} className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-error-400 hover:text-error-300 transition-colors">
+                <X size={12} /> Clear ({activeFilters})
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-ink-400 mb-1.5 uppercase tracking-wide">Game</label>
+              <div className="relative">
+                <select
+                  value={gameFilter}
+                  onChange={(e) => setGameFilter(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm text-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors cursor-pointer pr-9"
+                >
+                  <option value="">All Games</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  ))}
+                </select>
+                <Gamepad2 size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-500" />
               </div>
             </div>
-
-            {/* RIGHT — game categories in a compact grid (keeps hero short) */}
-            <div className="animate-fade-in">
-              <div className="card p-5 bg-ink-900/60">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-display text-sm font-bold text-white uppercase tracking-wide">Popular Games</h2>
-                  <Link to="/browse" className="text-xs font-semibold text-primary-400 hover:text-primary-300 flex items-center gap-1">All <ArrowRight size={12} /></Link>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-                  {categories.map((cat) => {
-                    const Icon = iconMap[cat.icon ?? "gamepad"] ?? Gamepad2;
-                    return (
-                      <Link key={cat.id} to={`/browse?category=${cat.slug}`} className="group rounded-xl border border-ink-700 bg-ink-800/60 p-3 text-center hover:border-primary-500/40 hover:bg-primary-500/10 transition-all">
-                        <div className="inline-grid place-items-center h-10 w-10 rounded-lg bg-primary-500/15 text-primary-400 group-hover:bg-primary-500 group-hover:text-white group-hover:scale-110 transition-all mx-auto">
-                          <Icon size={20} />
-                        </div>
-                        <p className="mt-2 text-[11px] font-semibold text-ink-200 group-hover:text-white line-clamp-1">{cat.name}</p>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-ink-400 mb-1.5 uppercase tracking-wide">Min Price (৳)</label>
+              <input
+                type="number" min="0" value={minPrice} placeholder="0"
+                onChange={(e) => setMinPrice(e.target.value)}
+                className="w-full rounded-xl border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm text-white placeholder-ink-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-ink-400 mb-1.5 uppercase tracking-wide">Max Price (৳)</label>
+              <input
+                type="number" min="0" value={maxPrice} placeholder="Any"
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="w-full rounded-xl border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm text-white placeholder-ink-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-ink-400 mb-1.5 uppercase tracking-wide">Min Level</label>
+              <input
+                type="number" min="0" value={minLevel} placeholder="Any"
+                onChange={(e) => setMinLevel(e.target.value)}
+                className="w-full rounded-xl border border-ink-700 bg-ink-900 px-3 py-2.5 text-sm text-white placeholder-ink-600 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-colors"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* Latest Listings */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
             <div className="flex items-center gap-3">
@@ -110,8 +149,12 @@ export default function Home() {
         ) : (
           <div className="card p-12 text-center">
             <Package size={40} className="mx-auto text-ink-600" />
-            <p className="mt-3 text-ink-400">No listings yet. Be the first to sell!</p>
-            <Link to="/sell" className="btn-primary mt-4 inline-flex">Sell an ID</Link>
+            <p className="mt-3 text-ink-400">No listings match your filters.</p>
+            {activeFilters > 0 ? (
+              <button onClick={clearFilters} className="btn-primary mt-4 inline-flex">Clear Filters</button>
+            ) : (
+              <Link to="/sell" className="btn-primary mt-4 inline-flex">Sell an ID</Link>
+            )}
           </div>
         )}
       </section>
