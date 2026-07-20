@@ -1,19 +1,19 @@
+import { clsx, type ClassValue } from "./clsx";
 import type { LucideIcon } from "lucide-react";
-import type { ListingStatus, OrderStatus } from "./types";
+
+export function classNames(...classes: ClassValue[]) {
+  return clsx(classes);
+}
 
 export type IconType = LucideIcon;
 
-export function classNames(...c: (string | false | null | undefined)[]): string {
-  return c.filter(Boolean).join(" ");
+export function formatPrice(n: number) {
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
 }
 
-export function formatBDT(n: number): string {
-  return "৳" + new Intl.NumberFormat("en-BD", { maximumFractionDigits: 0 }).format(n);
-}
-
-export function timeAgo(iso: string | Date): string {
-  const d = typeof iso === "string" ? new Date(iso) : iso;
-  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+export function timeAgo(iso: string) {
+  const d = new Date(iso).getTime();
+  const s = Math.floor((Date.now() - d) / 1000);
   if (s < 60) return "just now";
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
@@ -26,25 +26,30 @@ export function timeAgo(iso: string | Date): string {
   return `${Math.floor(mo / 12)}y ago`;
 }
 
-const statusStyles: Record<string, string> = {
-  pending: "bg-warning-500/15 text-warning-400 border-warning-500/20",
-  approved: "bg-primary-500/15 text-primary-300 border-primary-500/20",
-  active: "bg-success-500/15 text-success-400 border-success-500/20",
-  sold: "bg-ink-700 text-ink-300 border-ink-600",
-  rejected: "bg-error-500/15 text-error-400 border-error-500/20",
-  delisted: "bg-ink-700 text-ink-400 border-ink-600",
-  paid: "bg-primary-500/15 text-primary-300 border-primary-500/20",
-  delivering: "bg-accent-500/15 text-accent-300 border-accent-500/20",
-  completed: "bg-success-500/15 text-success-400 border-success-500/20",
-  cancelled: "bg-ink-700 text-ink-300 border-ink-600",
-  disputed: "bg-error-500/15 text-error-400 border-error-500/20",
-  refunded: "bg-ink-700 text-ink-400 border-ink-600",
-};
+const TAG_COLORS = [
+  { bg: "bg-primary-500/15", text: "text-primary-300", ring: "ring-primary-500/30" },
+  { bg: "bg-accent-500/15", text: "text-accent-300", ring: "ring-accent-500/30" },
+  { bg: "bg-success-500/15", text: "text-success-300", ring: "ring-success-500/30" },
+  { bg: "bg-warning-500/15", text: "text-warning-300", ring: "ring-warning-500/30" },
+  { bg: "bg-error-500/15", text: "text-error-300", ring: "ring-error-500/30" },
+];
 
-export function statusClass(s: ListingStatus | OrderStatus | string): string {
-  return statusStyles[s] ?? "bg-ink-700 text-ink-300 border-ink-600";
+export function tagColor(label: string) {
+  const sum = label.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return TAG_COLORS[sum % TAG_COLORS.length];
 }
 
-export function statusLabel(s: ListingStatus | OrderStatus | string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+export function buildTags(opts: {
+  prime: number | null;
+  accountLevel: number | null;
+  custom: string[];
+}): string[] {
+  const out: string[] = [];
+  if (opts.prime != null && opts.prime > 0) out.push(`Prime ${opts.prime}`);
+  if (opts.accountLevel != null && opts.accountLevel > 0) out.push(`Level ${opts.accountLevel}`);
+  for (const t of opts.custom) {
+    const v = t.trim();
+    if (v && !out.some((x) => x.toLowerCase() === v.toLowerCase())) out.push(v);
+  }
+  return out;
 }

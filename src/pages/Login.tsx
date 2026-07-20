@@ -1,38 +1,41 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Loader2, Gamepad2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 export default function Login() {
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const [email, setEmail] = useState(""); const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  const nav = useNavigate();
+  const loc = useLocation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault(); setError(""); setLoading(true);
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (err) { setError(err.message); return; }
-    navigate(params.get("redirect") ?? "/profile");
-  }
+    if (error) { setError(error.message); return; }
+    nav((loc.state as any)?.from ?? "/dashboard", { replace: true });
+  };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] grid place-items-center px-4 py-10 relative overflow-hidden">
-      <div className="absolute inset-0 bg-glow-radial opacity-50" />
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl" />
-      <div className="relative w-full max-w-md">
-        <div className="card p-8 animate-slide-up">
-          <h1 className="font-display text-2xl font-extrabold text-center text-white">Welcome back</h1>
-          <p className="text-center text-sm text-ink-400 mt-1">Log in to your GameHaatBD account</p>
-          {error && <div className="mt-5 flex items-start gap-2 rounded-xl bg-error-500/10 border border-error-500/20 p-3 text-sm text-error-400"><AlertCircle size={18} className="shrink-0 mt-0.5" /><span>{error}</span></div>}
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div><label className="label">Email</label><div className="relative"><Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input pl-10" placeholder="you@example.com" /></div></div>
-            <div><label className="label">Password</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="input pl-10" placeholder="••••••••" /></div></div>
-            <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? <Loader2 size={18} className="animate-spin" /> : "Log In"}</button>
-          </form>
-          <p className="text-center text-sm text-ink-400 mt-6">Don't have an account? <Link to="/register" className="font-semibold text-primary-400 hover:text-primary-300">Sign Up</Link></p>
+    <div className="mx-auto flex max-w-md flex-col px-4 py-16">
+      <div className="card p-8">
+        <div className="mb-6 flex flex-col items-center">
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary-500 text-white"><Gamepad2 size={24} /></span>
+          <h1 className="mt-3 font-display text-2xl font-extrabold text-white">Welcome back</h1>
+          <p className="text-sm text-ink-400">Sign in to your account</p>
         </div>
+        {error && <div className="mb-4 rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-3 text-sm text-error-300">{error}</div>}
+        <form onSubmit={submit} className="space-y-4">
+          <div><label className="label">Email</label><input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
+          <div><label className="label">Password</label><input className="input" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></div>
+          <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? <Loader2 size={16} className="animate-spin" /> : "Sign In"}</button>
+        </form>
+        <p className="mt-4 text-center text-sm text-ink-400">No account? <Link to="/signup" className="font-semibold text-primary-400 hover:text-primary-300">Sign up</Link></p>
       </div>
     </div>
   );

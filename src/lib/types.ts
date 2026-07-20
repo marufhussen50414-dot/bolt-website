@@ -10,7 +10,7 @@ export type Category = {
 export type Profile = {
   id: string;
   username: string | null;
-  full_name: string | null;
+  full_name: string;
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -45,6 +45,8 @@ export type GameListing = {
   price: number;
   account_level: number | null;
   rank_tier: string | null;
+  prime: number | null;
+  tags: string[] | null;
   account_id_display: string | null;
   server_region: string | null;
   images: string[] | null;
@@ -58,38 +60,6 @@ export type GameListing = {
 };
 
 export type OrderStatus = "pending" | "paid" | "delivering" | "completed" | "cancelled" | "disputed" | "refunded";
-
-export type Order = {
-  id: string;
-  listing_id: string;
-  buyer_id: string;
-  seller_id: string;
-  price: number;
-  commission_rate: number;
-  commission_amount: number;
-  seller_amount: number;
-  payment_method: "bkash" | "nagad" | "card";
-  payment_number: string | null;
-  status: OrderStatus;
-  escrow_released: boolean;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-  listing?: GameListing;
-  buyer?: Profile;
-  seller?: Profile;
-};
-
-export type Review = {
-  id: string;
-  order_id: string;
-  reviewer_id: string;
-  reviewee_id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  reviewer?: Profile;
-};
 
 export type Conversation = {
   id: string;

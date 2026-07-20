@@ -1,44 +1,42 @@
 import { Link } from "react-router-dom";
-import { Mail, MessageCircle, Send, ShieldCheck } from "lucide-react";
-import Logo from "./Logo";
+import { Gamepad2, ShieldCheck, CreditCard, TrendingUp } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-ink-800 mt-16 bg-ink-950">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
-            <Logo />
-            <p className="text-sm text-ink-400 mt-3 max-w-xs">Bangladesh's safest game ID marketplace. Buy and sell with escrow protection and only 2% commission.</p>
+    <footer className="border-t border-ink-800 bg-ink-950">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid gap-8 md:grid-cols-4">
+          <div className="md:col-span-2">
+            <Link to="/" className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary-500 text-white"><Gamepad2 size={18} /></span>
+              <span className="font-display text-lg font-extrabold text-white">GameHaatBD</span>
+            </Link>
+            <p className="mt-3 max-w-sm text-sm text-ink-400">Bangladesh's game account marketplace. Buy and sell IDs safely with escrow protection.</p>
+            <div className="mt-4 flex flex-wrap gap-4 text-xs text-ink-500">
+              <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-success-400" /> Escrow Protected</span>
+              <span className="flex items-center gap-1.5"><CreditCard size={14} className="text-primary-400" /> bKash · Nagad · Card</span>
+              <span className="flex items-center gap-1.5"><TrendingUp size={14} className="text-accent-400" /> 2% Commission</span>
+            </div>
           </div>
           <div>
-            <h4 className="font-semibold text-white text-sm mb-3">Marketplace</h4>
-            <ul className="space-y-2 text-sm text-ink-400">
-              <li><Link to="/browse" className="hover:text-primary-400">Browse IDs</Link></li>
-              <li><Link to="/sell" className="hover:text-primary-400">Sell an ID</Link></li>
-              <li><Link to="/how-it-works" className="hover:text-primary-400">How it Works</Link></li>
+            <h4 className="text-sm font-bold text-white">Marketplace</h4>
+            <ul className="mt-3 space-y-2 text-sm text-ink-400">
+              <li><Link to="/browse" className="hover:text-primary-300">Browse IDs</Link></li>
+              <li><Link to="/sell" className="hover:text-primary-300">Sell an ID</Link></li>
+              <li><Link to="/dashboard" className="hover:text-primary-300">Dashboard</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold text-white text-sm mb-3">Support</h4>
-            <ul className="space-y-2 text-sm text-ink-400">
-              <li><Link to="/faq" className="hover:text-primary-400">FAQ</Link></li>
-              <li><Link to="/support" className="hover:text-primary-400">Support Center</Link></li>
-              <li><Link to="/how-it-works" className="hover:text-primary-400">Safety & Escrow</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold text-white text-sm mb-3">Contact</h4>
-            <ul className="space-y-2 text-sm text-ink-400">
-              <li className="flex items-center gap-2"><Mail size={14} /> support@gamehaatbd.com</li>
-              <li className="flex items-center gap-2"><MessageCircle size={14} /> 01700-000000</li>
-              <li className="flex items-center gap-2"><Send size={14} /> @gamehaatbd</li>
+            <h4 className="text-sm font-bold text-white">Account</h4>
+            <ul className="mt-3 space-y-2 text-sm text-ink-400">
+              <li><Link to="/login" className="hover:text-primary-300">Login</Link></li>
+              <li><Link to="/signup" className="hover:text-primary-300">Sign Up</Link></li>
+              <li><Link to="/profile" className="hover:text-primary-300">Profile</Link></li>
             </ul>
           </div>
         </div>
-        <div className="mt-10 pt-6 border-t border-ink-800 flex flex-col md:flex-row justify-between items-center gap-3">
-          <p className="text-xs text-ink-500">© 2026 GameHaatBD. All rights reserved.</p>
-          <p className="text-xs text-ink-500 flex items-center gap-1.5"><ShieldCheck size={13} className="text-success-400" /> Escrow-protected transactions</p>
+        <div className="mt-8 border-t border-ink-800 pt-6 text-center text-xs text-ink-500">
+          © {new Date().getFullYear()} GameHaatBD. All rights reserved.
         </div>
       </div>
     </footer>
