@@ -32,9 +32,9 @@ export default function Header() {
   const menuItems = [
     { to: "/profile", icon: User, label: "My Profile" },
     { to: "/sell", icon: PlusCircle, label: "Sell an ID" },
-    { to: "/dashboard?tab=listings", icon: Settings, label: "My Listings" },
-    { to: "/dashboard?tab=selling", icon: Wallet, label: "Earnings & Wallet" },
-    { to: "/dashboard?tab=buying", icon: Star, label: "My Purchases" },
+    { to: "/my-listings", icon: Settings, label: "My Listings" },
+    { to: "/profile", icon: Wallet, label: "Earnings & Wallet" },
+    { to: "/profile", icon: Star, label: "My Purchases" },
   ];
 
   return (

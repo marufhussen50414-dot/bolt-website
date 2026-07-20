@@ -14,7 +14,7 @@ export default function Login() {
     const { error: err } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (err) { setError(err.message); return; }
-    navigate(params.get("redirect") ?? "/dashboard");
+    navigate(params.get("redirect") ?? "/profile");
   }
 
   return (

@@ -6,7 +6,6 @@ import Browse from "./pages/Browse";
 import Sell from "./pages/Sell";
 import ListingDetail from "./pages/ListingDetail";
 import Checkout from "./pages/Checkout";
-import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -14,6 +13,7 @@ import HowItWorks from "./pages/HowItWorks";
 import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
 import Messages from "./pages/Messages";
+import MyListings from "./pages/MyListings";
 
 export default function App() {
   return (
@@ -26,7 +26,7 @@ export default function App() {
           <Route path="/sell" element={<Sell />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
           <Route path="/checkout/:id" element={<Checkout />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/my-listings" element={<MyListings />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

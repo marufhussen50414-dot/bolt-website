@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
-  MapPin, Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2, MessageSquare,
+  MapPin, Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2,
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
-  Award, Activity, Bell, Lock, Eye, Heart, Trophy, Target,
+  Award, Activity, Lock, Heart, Trophy, Target,
   Gift, BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
-  Smartphone, AlertCircle,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -13,7 +13,7 @@ import type { GameListing, Order, Review } from "../lib/types";
 import { formatBDT, timeAgo, classNames, IconType } from "../lib/utils";
 import { StatusBadge } from "../components/ListingCard";
 
-type Tab = "overview" | "edit" | "payment" | "security" | "activity" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
+type Tab = "overview" | "payment" | "security" | "activity" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
 
 export default function Profile() {
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
@@ -27,6 +27,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
   const [verifyRequested, setVerifyRequested] = useState(false);
 
   useEffect(() => {
@@ -127,7 +128,7 @@ export default function Profile() {
     }).eq("id", user!.id);
     setSaving(false);
     if (error) setSaveMsg("Failed to save: " + error.message);
-    else { setSaveMsg("Profile updated successfully!"); await refreshProfile(); setTimeout(() => setSaveMsg(""), 2500); }
+    else { setSaveMsg("Profile updated successfully!"); await refreshProfile(); setTimeout(() => { setSaveMsg(""); setEditOpen(false); }, 2500); }
   }
 
   return (
@@ -154,7 +155,7 @@ export default function Profile() {
                 <span className="flex items-center gap-1"><Star size={12} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} rating</span>
               </div>
             </div>
-            <button onClick={() => setTab("edit")} className="btn-secondary"><Edit3 size={16} /> Edit Profile</button>
+            <button onClick={() => setEditOpen(true)} className="btn-secondary"><Edit3 size={16} /> Edit Profile</button>
           </div>
           {profile?.bio && <p className="mt-4 text-sm text-ink-300 leading-relaxed max-w-2xl">{profile.bio}</p>}
 
@@ -167,7 +168,7 @@ export default function Profile() {
             <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
               <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all" style={{ width: `${completionPct}%` }} />
             </div>
-            {completionPct < 100 && <p className="text-xs text-ink-500 mt-1.5">Complete your profile to earn buyers' trust. <button onClick={() => setTab("edit")} className="text-primary-400 font-semibold">Finish now →</button></p>}
+            {completionPct < 100 && <p className="text-xs text-ink-500 mt-1.5">Complete your profile to earn buyers' trust. <button onClick={() => setEditOpen(true)} className="text-primary-400 font-semibold">Finish now →</button></p>}
           </div>
         </div>
       </div>
@@ -176,12 +177,12 @@ export default function Profile() {
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-white flex items-center gap-2"><Package size={18} className="text-primary-400" /> Your Listings</h3>
-          <Link to="/dashboard?tab=listings" className="text-xs font-semibold text-primary-400 hover:text-primary-300">View all →</Link>
+          <Link to="/my-listings" className="text-xs font-semibold text-primary-400 hover:text-primary-300">View all →</Link>
         </div>
         {myListings.slice(0, 3).length > 0 ? (
           <div className="space-y-2">
             {myListings.slice(0, 3).map((l) => (
-              <div key={l.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-ink-800 transition-colors">
+              <div key={l.id} className="flex items-center gap-3 p-3 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/50 transition-all">
                 <div className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0">{l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}</div>
                 <Link to={`/listing/${l.id}`} className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1">{l.title}</Link>
                 <span className="font-semibold text-white">{formatBDT(l.price)}</span>
@@ -193,9 +194,11 @@ export default function Profile() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard icon={Tag} value={String(activeListings.length)} label="Active Listings" color="text-accent-400 bg-accent-500/15" />
         <StatCard icon={Award} value={Number(profile?.trust_score ?? 0).toFixed(1)} label="Trust Score" color="text-warning-400 bg-warning-500/15" />
+        <StatCard icon={Package} value={String(profile?.total_sales ?? completedSales.length)} label="Total IDs Sold" color="text-success-400 bg-success-500/15" />
+        <StatCard icon={ShoppingBag} value={String(profile?.total_purchases ?? buyOrders.length)} label="Total IDs Bought" color="text-primary-400 bg-primary-500/15" />
       </div>
 
       {/* Tabs */}
@@ -222,29 +225,6 @@ export default function Profile() {
                 <Row icon={Trophy} label="Badges Earned" value={`${unlockedCount}/${achievements.length}`} />
               </dl>
             </div>
-          )}
-
-          {/* EDIT PROFILE */}
-          {tab === "edit" && (
-            <form onSubmit={handleSave} className="card p-6 space-y-5 max-w-2xl">
-              <div className="flex items-center gap-2 text-white font-semibold"><Edit3 size={18} className="text-primary-400" /> Edit Your Profile</div>
-              {saveMsg && <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", saveMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>{saveMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {saveMsg}</div>}
-              <div className="flex items-center gap-4">
-                {editForm.avatar_url ? <img src={editForm.avatar_url} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-xl font-bold">{initials}</div>}
-                <div className="flex-1">
-                  <label className="label">Profile Picture</label>
-                  <input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} className="block w-full text-sm text-ink-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-500 file:text-white file:font-semibold hover:file:bg-primary-600 file:cursor-pointer cursor-pointer" />
-                  {uploading && <p className="text-xs text-ink-400 mt-1.5 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Uploading...</p>}
-                </div>
-              </div>
-              <div><label className="label">Full Name</label><input value={editForm.full_name} onChange={(e) => updateEdit("full_name", e.target.value)} className="input" required /></div>
-              <div><label className="label">Bio</label><textarea value={editForm.bio} onChange={(e) => updateEdit("bio", e.target.value)} rows={3} className="input" placeholder="Tell buyers about yourself..." /></div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div><label className="label">Location</label><input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} className="input" placeholder="Dhaka, Bangladesh" /></div>
-                <div><label className="label">Phone</label><input value={editForm.phone} onChange={(e) => updateEdit("phone", e.target.value)} className="input" placeholder="01XXXXXXXXX" /></div>
-              </div>
-              <button type="submit" disabled={saving} className="btn-primary">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Changes</button>
-            </form>
           )}
 
           {/* ACHIEVEMENTS / BADGES */}
@@ -380,23 +360,12 @@ export default function Profile() {
           {tab === "security" && (
             <div className="card p-6 max-w-2xl space-y-4">
               <div className="flex items-center gap-2 text-white font-semibold"><Lock size={18} className="text-primary-400" /> Security & Privacy</div>
-              <div className="space-y-3">
-                <Toggle icon={Eye} label="Public Profile" desc="Allow others to view your profile page" defaultOn />
-                <Toggle icon={MessageSquare} label="Show Contact Info" desc="Display your Discord/WhatsApp on listings" defaultOn />
-                <Toggle icon={Bell} label="Email Notifications" desc="Get notified about orders and messages" defaultOn />
-                <Toggle icon={Heart} label="Marketing Emails" desc="News about new features and promotions" />
-                <Toggle icon={Smartphone} label="SMS Alerts" desc="Receive SMS for critical order updates" defaultOn />
-              </div>
-              <div className="border-t border-ink-800 pt-4 mt-4">
-                <p className="text-sm text-ink-400 mb-3">Account email</p>
-                <div className="flex items-center justify-between rounded-xl bg-ink-800 p-3"><span className="text-sm text-white">{user.email}</span><span className="badge bg-success-500/15 text-success-400 border border-success-500/20"><Mail size={11} /> Verified</span></div>
-              </div>
-              <div className="border-t border-ink-800 pt-4 mt-4">
-                <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><Smartphone size={15} className="text-primary-400" /> Active Sessions</h4>
-                <div className="space-y-2">
-                  <SessionRow device="This browser" location="Current session" current />
-                  <SessionRow device="Mobile App" location="Dhaka, BD" />
+              <div className="rounded-xl bg-ink-800 p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-white">Email verified</p>
+                  <p className="text-xs text-ink-400 mt-0.5">{user.email}</p>
                 </div>
+                <span className="badge bg-success-500/15 text-success-400 border border-success-500/20"><Mail size={11} /> Verified</span>
               </div>
             </div>
           )}
@@ -432,6 +401,38 @@ export default function Profile() {
           )}
         </>
       )}
+
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/80 backdrop-blur-sm" onClick={() => setEditOpen(false)}>
+          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-display text-lg font-bold text-white flex items-center gap-2"><Edit3 size={18} className="text-primary-400" /> Edit Your Profile</h2>
+              <button onClick={() => setEditOpen(false)} className="text-ink-400 hover:text-white transition-colors"><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSave} className="space-y-5">
+              {saveMsg && <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", saveMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>{saveMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {saveMsg}</div>}
+              <div className="flex items-center gap-4">
+                {editForm.avatar_url ? <img src={editForm.avatar_url} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-xl font-bold">{initials}</div>}
+                <div className="flex-1">
+                  <label className="label">Profile Picture</label>
+                  <input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} className="block w-full text-sm text-ink-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-500 file:text-white file:font-semibold hover:file:bg-primary-600 file:cursor-pointer cursor-pointer" />
+                  {uploading && <p className="text-xs text-ink-400 mt-1.5 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Uploading...</p>}
+                </div>
+              </div>
+              <div><label className="label">Full Name</label><input value={editForm.full_name} onChange={(e) => updateEdit("full_name", e.target.value)} className="input" required /></div>
+              <div><label className="label">Bio</label><textarea value={editForm.bio} onChange={(e) => updateEdit("bio", e.target.value)} rows={3} className="input" placeholder="Tell buyers about yourself..." /></div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div><label className="label">Location</label><input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} className="input" placeholder="Dhaka, Bangladesh" /></div>
+                <div><label className="label">Phone</label><input value={editForm.phone} onChange={(e) => updateEdit("phone", e.target.value)} className="input" placeholder="01XXXXXXXXX" /></div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Changes</button>
+                <button type="button" onClick={() => setEditOpen(false)} className="btn-secondary">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -464,23 +465,4 @@ function VerifyReq({ done, label }: { done: boolean; label: string }) {
   );
 }
 
-function Toggle({ icon: Icon, label, desc, defaultOn }: { icon: IconType; label: string; desc: string; defaultOn?: boolean }) {
-  const [on, setOn] = useState(!!defaultOn);
-  return (
-    <div className="flex items-center justify-between rounded-xl bg-ink-800 p-3">
-      <div className="flex items-center gap-3"><Icon size={18} className="text-ink-400" /><div><p className="text-sm font-semibold text-white">{label}</p><p className="text-xs text-ink-400">{desc}</p></div></div>
-      <button type="button" onClick={() => setOn((v) => !v)} className={classNames("relative h-6 w-11 rounded-full transition-colors", on ? "bg-primary-500" : "bg-ink-700")}>
-        <span className={classNames("absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform", on ? "translate-x-5" : "translate-x-0.5")} />
-      </button>
-    </div>
-  );
-}
 
-function SessionRow({ device, location, current }: { device: string; location: string; current?: boolean }) {
-  return (
-    <div className="flex items-center justify-between rounded-xl bg-ink-800 p-3">
-      <div className="flex items-center gap-3"><Smartphone size={18} className="text-ink-400" /><div><p className="text-sm font-semibold text-white">{device}</p><p className="text-xs text-ink-400">{location}</p></div></div>
-      {current ? <span className="badge bg-success-500/15 text-success-400 border border-success-500/20">Active</span> : <button className="text-xs text-error-400 hover:text-error-300">Revoke</button>}
-    </div>
-  );
-}

@@ -39,7 +39,7 @@ export default function Checkout() {
     });
     setSubmitting(false);
     if (insErr) { setError(insErr.message); return; }
-    setSuccess(true); setTimeout(() => navigate("/dashboard?tab=buying"), 1500);
+    setSuccess(true); setTimeout(() => navigate("/profile"), 1500);
   }
 
   if (success) return (

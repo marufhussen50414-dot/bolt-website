@@ -24,7 +24,7 @@ export default function Register() {
       const { error: profileError } = await supabase.from("profiles").insert({ id: data.user.id, full_name: form.name.trim(), phone: form.phone || null, location: form.location || null });
       if (profileError) { setError("Account created but profile failed: " + profileError.message); setLoading(false); return; }
     }
-    setLoading(false); navigate("/dashboard");
+    setLoading(false); navigate("/profile");
   }
 
   return (

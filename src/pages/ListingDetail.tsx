@@ -40,7 +40,7 @@ export default function ListingDetail() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-      <Link to="/browse" className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-white mb-4"><ArrowLeft size={16} /> Back to browse</Link>
+      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-white mb-4"><ArrowLeft size={16} /> Go back</button>
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <div className="card overflow-hidden"><img src={images[activeImg]} alt={listing.title} className="w-full h-72 object-cover" /></div>

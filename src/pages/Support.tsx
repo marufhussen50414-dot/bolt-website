@@ -80,7 +80,7 @@ export default function Support() {
             <ul className="space-y-2 text-sm">
               <li><Link to="/faq" className="text-ink-300 hover:text-primary-400">FAQ — Common Questions</Link></li>
               <li><Link to="/how-it-works" className="text-ink-300 hover:text-primary-400">How Escrow Works</Link></li>
-              <li><Link to="/dashboard" className="text-ink-300 hover:text-primary-400">Your Orders & Disputes</Link></li>
+              <li><Link to="/profile" className="text-ink-300 hover:text-primary-400">Your Orders & Disputes</Link></li>
             </ul>
           </div>
           <div className="card p-5 bg-gradient-to-br from-success-500/10 to-transparent border-success-500/20">
