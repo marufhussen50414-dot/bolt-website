@@ -2,31 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body { @apply bg-ink-950 text-ink-200 font-sans antialiased; }
-  ::selection { @apply bg-primary-500/30 text-white; }
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-ink-950 text-zinc-200 font-sans antialiased;
+  background-image: radial-gradient(
+      900px 600px at 100% -10%,
+      rgba(6, 182, 212, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(700px 500px at -10% 10%, rgba(245, 158, 11, 0.05), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgba(6, 182, 212, 0.3);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2430;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3140;
+  background-clip: padding-box;
 }
 
 @layer components {
-  .card { @apply rounded-2xl border border-ink-800 bg-ink-900/80 backdrop-blur-sm transition-colors; }
-  .card-hover { @apply card hover:border-primary-500/30 hover:shadow-glow cursor-pointer; }
-  .glass { @apply bg-ink-900/60 backdrop-blur-md border border-ink-700/60 rounded-xl; }
-  .badge { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold; }
-  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-glow transition-all hover:bg-primary-400 active:scale-[0.98] disabled:opacity-50; }
-  .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-700 bg-ink-800 px-4 py-2.5 text-sm font-bold text-ink-100 transition-all hover:bg-ink-700 active:scale-[0.98]; }
-  .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold text-ink-300 transition-colors hover:bg-ink-800 hover:text-white; }
-  .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-error-500/30 bg-error-500/10 px-4 py-2.5 text-sm font-bold text-error-400 transition-all hover:bg-error-500/20; }
-  .input { @apply w-full rounded-xl border border-ink-700 bg-ink-900 px-3.5 py-2.5 text-sm text-white placeholder:text-ink-500 outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20; }
-  .label { @apply block text-xs font-semibold text-ink-400 mb-1.5 uppercase tracking-wide; }
-  .text-gradient { @apply bg-gradient-to-r from-primary-400 via-primary-300 to-accent-400 bg-clip-text text-transparent; }
+  .input-base {
+    @apply w-full rounded-xl border border-ink-700 bg-ink-850 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25;
+  }
+  .label-base {
+    @apply mb-1.5 block text-sm font-medium text-zinc-300;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-ink-950 transition hover:bg-brand-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-700 bg-ink-850 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-ink-600 hover:bg-ink-800;
+  }
 }
-
-@layer utilities {
-  .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-ink-700 rounded-full; }
-}
-
-@keyframes scale-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
-.animate-scale-in { animation: scale-in 0.18s ease-out; }
