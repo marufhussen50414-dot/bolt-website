@@ -18,7 +18,7 @@ export default function Sell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", rank_tier: "", server_region: "" });
+  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "" });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -26,9 +26,15 @@ export default function Sell() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => { supabase.from("categories").select("*").order("sort_order").then(({ data }) => setCategories((data as Category[]) ?? [])); }, []);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
+
+  const selectedCategory = categories.find((c) => c.id === form.category_id);
+  const isFreeFire = selectedCategory?.slug === "free-fire";
+  const primeNum = form.prime === "" ? null : parseInt(form.prime);
+  const primeInvalid = primeNum !== null && (isNaN(primeNum) || primeNum < 0 || primeNum > 8);
 
   function update(k: keyof typeof form, v: string) { setForm((f) => ({ ...f, [k]: v })); }
 
@@ -42,6 +48,7 @@ export default function Sell() {
       valid.push(f);
     }
     if (valid.length === 0) return;
+    setImageError(false);
     setImages((prev) => {
       const next = [...prev, ...valid];
       if (next.length > MAX_FILES) { setError(`You can upload at most ${MAX_FILES} images.`); return next.slice(0, MAX_FILES); }
@@ -90,6 +97,8 @@ export default function Sell() {
     e.preventDefault(); setError("");
     if (!user) { setError("Please log in to create a listing."); return; }
     const price = parseFloat(form.price); if (!price || price <= 0) { setError("Enter a valid price."); return; }
+    if (images.length === 0) { setImageError(true); setError("Please upload at least one image."); return; }
+    if (isFreeFire && primeInvalid) { setError("Prime must be between 0 and 8."); return; }
     setLoading(true);
     const uploaded = await uploadAll(user.id);
     if (!uploaded) { setLoading(false); return; }
@@ -99,7 +108,8 @@ export default function Sell() {
       game_name: categories.find((c) => c.id === form.category_id)?.name ?? "Others",
       title: form.title, description: form.description || null, price,
       account_level: form.account_level ? parseInt(form.account_level) : null,
-      rank_tier: form.rank_tier || null, server_region: form.server_region || null,
+      prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
+      server_region: form.server_region || null,
       images: imageUrls.length ? imageUrls : null, status: "pending",
     }).select().single();
     setLoading(false);
@@ -135,7 +145,13 @@ export default function Sell() {
           <div className="grid grid-cols-2 gap-4">
             <div><label className="label">Price (৳)</label><input type="number" required value={form.price} onChange={(e) => update("price", e.target.value)} className="input" placeholder="1500" /></div>
             <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" placeholder="70" /></div>
-            <div><label className="label">Rank / Tier</label><input value={form.rank_tier} onChange={(e) => update("rank_tier", e.target.value)} className="input" placeholder="Heroic" /></div>
+            {isFreeFire && (
+              <div>
+                <label className="label">Prime</label>
+                <input type="number" min={0} max={8} value={form.prime} onChange={(e) => update("prime", e.target.value)} className={classNames("input", primeInvalid && "border-error-500")} placeholder="0-8" />
+                {primeInvalid && <p className="mt-1 text-xs text-error-400">Prime must be between 0 and 8.</p>}
+              </div>
+            )}
             <div><label className="label">Server / Region</label><input value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input" placeholder="BD/Asia" /></div>
           </div>
 
@@ -148,7 +164,9 @@ export default function Sell() {
               onDrop={onDrop}
               className={classNames(
                 "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors",
-                dragOver ? "border-primary-500 bg-primary-500/10" : "border-ink-700 bg-ink-900 hover:border-primary-500/50 hover:bg-ink-800"
+                imageError && images.length === 0
+                  ? "border-error-500 bg-error-500/5"
+                  : dragOver ? "border-primary-500 bg-primary-500/10" : "border-ink-700 bg-ink-900 hover:border-primary-500/50 hover:bg-ink-800"
               )}
             >
               <UploadCloud size={28} className="text-primary-400" />
@@ -173,7 +191,11 @@ export default function Sell() {
               </div>
             )}
             {previews.length === 0 && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-ink-500"><ImageIcon size={14} /> No images selected yet.</div>
+              imageError ? (
+                <div className="mt-3 flex items-center gap-2 text-xs text-error-400"><ImageIcon size={14} /> At least one image is required to create a listing.</div>
+              ) : (
+                <div className="mt-3 flex items-center gap-2 text-xs text-ink-500"><ImageIcon size={14} /> No images selected yet.</div>
+              )
             )}
           </div>
 
