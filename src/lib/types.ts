@@ -1,41 +1,39 @@
-export type Category = {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string | null;
-  description: string | null;
-  sort_order: number;
-};
-
-export type Profile = {
+export interface Profile {
   id: string;
   username: string | null;
-  full_name: string | null;
+  full_name: string;
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
+  trust_score: number | null;
+  total_sales: number | null;
+  total_purchases: number | null;
+  is_verified: boolean | null;
+  is_banned: boolean | null;
   location: string | null;
   discord: string | null;
   whatsapp: string | null;
   preferred_payment: string | null;
   bkash_number: string | null;
   nagad_number: string | null;
-  is_online: boolean;
+  is_online: boolean | null;
   last_seen: string | null;
-  response_rate: number;
-  total_earnings: number;
-  items_sold: number;
-  trust_score: number;
-  total_sales: number;
-  total_purchases: number;
-  is_verified: boolean;
-  is_banned: boolean;
+  response_rate: number | null;
+  total_earnings: number | null;
+  items_sold: number | null;
   created_at: string;
-};
+}
 
-export type ListingStatus = "pending" | "approved" | "active" | "sold" | "rejected" | "delisted";
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string | null;
+  description: string | null;
+  sort_order: number | null;
+}
 
-export type GameListing = {
+export interface GameListing {
   id: string;
   seller_id: string;
   category_id: string | null;
@@ -48,66 +46,39 @@ export type GameListing = {
   account_id_display: string | null;
   server_region: string | null;
   images: string[] | null;
-  status: ListingStatus;
-  is_featured: boolean;
-  view_count: number;
+  status: string;
+  is_featured: boolean | null;
+  view_count: number | null;
   created_at: string;
   updated_at: string;
-  seller?: Profile;
-  category?: Category;
-};
+  prime: number | null;
+  evo_max_count: number | null;
+  tags: string[] | null;
+  category?: Category | null;
+  seller?: Pick<Profile, "id" | "username" | "full_name" | "avatar_url" | "is_verified"> | null;
+}
 
-export type OrderStatus = "pending" | "paid" | "delivering" | "completed" | "cancelled" | "disputed" | "refunded";
-
-export type Order = {
-  id: string;
-  listing_id: string;
-  buyer_id: string;
-  seller_id: string;
-  price: number;
-  commission_rate: number;
-  commission_amount: number;
-  seller_amount: number;
-  payment_method: "bkash" | "nagad" | "card";
-  payment_number: string | null;
-  status: OrderStatus;
-  escrow_released: boolean;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-  listing?: GameListing;
-  buyer?: Profile;
-  seller?: Profile;
-};
-
-export type Review = {
-  id: string;
-  order_id: string;
-  reviewer_id: string;
-  reviewee_id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  reviewer?: Profile;
-};
-
-export type Conversation = {
+export interface Conversation {
   id: string;
   listing_id: string;
   buyer_id: string;
   seller_id: string;
   last_message_at: string;
   created_at: string;
-  listing?: GameListing;
-  buyer?: Profile;
-  seller?: Profile;
-};
+  listing?: Pick<GameListing, "id" | "title" | "game_name" | "price" | "images"> | null;
+  seller?: Pick<Profile, "id" | "username" | "full_name" | "avatar_url" | "is_online"> | null;
+  buyer?: Pick<Profile, "id" | "username" | "full_name" | "avatar_url"> | null;
+}
 
-export type Message = {
+export interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
   body: string;
   read_at: string | null;
   created_at: string;
+}
+
+export type ListingInsert = Omit<GameListing, "id" | "created_at" | "updated_at" | "view_count" | "status" | "is_featured" | "seller" | "category"> & {
+  status?: string;
 };
