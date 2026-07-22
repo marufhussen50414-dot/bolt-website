@@ -1,211 +1,325 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { Tag, Loader2, AlertCircle, CheckCircle2, Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, UploadCloud, X, ImageIcon } from "lucide-react";
-import { supabase } from "../lib/supabase";
-import { useAuth } from "../context/AuthContext";
-import type { Category } from "../lib/types";
-import { classNames, IconType } from "../lib/utils";
+import { useEffect, useState, FormEvent } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, LogIn } from 'lucide-react'
+import { supabase, type Category, type GameListingInsert } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
+import TagInput from '../components/TagInput'
 
-const iconMap: Record<string, IconType> = { flame: Flame, crosshair: Crosshair, target: Target, shield: Shield, sword: Sword, zap: Zap, gamepad: Gamepad2 };
-
-const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_FILES = 8;
-
-type UploadedImage = { url: string; path: string };
+const CURRENCIES = ['USD', 'BDT', 'INR', 'PKR', 'PHP', 'BRL', 'EUR', 'GBP']
 
 export default function Sell() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "" });
-  const [images, setImages] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
 
-  useEffect(() => { supabase.from("categories").select("*").order("sort_order").then(({ data }) => setCategories((data as Category[]) ?? [])); }, []);
-  useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loadingCats, setLoadingCats] = useState(true)
 
-  const selectedCategory = categories.find((c) => c.id === form.category_id);
-  const isFreeFire = selectedCategory?.slug === "free-fire";
-  const primeNum = form.prime === "" ? null : parseInt(form.prime);
-  const primeInvalid = primeNum !== null && (isNaN(primeNum) || primeNum < 0 || primeNum > 8);
+  const [categoryId, setCategoryId] = useState('')
+  const [gameName, setGameName] = useState('')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [price, setPrice] = useState('')
+  const [currency, setCurrency] = useState('USD')
+  const [accountLevel, setAccountLevel] = useState('')
+  const [rankTier, setRankTier] = useState('')
+  const [serverRegion, setServerRegion] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [tags, setTags] = useState<string[]>([])
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
 
-  function update(k: keyof typeof form, v: string) { setForm((f) => ({ ...f, [k]: v })); }
-
-  function validateAndAdd(files: FileList | File[]) {
-    setError("");
-    const incoming = Array.from(files);
-    const valid: File[] = [];
-    for (const f of incoming) {
-      if (!ACCEPTED.includes(f.type)) { setError(`"${f.name}" is not a supported image type. Use JPG, PNG, WebP, or GIF.`); continue; }
-      if (f.size > MAX_SIZE) { setError(`"${f.name}" is larger than 5MB.`); continue; }
-      valid.push(f);
+  useEffect(() => {
+    let active = true
+    supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .then(({ data, error }) => {
+        if (!active) return
+        if (!error && data) {
+          const cats = data as Category[]
+          setCategories(cats)
+          if (cats.length > 0) setCategoryId(cats[0].id)
+        }
+        setLoadingCats(false)
+      })
+    return () => {
+      active = false
     }
-    if (valid.length === 0) return;
-    setImageError(false);
-    setImages((prev) => {
-      const next = [...prev, ...valid];
-      if (next.length > MAX_FILES) { setError(`You can upload at most ${MAX_FILES} images.`); return next.slice(0, MAX_FILES); }
-      return next;
-    });
-    setPreviews((prev) => [...prev, ...valid.map((f) => URL.createObjectURL(f))].slice(0, MAX_FILES));
-  }
+  }, [])
 
-  function onDrop(e: React.DragEvent) {
-    e.preventDefault(); setDragOver(false);
-    if (e.dataTransfer.files?.length) validateAndAdd(e.dataTransfer.files);
-  }
+  const selectedCategory = categories.find((c) => c.id === categoryId)
+  const isOther = selectedCategory?.slug === 'others'
 
-  function removeImage(i: number) {
-    setImages((prev) => prev.filter((_, idx) => idx !== i));
-    setPreviews((prev) => {
-      URL.revokeObjectURL(prev[i]);
-      return prev.filter((_, idx) => idx !== i);
-    });
-  }
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    setErrorMsg('')
 
-  function moveImage(from: number, to: number) {
-    if (to < 0 || to >= images.length) return;
-    setImages((prev) => { const n = [...prev]; [n[from], n[to]] = [n[to], n[from]]; return n; });
-    setPreviews((prev) => { const n = [...prev]; [n[from], n[to]] = [n[to], n[from]]; return n; });
-  }
-
-  async function uploadAll(userId: string): Promise<UploadedImage[] | null> {
-    if (images.length === 0) return [];
-    setUploading(true);
-    const out: UploadedImage[] = [];
-    for (let i = 0; i < images.length; i++) {
-      const file = images[i];
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("listings").upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) { setError(`Upload failed for "${file.name}": ${upErr.message}`); setUploading(false); return null; }
-      const { data: pub } = supabase.storage.from("listings").getPublicUrl(path);
-      out.push({ url: pub.publicUrl, path });
+    const resolvedGame = (isOther ? gameName.trim() : selectedCategory?.name || gameName.trim()).trim()
+    if (!resolvedGame) {
+      setErrorMsg('Please select or enter a game.')
+      setStatus('error')
+      return
     }
-    setUploading(false);
-    return out;
+    if (!title.trim() || !description.trim()) {
+      setErrorMsg('Title and description are required.')
+      setStatus('error')
+      return
+    }
+    const parsedPrice = parseFloat(price)
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      setErrorMsg('Enter a valid price.')
+      setStatus('error')
+      return
+    }
+
+    setStatus('submitting')
+    const payload: GameListingInsert = {
+      category_id: categoryId || null,
+      game_name: resolvedGame,
+      title: title.trim(),
+      description: description.trim(),
+      price: parsedPrice,
+      account_level: accountLevel ? parseInt(accountLevel, 10) : null,
+      rank_tier: rankTier.trim() || null,
+      server_region: serverRegion.trim() || null,
+      images: imageUrl.trim() ? [imageUrl.trim()] : null,
+      tags: tags.length > 0 ? tags : null,
+    }
+
+    const { data, error } = await supabase
+      .from('game_listings')
+      .insert(payload)
+      .select('id')
+      .single()
+
+    if (error || !data) {
+      setStatus('error')
+      setErrorMsg(error?.message || 'Could not create listing. Please try again.')
+      return
+    }
+
+    setStatus('success')
+    navigate(`/listing/${data.id}`)
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault(); setError("");
-    if (!user) { setError("Please log in to create a listing."); return; }
-    const price = parseFloat(form.price); if (!price || price <= 0) { setError("Enter a valid price."); return; }
-    if (images.length === 0) { setImageError(true); setError("Please upload at least one image."); return; }
-    if (isFreeFire && primeInvalid) { setError("Prime must be between 0 and 8."); return; }
-    setLoading(true);
-    const uploaded = await uploadAll(user.id);
-    if (!uploaded) { setLoading(false); return; }
-    const imageUrls = uploaded.map((u) => u.url); // first = thumbnail
-    const { data, error: insErr } = await supabase.from("game_listings").insert({
-      seller_id: user.id, category_id: form.category_id || null,
-      game_name: categories.find((c) => c.id === form.category_id)?.name ?? "Others",
-      title: form.title, description: form.description || null, price,
-      account_level: form.account_level ? parseInt(form.account_level) : null,
-      prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
-      server_region: form.server_region || null,
-      images: imageUrls.length ? imageUrls : null, status: "pending",
-    }).select().single();
-    setLoading(false);
-    if (insErr) { setError(insErr.message); return; }
-    setSuccess(true); setTimeout(() => navigate(`/listing/${data.id}`), 1200);
+  // Auth gate: RLS requires an authenticated seller to insert.
+  if (!authLoading && !user) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+          <LogIn size={24} />
+        </div>
+        <h1 className="mt-5 text-2xl font-bold tracking-tight text-ink-900">Sign in to sell</h1>
+        <p className="mt-2 text-sm text-ink-500">
+          You need an account to list a game ID for sale.
+        </p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Link to="/signin" state={{ from: '/sell' }} className="btn-primary">
+            Sign in
+          </Link>
+          <Link to="/signup" state={{ from: '/sell' }} className="btn-ghost">
+            Create account
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (authLoading || loadingCats) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 size={28} className="animate-spin text-primary-500" />
+      </div>
+    )
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-6"><h1 className="font-display text-3xl font-extrabold text-white">Sell a Game ID</h1><p className="text-ink-400 mt-1">List your account — only 2% commission when it sells</p></div>
-      {success ? (
-        <div className="card p-8 text-center animate-scale-in">
-          <CheckCircle2 size={48} className="mx-auto text-success-400" />
-          <h2 className="font-display text-xl font-bold text-white mt-4">Listing Created!</h2>
-          <p className="text-sm text-ink-400 mt-1">Redirecting you to your listing...</p>
-          <Loader2 size={20} className="animate-spin text-primary-400 mx-auto mt-3" />
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-10">
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 transition-colors hover:text-ink-900"
+      >
+        <ArrowLeft size={16} /> Back
+      </button>
+
+      <h1 className="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">Sell an ID</h1>
+      <p className="mt-1.5 text-sm text-ink-500">
+        List your game account for sale. Tags help buyers find what matters to them.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        {/* Game selection — applies to ALL games via categories, not just Free Fire */}
+        <div>
+          <label className="label" htmlFor="game">Game</label>
+          <select
+            id="game"
+            value={categoryId}
+            onChange={() => setGameName('')}
+            className="input"
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="card p-6 space-y-5">
-          {error && <div className="flex items-start gap-2 rounded-xl bg-error-500/10 border border-error-500/20 p-3 text-sm text-error-400"><AlertCircle size={18} className="shrink-0 mt-0.5" /><span>{error}</span></div>}
-          <div>
-            <label className="label">Game</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {categories.map((c) => { const Icon = iconMap[c.icon ?? "gamepad"] ?? Gamepad2; return (
-                <button type="button" key={c.id} onClick={() => update("category_id", c.id)} className={classNames("rounded-xl border-2 px-2 py-3 text-xs font-semibold transition-all flex flex-col items-center gap-1.5", form.category_id === c.id ? "border-primary-500 bg-primary-500/10 text-primary-300" : "border-ink-700 bg-ink-900 text-ink-400 hover:bg-ink-800")}>
-                  <Icon size={18} /> {c.name}
-                </button>
-              ); })}
-            </div>
-          </div>
-          <div><label className="label">Listing Title</label><input required value={form.title} onChange={(e) => update("title", e.target.value)} className="input" placeholder="e.g. Free Fire MAX — Level 70, Heroic Grandmaster" /></div>
-          <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder="Describe the account — skins, characters, diamonds, binds, etc." /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Price (৳)</label><input type="number" required value={form.price} onChange={(e) => update("price", e.target.value)} className="input" placeholder="1500" /></div>
-            <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" placeholder="70" /></div>
-            {isFreeFire && (
-              <div>
-                <label className="label">Prime</label>
-                <input type="number" min={0} max={8} value={form.prime} onChange={(e) => update("prime", e.target.value)} className={classNames("input", primeInvalid && "border-error-500")} placeholder="0-8" />
-                {primeInvalid && <p className="mt-1 text-xs text-error-400">Prime must be between 0 and 8.</p>}
-              </div>
-            )}
-            <div><label className="label">Server / Region</label><input value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input" placeholder="BD/Asia" /></div>
-          </div>
 
+        {(isOther || !selectedCategory) && (
+          <div className="animate-fade-in">
+            <label className="label" htmlFor="gameName">Game name</label>
+            <input
+              id="gameName"
+              type="text"
+              value={gameName}
+              onChange={(e) => setGameName(e.target.value)}
+              placeholder="Enter the game name"
+              className="input"
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="label" htmlFor="title">Listing title</label>
+          <input
+            id="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Level 75 account with rare skins"
+            className="input"
+            maxLength={80}
+          />
+        </div>
+
+        <div>
+          <label className="label" htmlFor="description">Description</label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe the account: items, progress, region, etc."
+            className="input min-h-[100px] resize-y"
+            maxLength={1000}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <label className="label" htmlFor="price">Price ({currency})</label>
+            <input
+              id="price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+              className="input"
+            />
+          </div>
           <div>
-            <label className="label">Listing Images</label>
-            <p className="text-xs text-ink-400 mb-2">Upload up to {MAX_FILES} images (JPG, PNG, WebP, GIF — max 5MB each). The first image is your thumbnail.</p>
-            <label
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={onDrop}
-              className={classNames(
-                "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center cursor-pointer transition-colors",
-                imageError && images.length === 0
-                  ? "border-error-500 bg-error-500/5"
-                  : dragOver ? "border-primary-500 bg-primary-500/10" : "border-ink-700 bg-ink-900 hover:border-primary-500/50 hover:bg-ink-800"
-              )}
+            <label className="label" htmlFor="currency">Currency</label>
+            <select
+              id="currency"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="input"
             >
-              <UploadCloud size={28} className="text-primary-400" />
-              <span className="text-sm font-semibold text-white">Click to upload or drag & drop</span>
-              <span className="text-xs text-ink-400">Select multiple images from your device</span>
-              <input type="file" accept={ACCEPTED.join(",")} multiple className="hidden" onChange={(e) => e.target.files && validateAndAdd(e.target.files)} />
-            </label>
-
-            {previews.length > 0 && (
-              <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {previews.map((src, i) => (
-                  <div key={i} className="group relative aspect-square rounded-xl overflow-hidden border border-ink-700 bg-ink-900">
-                    <img src={src} alt={`Preview ${i + 1}`} className="h-full w-full object-cover" />
-                    {i === 0 && <span className="absolute top-1 left-1 badge bg-primary-600 text-white text-[10px] px-1.5 py-0.5">Thumbnail</span>}
-                    <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-white hover:bg-error-500 transition-colors" aria-label="Remove image"><X size={14} /></button>
-                    <div className="absolute bottom-0 inset-x-0 flex justify-between bg-black/70 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" onClick={() => moveImage(i, i - 1)} disabled={i === 0} className="text-xs text-white disabled:opacity-30 px-1">◀</button>
-                      <button type="button" onClick={() => moveImage(i, i + 1)} disabled={i === previews.length - 1} className="text-xs text-white disabled:opacity-30 px-1">▶</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {previews.length === 0 && (
-              imageError ? (
-                <div className="mt-3 flex items-center gap-2 text-xs text-error-400"><ImageIcon size={14} /> At least one image is required to create a listing.</div>
-              ) : (
-                <div className="mt-3 flex items-center gap-2 text-xs text-ink-500"><ImageIcon size={14} /> No images selected yet.</div>
-              )
-            )}
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
+        </div>
 
-          <div className="rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 text-xs text-primary-300">You receive 98% of the sale price. Only 2% commission. Example: sell for ৳1000 → you get ৳980.</div>
-          <button type="submit" disabled={loading || uploading} className="btn-primary w-full">
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <Tag size={18} />}
-            {uploading ? "Uploading images..." : loading ? "Creating..." : "Create Listing"}
-          </button>
-        </form>
-      )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <label className="label" htmlFor="level">Account level (optional)</label>
+            <input
+              id="level"
+              type="number"
+              min="0"
+              value={accountLevel}
+              onChange={(e) => setAccountLevel(e.target.value)}
+              placeholder="e.g. 75"
+              className="input"
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="rank">Rank / Tier (optional)</label>
+            <input
+              id="rank"
+              type="text"
+              value={rankTier}
+              onChange={(e) => setRankTier(e.target.value)}
+              placeholder="e.g. Heroic"
+              className="input"
+              maxLength={40}
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor="region">Server region (optional)</label>
+            <input
+              id="region"
+              type="text"
+              value={serverRegion}
+              onChange={(e) => setServerRegion(e.target.value)}
+              placeholder="e.g. Asia"
+              className="input"
+              maxLength={40}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="label" htmlFor="imageUrl">Cover image URL (optional)</label>
+          <input
+            id="imageUrl"
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://..."
+            className="input"
+          />
+        </div>
+
+        {/* Dynamic tag creation — real input only, no sample/example tags */}
+        <TagInput
+          tags={tags}
+          onChange={setTags}
+          label="Tags"
+          hint="Add keywords that describe this account (e.g. rare, full access, region). Shown on your listing."
+        />
+
+        {status === 'error' && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertCircle size={18} className="mt-0.5 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {status === 'success' && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+            <span>Listing created! Redirecting...</span>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={status === 'submitting'}
+          className="btn-primary w-full sm:w-auto"
+        >
+          {status === 'submitting' ? (
+            <>
+              <Loader2 size={18} className="animate-spin" /> Publishing...
+            </>
+          ) : (
+            'Publish listing'
+          )}
+        </button>
+      </form>
     </div>
-  );
+  )
 }

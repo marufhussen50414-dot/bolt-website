@@ -1,85 +1,81 @@
-import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Eye, Star, ShieldCheck, TrendingUp } from "lucide-react";
-import { Link as RouterLink } from "react-router-dom";
-import type { GameListing, ListingStatus, OrderStatus } from "../lib/types";
-import { formatBDT, statusClass, statusLabel, classNames, IconType } from "../lib/utils";
+import { Link } from 'react-router-dom'
+import { User, BadgeCheck } from 'lucide-react'
+import type { ListingWithProfile } from '../lib/supabase'
+import Tags from './Tags'
 
-const fallbackImages = [
-  "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=600",
-  "https://images.pexels.com/photos/16707738/pexels-photo-16707738.jpeg?auto=compress&cs=tinysrgb&w=600",
-  "https://images.pexels.com/photos/164821/pexels-photo-164821.jpeg?auto=compress&cs=tinysrgb&w=600",
-];
-
-const gameIcons: Record<string, IconType> = {
-  "Free Fire": Flame, "PUBG Mobile": Crosshair, "Call of Duty Mobile": Target,
-  "Clash of Clans": Shield, "Mobile Legends": Sword, Valorant: Zap,
-};
-
-export function StatusBadge({ status }: { status: ListingStatus | OrderStatus }) {
-  return <span className={classNames("badge border", statusClass(status))}>{statusLabel(status)}</span>;
+type ListingCardProps = {
+  listing: ListingWithProfile
 }
 
-export function ListingCardSkeleton() {
-  return (
-    <div className="card overflow-hidden animate-pulse">
-      <div className="h-44 bg-ink-800" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 w-20 rounded bg-ink-800" />
-        <div className="h-5 w-full rounded bg-ink-800" />
-        <div className="h-4 w-2/3 rounded bg-ink-800" />
-        <div className="flex justify-between pt-2"><div className="h-6 w-16 rounded bg-ink-800" /><div className="h-6 w-12 rounded bg-ink-800" /></div>
-      </div>
-    </div>
-  );
+function formatPrice(price: number, currency: string) {
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2,
+    }).format(price)
+  } catch {
+    return `${currency} ${price}`
+  }
 }
 
-export function EmptyState({ icon: Icon, title, subtitle }: { icon: IconType; title: string; subtitle?: string }) {
-  return (
-    <div className="card p-12 text-center">
-      <Icon size={40} className="mx-auto text-ink-600" />
-      <p className="mt-3 font-semibold text-white">{title}</p>
-      {subtitle && <p className="text-sm text-ink-400 mt-1">{subtitle}</p>}
-    </div>
-  );
-}
+const PLACEHOLDER =
+  'https://images.pexels.com/photos/1670974/pexels-photo-1670974.jpeg?auto=compress&cs=tinysrgb&w=800'
 
-export default function ListingCard({ listing }: { listing: GameListing }) {
-  const img = listing.images?.[0] ?? fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
-  const GameIcon = gameIcons[listing.game_name] ?? Gamepad2;
+export default function ListingCard({ listing }: ListingCardProps) {
+  const cover = listing.images && listing.images.length > 0 ? listing.images[0] : PLACEHOLDER
+  const ownerName = listing.profiles?.full_name || 'Unknown seller'
+  const isVerified = listing.profiles?.is_verified
+  const tags = listing.tags || []
 
   return (
-    <RouterLink to={`/listing/${listing.id}`} className="card-hover overflow-hidden block group">
-      <div className="relative h-44 overflow-hidden">
-        <img src={img} alt={listing.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/20 to-transparent" />
-        <div className="absolute top-3 left-3 flex gap-2">
-          <span className="badge glass text-white"><GameIcon size={12} /> {listing.game_name}</span>
-        </div>
-        {listing.is_featured && (
-          <span className="absolute top-3 right-3 badge bg-accent-500/90 text-ink-950 font-bold"><Star size={12} className="fill-ink-950" /> Featured</span>
-        )}
-        {listing.status === "sold" && (
-          <div className="absolute inset-0 grid place-items-center bg-ink-950/60"><span className="badge border border-ink-600 bg-ink-900 text-ink-300">SOLD</span></div>
+    <Link
+      to={`/listing/${listing.id}`}
+      className="group flex flex-col overflow-hidden rounded-xl border border-ink-200 bg-white shadow-card transition-all hover:-translate-y-0.5 hover:shadow-glow"
+    >
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-ink-100">
+        <img
+          src={cover}
+          alt={listing.title}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).src = PLACEHOLDER
+          }}
+        />
+        <span className="absolute left-3 top-3 rounded-full bg-ink-900/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+          {listing.game_name}
+        </span>
+        {listing.rank_tier && (
+          <span className="absolute right-3 top-3 rounded-full bg-accent-500/90 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+            {listing.rank_tier}
+          </span>
         )}
       </div>
-      <div className="p-4">
-        <h3 className="font-semibold text-white line-clamp-1 group-hover:text-primary-400 transition-colors">{listing.title}</h3>
-        <div className="mt-1.5 flex items-center gap-3 text-xs text-ink-400">
-          {listing.rank_tier && <span className="flex items-center gap-1"><TrendingUp size={12} className="text-accent-400" /> {listing.rank_tier}</span>}
-          <span className="flex items-center gap-1"><Eye size={12} /> {listing.view_count}</span>
-        </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="font-display text-xl font-extrabold text-white">{formatBDT(listing.price)}</span>
-          {listing.seller && (
-            <span className="flex items-center gap-1 text-xs text-ink-400">
-              {listing.seller.is_verified && <ShieldCheck size={13} className="text-success-400" />}
-              <span className="max-w-[80px] truncate">{listing.seller.full_name ?? listing.seller.username}</span>
-            </span>
-          )}
+
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="line-clamp-1 text-base font-semibold text-ink-900">{listing.title}</h3>
+        <p className="mt-1 line-clamp-2 text-sm text-ink-500">{listing.description}</p>
+
+        <div className="mt-auto pt-4">
+          <p className="text-lg font-bold text-primary-700">
+            {formatPrice(Number(listing.price), 'USD')}
+          </p>
+
+          {/* Tags sit right above the owner's name, shifting it down */}
+          <div className="mt-3 min-h-[1.5rem]">
+            <Tags tags={tags} />
+          </div>
+
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-ink-500">
+            <User size={13} className="text-ink-400" />
+            <span className="font-medium text-ink-600">{ownerName}</span>
+            {isVerified && (
+              <BadgeCheck size={13} className="text-primary-500" />
+            )}
+          </div>
         </div>
       </div>
-    </RouterLink>
-  );
+    </Link>
+  )
 }
-
-export { Link };

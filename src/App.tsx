@@ -1,42 +1,40 @@
-import { Routes, Route } from "react-router-dom";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import Home from "./pages/Home";
-import Browse from "./pages/Browse";
-import Sell from "./pages/Sell";
-import ListingDetail from "./pages/ListingDetail";
-import Checkout from "./pages/Checkout";
-import Profile from "./pages/Profile";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import HowItWorks from "./pages/HowItWorks";
-import FAQ from "./pages/FAQ";
-import Support from "./pages/Support";
-import Messages from "./pages/Messages";
-import MyListings from "./pages/MyListings";
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './lib/auth'
+import Navbar from './components/Navbar'
+import Home from './pages/Home'
+import Sell from './pages/Sell'
+import ListingDetail from './pages/ListingDetail'
+import Auth from './pages/Auth'
+import type { ReactNode } from 'react'
+
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/signin" state={{ from: '/sell' }} replace />
+  return <>{children}</>
+}
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route path="/sell" element={<Sell />} />
-          <Route path="/listing/:id" element={<ListingDetail />} />
-          <Route path="/checkout/:id" element={<Checkout />} />
-          <Route path="/my-listings" element={<MyListings />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/messages" element={<Messages />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
-  );
+    <AuthProvider>
+      <div className="flex min-h-screen flex-col">
+        <Navbar />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/listing/:id" element={<ListingDetail />} />
+            <Route path="/sell" element={<RequireAuth><Sell /></RequireAuth>} />
+            <Route path="/signin" element={<Auth />} />
+            <Route path="/signup" element={<Auth />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+        <footer className="border-t border-ink-200 bg-white">
+          <div className="mx-auto max-w-6xl px-4 py-6 text-center text-xs text-ink-400">
+            GameID Market — buy and sell game accounts safely.
+          </div>
+        </footer>
+      </div>
+    </AuthProvider>
+  )
 }
