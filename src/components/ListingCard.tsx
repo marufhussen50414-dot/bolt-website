@@ -68,6 +68,15 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
           {listing.rank_tier && <span className="flex items-center gap-1"><TrendingUp size={12} className="text-accent-400" /> {listing.rank_tier}</span>}
           <span className="flex items-center gap-1"><Eye size={12} /> {listing.view_count}</span>
         </div>
+        {listing.tags && listing.tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {listing.tags.map((tag) => (
+              <span key={tag} className="inline-flex items-center rounded-full bg-primary-500/15 px-2.5 py-0.5 text-[11px] font-medium text-primary-300 ring-1 ring-inset ring-primary-500/25">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="mt-3 flex items-center justify-between">
           <span className="font-display text-xl font-extrabold text-white">{formatBDT(listing.price)}</span>
           {listing.seller && (

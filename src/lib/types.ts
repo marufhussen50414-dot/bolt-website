@@ -48,6 +48,7 @@ export type GameListing = {
   account_id_display: string | null;
   server_region: string | null;
   images: string[] | null;
+  tags: string[] | null;
   status: ListingStatus;
   is_featured: boolean;
   view_count: number;
