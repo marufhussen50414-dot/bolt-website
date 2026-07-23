@@ -27,6 +27,8 @@ export default function Sell() {
   const [success, setSuccess] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   useEffect(() => { supabase.from("categories").select("*").order("sort_order").then(({ data }) => setCategories((data as Category[]) ?? [])); }, []);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
@@ -37,6 +39,17 @@ export default function Sell() {
   const primeInvalid = primeNum !== null && (isNaN(primeNum) || primeNum < 0 || primeNum > 8);
 
   function update(k: keyof typeof form, v: string) { setForm((f) => ({ ...f, [k]: v })); }
+
+  function addTag() {
+    const trimmed = tagInput.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+      setTagInput("");
+    }
+  }
+  function removeTag(tag: string) {
+    setTags(tags.filter((t) => t !== tag));
+  }
 
   function validateAndAdd(files: FileList | File[]) {
     setError("");
@@ -110,7 +123,7 @@ export default function Sell() {
       account_level: form.account_level ? parseInt(form.account_level) : null,
       prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
       server_region: form.server_region || null,
-      images: imageUrls.length ? imageUrls : null, status: "pending",
+      images: imageUrls.length ? imageUrls : null, tags: tags.length > 0 ? tags : null, status: "pending",
     }).select().single();
     setLoading(false);
     if (insErr) { setError(insErr.message); return; }
@@ -197,6 +210,30 @@ export default function Sell() {
                 <div className="mt-3 flex items-center gap-2 text-xs text-ink-500"><ImageIcon size={14} /> No images selected yet.</div>
               )
             )}
+          </div>
+
+          <div>
+            <label className="label">Tags</label>
+            <p className="text-xs text-ink-400 mb-2">Add keywords to help buyers find your listing. Press Enter or click Add.</p>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+                placeholder="e.g. hero, rare skins, diamonds"
+                className="input"
+              />
+              <button type="button" onClick={addTag} className="shrink-0 rounded-xl border-2 border-ink-700 bg-ink-900 px-4 py-2 text-sm font-semibold text-ink-300 hover:border-primary-500/50 hover:bg-ink-800 transition-all">Add</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-primary-500/15 px-3 py-1 text-sm font-medium text-primary-300 ring-1 ring-inset ring-primary-500/25">
+                  {tag}
+                  <button type="button" onClick={() => removeTag(tag)} className="text-primary-400 hover:text-primary-200" aria-label={`Remove ${tag}`}><X size={14} /></button>
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 text-xs text-primary-300">You receive 98% of the sale price. Only 2% commission. Example: sell for ৳1000 → you get ৳980.</div>
