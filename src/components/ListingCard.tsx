@@ -81,8 +81,8 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
           <span className="font-display text-xl font-extrabold text-white">৳<span className="ml-1">{listing.price.toLocaleString()}</span></span>
           {listing.seller && (
             <span className="flex items-center gap-1 text-xs min-w-0">
-              <User size={13} className="text-ink-400 shrink-0" />
-              <span className="font-medium text-ink-300 whitespace-nowrap">{listing.seller.full_name ?? listing.seller.username}</span>
+              <User size={13} className="text-accent-400 shrink-0" />
+              <span className="font-medium text-accent-200 whitespace-nowrap">{listing.seller.full_name ?? listing.seller.username}</span>
               {listing.seller.is_verified && <ShieldCheck size={13} className="text-success-400 shrink-0" />}
             </span>
           )}
