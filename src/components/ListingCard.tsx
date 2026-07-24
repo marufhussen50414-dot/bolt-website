@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Eye, Star, ShieldCheck, TrendingUp } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Eye, Star, ShieldCheck, TrendingUp, User } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import type { GameListing, ListingStatus, OrderStatus } from "../lib/types";
 import { formatBDT, statusClass, statusLabel, classNames, IconType } from "../lib/utils";
@@ -69,7 +69,7 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
           <span className="flex items-center gap-1"><Eye size={12} /> {listing.view_count}</span>
         </div>
         {listing.tags && listing.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5 max-h-11 overflow-hidden">
+          <div className="mt-3 flex flex-wrap gap-x-1.5 gap-y-2 max-h-12 overflow-hidden">
             {listing.tags.map((tag) => (
               <span key={tag} className="inline-flex items-center rounded-full bg-accent-500/10 px-2.5 py-0.5 text-[11px] font-medium text-accent-300 ring-1 ring-inset ring-accent-500/25">
                 {tag}
@@ -80,9 +80,11 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
         <div className="mt-3 flex items-center justify-between">
           <span className="font-display text-xl font-extrabold text-white">{formatBDT(listing.price)}</span>
           {listing.seller && (
-            <span className="flex items-center gap-1 text-xs text-ink-400">
-              {listing.seller.is_verified && <ShieldCheck size={13} className="text-success-400" />}
-              <span className="max-w-[80px] truncate">{listing.seller.full_name ?? listing.seller.username}</span>
+            <span className="flex items-center gap-1 text-xs">
+              <User size={13} className="text-accent-400" />
+              <span className="text-ink-500">Seller:</span>
+              <span className="font-medium text-accent-300 max-w-[70px] truncate">{listing.seller.full_name ?? listing.seller.username}</span>
+              {listing.seller.is_verified && <ShieldCheck size={13} className="text-success-400 shrink-0" />}
             </span>
           )}
         </div>
