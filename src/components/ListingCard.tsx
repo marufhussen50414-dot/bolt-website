@@ -69,7 +69,7 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
           <span className="flex items-center gap-1"><Eye size={12} /> {listing.view_count}</span>
         </div>
         {listing.tags && listing.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-x-1.3 gap-y-2.5 max-h-[4.25rem] overflow-hidden">
+          <div className="mt-3 flex flex-wrap gap-x-1 gap-y-2.5 max-h-[4.25rem] overflow-hidden">
             {listing.tags.map((tag) => (
               <span key={tag} className="inline-flex items-center rounded-full bg-accent-500/10 px-2.5 py-1 text-[11px] font-medium text-accent-300 ring-1 ring-inset ring-accent-500/25">
                 {tag}
