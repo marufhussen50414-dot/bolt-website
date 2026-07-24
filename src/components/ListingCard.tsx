@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Eye, Star, ShieldCheck, TrendingUp, User } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import type { GameListing, ListingStatus, OrderStatus } from "../lib/types";
-import { formatBDT, statusClass, statusLabel, classNames, IconType } from "../lib/utils";
+import { statusClass, statusLabel, classNames, IconType } from "../lib/utils";
 
 const fallbackImages = [
   "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=600",
@@ -78,11 +78,11 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
           </div>
         )}
         <div className="mt-3 flex items-center justify-between">
-          <span className="font-display text-xl font-extrabold text-white">{formatBDT(listing.price)}</span>
+          <span className="font-display text-xl font-extrabold text-white">৳<span className="ml-1">{listing.price.toLocaleString()}</span></span>
           {listing.seller && (
             <span className="flex items-center gap-1 text-xs min-w-0">
-              <User size={13} className="text-accent-400 shrink-0" />
-              <span className="font-medium text-accent-300 whitespace-nowrap">{listing.seller.full_name ?? listing.seller.username}</span>
+              <User size={13} className="text-ink-400 shrink-0" />
+              <span className="font-medium text-ink-300 whitespace-nowrap">{listing.seller.full_name ?? listing.seller.username}</span>
               {listing.seller.is_verified && <ShieldCheck size={13} className="text-success-400 shrink-0" />}
             </span>
           )}
