@@ -69,9 +69,9 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
           <span className="flex items-center gap-1"><Eye size={12} /> {listing.view_count}</span>
         </div>
         {listing.tags && listing.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-x-1.5 gap-y-2 max-h-12 overflow-hidden">
+          <div className="mt-3 flex flex-wrap gap-2 max-h-[3.5rem] overflow-hidden">
             {listing.tags.map((tag) => (
-              <span key={tag} className="inline-flex items-center rounded-full bg-accent-500/10 px-2.5 py-0.5 text-[11px] font-medium text-accent-300 ring-1 ring-inset ring-accent-500/25">
+              <span key={tag} className="inline-flex items-center rounded-full bg-accent-500/10 px-2.5 py-1 text-[11px] font-medium text-accent-300 ring-1 ring-inset ring-accent-500/25">
                 {tag}
               </span>
             ))}
@@ -80,10 +80,9 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
         <div className="mt-3 flex items-center justify-between">
           <span className="font-display text-xl font-extrabold text-white">{formatBDT(listing.price)}</span>
           {listing.seller && (
-            <span className="flex items-center gap-1 text-xs">
-              <User size={13} className="text-accent-400" />
-              <span className="text-ink-500">Seller:</span>
-              <span className="font-medium text-accent-300 max-w-[70px] truncate">{listing.seller.full_name ?? listing.seller.username}</span>
+            <span className="flex items-center gap-1 text-xs min-w-0">
+              <User size={13} className="text-accent-400 shrink-0" />
+              <span className="font-medium text-accent-300 whitespace-nowrap">{listing.seller.full_name ?? listing.seller.username}</span>
               {listing.seller.is_verified && <ShieldCheck size={13} className="text-success-400 shrink-0" />}
             </span>
           )}
