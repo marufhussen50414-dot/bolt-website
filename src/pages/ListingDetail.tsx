@@ -62,6 +62,15 @@ export default function ListingDetail() {
               {listing.is_featured && <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20"><Star size={12} className="fill-accent-300" /> Featured</span>}
             </div>
             <h1 className="font-display text-2xl font-extrabold text-white">{listing.title}</h1>
+            {listing.tags && listing.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {listing.tags.map((tag) => (
+                  <span key={tag} className="inline-flex items-center rounded-full bg-accent-500/10 px-2.5 py-0.5 text-xs font-medium text-accent-300 ring-1 ring-inset ring-accent-500/25">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
             <p className="font-display text-3xl font-extrabold text-primary-400 mt-3">{formatBDT(listing.price)}</p>
             <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
               {listing.account_level != null && <Info label="Level" value={String(listing.account_level)} />}
