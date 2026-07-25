@@ -21,7 +21,7 @@ export default function Header() {
       isActive ? "text-primary-400 bg-primary-500/10" : "text-ink-300 hover:text-white hover:bg-ink-800"
     );
 
-  const displayName = profile?.full_name ?? profile?.username ?? "User";
+  const displayName = profile?.full_name ?? profile?.username ?? (user?.user_metadata?.full_name as string | undefined) ?? "User";
   const initials = displayName.trim()[0]?.toUpperCase() ?? "U";
 
   async function handleSignOut() {

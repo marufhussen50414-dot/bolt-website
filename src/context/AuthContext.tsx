@@ -25,7 +25,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadProfile(uid: string) {
     const { data } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
-    setProfile(data as Profile | null);
+    if (data) {
+      setProfile(data as Profile | null);
+      return;
+    }
+    // Right after signup, the auth event can fire before the profile row has been
+    // inserted, leaving the header stuck on the fallback name. Retry once shortly
+    // after so the real name appears without a manual page reload.
+    setTimeout(async () => {
+      const { data: retry } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+      if (retry) setProfile(retry as Profile | null);
+    }, 800);
   }
 
   useEffect(() => {
