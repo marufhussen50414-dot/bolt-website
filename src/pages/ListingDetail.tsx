@@ -25,9 +25,20 @@ export default function ListingDetail() {
       const revRes = await supabase.from("reviews").select("*, reviewer:profiles(full_name, username, avatar_url)").eq("reviewee_id", (data as GameListing).seller_id).order("created_at", { ascending: false });
       setReviews((revRes.data as Review[]) ?? []);
       setLoading(false);
-      supabase.from("game_listings").update({ view_count: ((data as GameListing).view_count ?? 0) + 1 }).eq("id", id).then(() => {});
+      // Record a unique view: the server-side function excludes the owner and
+      // dedupes so each user/session only increments the count once per listing.
+      if (!isOwnerView(data as GameListing, user?.id)) {
+        const sessionId = getOrCreateSessionId();
+        const { data: newCount } = await supabase.rpc("record_listing_view", {
+          p_listing_id: id,
+          p_session_id: sessionId,
+        });
+        if (typeof newCount === "number") {
+          setListing((prev) => (prev ? { ...prev, view_count: newCount } : prev));
+        }
+      }
     })();
-  }, [id]);
+  }, [id, user?.id]);
 
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
   if (!listing) return <div className="mx-auto max-w-md py-16 text-center"><p className="text-ink-400">Listing not found.</p><Link to="/browse" className="btn-primary mt-4 inline-flex">Browse IDs</Link></div>;
@@ -128,4 +139,23 @@ export default function ListingDetail() {
 
 function Info({ label, value, icon: Icon }: { label: string; value: string; icon?: typeof Eye }) {
   return <div className="rounded-lg bg-ink-800 p-3"><p className="text-xs text-ink-500">{label}</p><p className="text-sm font-semibold text-white mt-0.5 flex items-center gap-1.5">{Icon && <Icon size={14} className="text-primary-400" />}{value}</p></div>;
+}
+
+function isOwnerView(listing: GameListing, userId: string | undefined): boolean {
+  return !!userId && userId === listing.seller_id;
+}
+
+const SESSION_KEY = "gh_viewer_session";
+
+function getOrCreateSessionId(): string {
+  try {
+    let sid = localStorage.getItem(SESSION_KEY);
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem(SESSION_KEY, sid);
+    }
+    return sid;
+  } catch {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
 }
