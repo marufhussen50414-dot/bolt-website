@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Phone, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { GoogleIcon } from "../components/GoogleIcon";
 
 type AuthMode = "email" | "phone";
 
@@ -25,9 +26,19 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   function update(k: keyof typeof form, v: string) { setForm((f) => ({ ...f, [k]: v })); }
   function switchMode(m: AuthMode) { setMode(m); setError(""); setInfo(""); }
+
+  async function handleGoogle() {
+    setError(""); setInfo(""); setGoogleLoading(true);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/profile` },
+    });
+    if (oauthError) { setError(oauthError.message); setGoogleLoading(false); }
+  }
 
   async function createProfile(uid: string, phoneVal: string) {
     const { error: profileError } = await supabase.from("profiles").upsert(
@@ -87,7 +98,17 @@ export default function Register() {
           <h1 className="font-display text-2xl font-extrabold text-center text-white">Create your account</h1>
           <p className="text-center text-sm text-ink-400 mt-1">Start buying and selling game IDs</p>
 
-          <div className="mt-6 flex p-1 rounded-xl bg-ink-800/60 border border-ink-700">
+          <button type="button" onClick={handleGoogle} disabled={googleLoading || loading} className="btn-google w-full mt-6">
+            {googleLoading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon size={18} />}
+            <span>Continue with Google</span>
+          </button>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-ink-700" /></div>
+            <div className="relative flex justify-center"><span className="bg-ink-900 px-3 text-xs text-ink-500 uppercase tracking-wider">or</span></div>
+          </div>
+
+          <div className="flex p-1 rounded-xl bg-ink-800/60 border border-ink-700">
             <button type="button" onClick={() => switchMode("email")} className={mode === "email" ? "flex-1 py-2 rounded-lg text-sm font-semibold bg-primary-500/20 text-primary-300 transition-colors" : "flex-1 py-2 rounded-lg text-sm font-semibold text-ink-400 hover:text-white transition-colors"}>
               <Mail size={15} className="inline mr-1.5 -mt-0.5" />Email
             </button>
@@ -106,7 +127,7 @@ export default function Register() {
               <div><label className="label">Password</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type={showPassword ? "text" : "password"} required value={form.password} onChange={(e) => update("password", e.target.value)} className="input pl-10 pr-10" placeholder="••••••••" /><button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-300 transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
               <div><label className="label">Confirm</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type={showConfirm ? "text" : "password"} required value={form.confirm} onChange={(e) => update("confirm", e.target.value)} className="input pl-10 pr-10" placeholder="••••••••" /><button type="button" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-300 transition-colors" aria-label={showConfirm ? "Hide password" : "Show password"}>{showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
             </div>
-            <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? <Loader2 size={18} className="animate-spin" /> : "Create Account"}</button>
+            <button type="submit" disabled={loading || googleLoading} className="btn-primary w-full">{loading ? <Loader2 size={18} className="animate-spin" /> : "Create Account"}</button>
           </form>
           <p className="text-center text-sm text-ink-400 mt-6">Already have an account? <Link to="/login" className="font-semibold text-primary-400 hover:text-primary-300">Log In</Link></p>
         </div>
