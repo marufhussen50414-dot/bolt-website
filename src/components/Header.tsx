@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Search, User, LogOut, PlusCircle, ShieldCheck,
   Settings, Wallet, Star, LifeBuoy, ChevronRight, HelpCircle, Home as HomeIcon,
-  Tag, MessageSquare,
+  Tag, MessageSquare, X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
@@ -13,6 +13,7 @@ export default function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     classNames(
@@ -49,7 +50,11 @@ export default function Header() {
               <NavLink to="/messages" className={linkClass}><span className="flex items-center gap-1.5"><MessageSquare size={15} /> Message</span></NavLink>
               <NavLink to="/faq" className={linkClass}><span className="flex items-center gap-1.5"><HelpCircle size={15} /> FAQ</span></NavLink>
               <NavLink to="/support" className={linkClass}><span className="flex items-center gap-1.5"><LifeBuoy size={15} /> Support</span></NavLink>
-              {user && <NavLink to="/profile" className={linkClass}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></NavLink>}
+              {user ? (
+                <NavLink to="/profile" className={linkClass}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></NavLink>
+              ) : (
+                <button onClick={() => setAuthOpen(true)} className={linkClass({ isActive: false })}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></button>
+              )}
             </nav>
           </div>
 
@@ -114,6 +119,23 @@ export default function Header() {
           </div>
         </div>
       </div>
+      {authOpen && !user && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setAuthOpen(false)} />
+          <div className="fixed inset-0 z-50 grid place-items-center p-4 pointer-events-none">
+            <div className="relative w-full max-w-sm card p-6 animate-scale-in pointer-events-auto">
+              <button onClick={() => setAuthOpen(false)} className="absolute right-3 top-3 text-ink-500 hover:text-white transition-colors" aria-label="Close"><X size={18} /></button>
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-primary-500/10 text-primary-400 mx-auto"><User size={22} /></div>
+              <h2 className="font-display text-xl font-extrabold text-center text-white mt-3">Access your profile</h2>
+              <p className="text-center text-sm text-ink-400 mt-1">Log in or create an account to view your profile, listings, and messages.</p>
+              <div className="mt-5 space-y-2.5">
+                <Link to="/login" onClick={() => setAuthOpen(false)} className="btn-primary w-full justify-center">Log In</Link>
+                <Link to="/register" onClick={() => setAuthOpen(false)} className="btn-secondary w-full justify-center">Create Account</Link>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </header>
   );
 }

@@ -1,21 +1,20 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Phone, MapPin, AlertCircle, Loader2, CheckCircle2, Flame, Crosshair, Gamepad2 } from "lucide-react";
+import { Mail, Lock, User, Phone, MapPin, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
-
-const interests = [{ id: "free-fire", label: "Free Fire", icon: Flame }, { id: "pubg-mobile", label: "PUBG Mobile", icon: Crosshair }, { id: "cod-mobile", label: "COD Mobile", icon: Gamepad2 }];
 
 export default function Register() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", location: "", password: "", confirm: "", interest: "", role: "both" as "buyer" | "seller" | "both" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", location: "", password: "", confirm: "" });
   const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   function update(k: keyof typeof form, v: string) { setForm((f) => ({ ...f, [k]: v })); }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault(); setError("");
     if (form.name.trim().length < 2) { setError("Please enter your name (at least 2 characters)"); return; }
-    if (form.password.length < 6) { setError("Password must be at least 6 characters"); return; }
     if (form.password !== form.confirm) { setError("Passwords don't match"); return; }
     setLoading(true);
     const { data, error: signUpError } = await supabase.auth.signUp({ email: form.email, password: form.password });
@@ -44,15 +43,12 @@ export default function Register() {
               <div><label className="label">Phone (optional)</label><div className="relative"><Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input value={form.phone} onChange={(e) => update("phone", e.target.value)} className="input pl-10" placeholder="01XXXXXXXXX" /></div></div>
               <div><label className="label">Location (optional)</label><div className="relative"><MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input value={form.location} onChange={(e) => update("location", e.target.value)} className="input pl-10" placeholder="Dhaka" /></div></div>
             </div>
-            <div><label className="label">I want to</label><div className="grid grid-cols-3 gap-2">{([["buyer", "Buy"], ["seller", "Sell"], ["both", "Both"]] as const).map((row) => { const [id, label] = row; return (<button type="button" key={id} onClick={() => update("role", id)} className={`rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all ${form.role === id ? "border-primary-500 bg-primary-500/10 text-primary-300" : "border-ink-700 bg-ink-900 text-ink-400 hover:bg-ink-800"}`}>{label}</button>); })}</div></div>
-            <div><label className="label">Favorite Game (optional)</label><div className="grid grid-cols-3 gap-2">{interests.map((g) => { const Icon = g.icon; return (<button type="button" key={g.id} onClick={() => update("interest", form.interest === g.id ? "" : g.id)} className={`rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all flex flex-col items-center gap-1 ${form.interest === g.id ? "border-accent-500 bg-accent-500/10 text-accent-300" : "border-ink-700 bg-ink-900 text-ink-400 hover:bg-ink-800"}`}><Icon size={18} /> {g.label}</button>); })}</div></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="label">Password</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type="password" required value={form.password} onChange={(e) => update("password", e.target.value)} className="input pl-10" placeholder="••••••••" /></div></div>
-              <div><label className="label">Confirm</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type="password" required value={form.confirm} onChange={(e) => update("confirm", e.target.value)} className="input pl-10" placeholder="••••••••" /></div></div>
+              <div><label className="label">Password</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type={showPassword ? "text" : "password"} required value={form.password} onChange={(e) => update("password", e.target.value)} className="input pl-10 pr-10" placeholder="••••••••" /><button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-300 transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
+              <div><label className="label">Confirm</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type={showConfirm ? "text" : "password"} required value={form.confirm} onChange={(e) => update("confirm", e.target.value)} className="input pl-10 pr-10" placeholder="••••••••" /><button type="button" onClick={() => setShowConfirm((v) => !v)} tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-300 transition-colors" aria-label={showConfirm ? "Hide password" : "Show password"}>{showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
             </div>
             <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? <Loader2 size={18} className="animate-spin" /> : "Create Account"}</button>
           </form>
-          <div className="mt-5 flex items-start gap-2 rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 text-xs text-primary-300"><CheckCircle2 size={16} className="shrink-0 mt-0.5" /><span>By signing up you agree to our Terms and Privacy Policy. Only 2% commission on every sale.</span></div>
           <p className="text-center text-sm text-ink-400 mt-6">Already have an account? <Link to="/login" className="font-semibold text-primary-400 hover:text-primary-300">Log In</Link></p>
         </div>
       </div>

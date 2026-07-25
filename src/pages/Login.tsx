@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 export default function Login() {
@@ -8,6 +8,7 @@ export default function Login() {
   const [params] = useSearchParams();
   const [email, setEmail] = useState(""); const [password, setPassword] = useState("");
   const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault(); setError(""); setLoading(true);
@@ -28,7 +29,7 @@ export default function Login() {
           {error && <div className="mt-5 flex items-start gap-2 rounded-xl bg-error-500/10 border border-error-500/20 p-3 text-sm text-error-400"><AlertCircle size={18} className="shrink-0 mt-0.5" /><span>{error}</span></div>}
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div><label className="label">Email</label><div className="relative"><Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input pl-10" placeholder="you@example.com" /></div></div>
-            <div><label className="label">Password</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="input pl-10" placeholder="••••••••" /></div></div>
+            <div><label className="label">Password</label><div className="relative"><Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" /><input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="input pl-10 pr-10" placeholder="••••••••" /><button type="button" onClick={() => setShowPassword((v) => !v)} tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-500 hover:text-ink-300 transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></div>
             <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? <Loader2 size={18} className="animate-spin" /> : "Log In"}</button>
           </form>
           <p className="text-center text-sm text-ink-400 mt-6">Don't have an account? <Link to="/register" className="font-semibold text-primary-400 hover:text-primary-300">Sign Up</Link></p>
