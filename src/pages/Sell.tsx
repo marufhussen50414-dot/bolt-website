@@ -18,7 +18,7 @@ export default function Sell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "" });
+  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "", game_name: "" });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -35,6 +35,7 @@ export default function Sell() {
 
   const selectedCategory = categories.find((c) => c.id === form.category_id);
   const isFreeFire = selectedCategory?.slug === "free-fire";
+  const isOthers = selectedCategory?.slug === "others";
   const primeNum = form.prime === "" ? null : parseInt(form.prime);
   const primeInvalid = primeNum !== null && (isNaN(primeNum) || primeNum < 0 || primeNum > 8);
 
@@ -111,6 +112,7 @@ export default function Sell() {
     if (!user) { setError("Please log in to create a listing."); return; }
     const price = parseFloat(form.price); if (!price || price <= 0) { setError("Enter a valid price."); return; }
     if (images.length === 0) { setImageError(true); setError("Please upload at least one image."); return; }
+    if (isOthers && !form.game_name.trim()) { setError("Enter the game name for your custom listing."); return; }
     if (isFreeFire && primeInvalid) { setError("Prime must be between 0 and 8."); return; }
     setLoading(true);
     const uploaded = await uploadAll(user.id);
@@ -118,11 +120,11 @@ export default function Sell() {
     const imageUrls = uploaded.map((u) => u.url); // first = thumbnail
     const { data, error: insErr } = await supabase.from("game_listings").insert({
       seller_id: user.id, category_id: form.category_id || null,
-      game_name: categories.find((c) => c.id === form.category_id)?.name ?? "Others",
+      game_name: isOthers ? form.game_name.trim() : (categories.find((c) => c.id === form.category_id)?.name ?? "Others"),
       title: form.title, description: form.description || null, price,
-      account_level: form.account_level ? parseInt(form.account_level) : null,
+      account_level: !isOthers && form.account_level ? parseInt(form.account_level) : null,
       prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
-      server_region: form.server_region || null,
+      server_region: !isOthers ? (form.server_region || null) : null,
       images: imageUrls.length ? imageUrls : null, tags: tags.length > 0 ? tags : null, status: "active",
     }).select().single();
     setLoading(false);
@@ -157,7 +159,11 @@ export default function Sell() {
           <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder="Describe the account — skins, characters, diamonds, binds, etc." /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="label">Price (৳)</label><input type="number" required value={form.price} onChange={(e) => update("price", e.target.value)} className="input" placeholder="1500" /></div>
-            <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" placeholder="70" /></div>
+            {isOthers ? (
+              <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="e.g. Clash Royale" /></div>
+            ) : (
+              <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" placeholder="70" /></div>
+            )}
             {isFreeFire && (
               <div>
                 <label className="label">Prime</label>
@@ -165,7 +171,9 @@ export default function Sell() {
                 {primeInvalid && <p className="mt-1 text-xs text-error-400">Prime must be between 0 and 8.</p>}
               </div>
             )}
-            <div><label className="label">Server / Region</label><input value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input" placeholder="BD/Asia" /></div>
+            {!isOthers && (
+              <div><label className="label">Server / Region</label><input value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input" placeholder="BD/Asia" /></div>
+            )}
           </div>
 
           <div>
