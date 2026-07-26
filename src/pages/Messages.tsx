@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Circle, Tag,
+  Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -27,10 +27,10 @@ export default function Messages() {
   const [loadingThread, setLoadingThread] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [starterListing, setStarterListing] = useState<GameListing | null>(null);
-  const [starterOpen, setStarterOpen] = useState(false);
-  const [starterBody, setStarterBody] = useState("");
+  const [search, setSearch] = useState("");
+  const [starting, setStarting] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef<HTMLInputElement>(null);
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
@@ -90,26 +90,70 @@ export default function Messages() {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [messages, activeId]);
 
+  // When arriving via ?listing=, auto-create/find the conversation and open it directly.
   useEffect(() => {
-    if (listingIdParam && user) {
-      (async () => {
-        const { data } = await supabase
-          .from("game_listings")
-          .select("*")
-          .eq("id", listingIdParam)
-          .maybeSingle();
-        if (data) {
-          const listing = data as GameListing;
-          if (listing.seller_id === user.id) {
-            params.delete("listing"); setParams(params, { replace: true });
-            return;
-          }
-          setStarterListing(listing);
-          setStarterOpen(true);
-        }
-      })();
-    }
+    if (!listingIdParam || !user) return;
+    setStarting(true);
+    (async () => {
+      const { data } = await supabase
+        .from("game_listings")
+        .select("*")
+        .eq("id", listingIdParam)
+        .maybeSingle();
+      if (!data) { setStarting(false); return; }
+      const listing = data as GameListing;
+      if (listing.seller_id === user.id) {
+        params.delete("listing"); setParams(params, { replace: true });
+        setStarting(false);
+        return;
+      }
+      const { data: existing } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", listing.id)
+        .eq("buyer_id", user.id)
+        .eq("seller_id", listing.seller_id)
+        .maybeSingle();
+      let convId = (existing as { id: string } | null)?.id ?? null;
+      if (!convId) {
+        const { data: created } = await supabase
+          .from("conversations")
+          .insert({ listing_id: listing.id, buyer_id: user.id, seller_id: listing.seller_id })
+          .select("id")
+          .single();
+        if (created) convId = (created as { id: string }).id;
+      }
+      params.delete("listing"); setParams(params, { replace: true });
+      await loadConversations();
+      if (convId) setActiveId(convId);
+      setStarting(false);
+      setTimeout(() => draftRef.current?.focus(), 100);
+    })();
   }, [listingIdParam, user, params, setParams]);
+
+  // Realtime: refresh conversations + thread when new messages arrive.
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("messages-realtime")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const msg = payload.new as Message;
+        setConversations((prev) => {
+          const idx = prev.findIndex((c) => c.id === msg.conversation_id);
+          if (idx < 0) return prev;
+          const next = [...prev];
+          next[idx] = { ...next[idx], last_message_at: msg.created_at };
+          next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+          return next;
+        });
+        if (msg.conversation_id === activeId) {
+          setMessages((m) => [...m, msg]);
+          if (msg.sender_id !== user.id) markRead(msg.conversation_id).then(loadConversations);
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, activeId]);
 
   async function handleSend(e: FormEvent) {
     e.preventDefault();
@@ -129,48 +173,17 @@ export default function Messages() {
     loadConversations();
   }
 
-  async function startConversation(e: FormEvent) {
-    e.preventDefault();
-    if (!user || !starterListing) return;
-    const body = starterBody.trim();
-    setSending(true);
-    setError("");
-    const { data: existing } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("listing_id", starterListing.id)
-      .eq("buyer_id", user.id)
-      .eq("seller_id", starterListing.seller_id)
-      .maybeSingle();
-    let convId = (existing as { id: string } | null)?.id ?? null;
-    if (!convId) {
-      const { data: created, error: cerr } = await supabase
-        .from("conversations")
-        .insert({ listing_id: starterListing.id, buyer_id: user.id, seller_id: starterListing.seller_id })
-        .select("id")
-        .single();
-      if (cerr) { setSending(false); setError(cerr.message); return; }
-      convId = (created as { id: string }).id;
-    }
-    if (body) {
-      const { error: merr } = await supabase
-        .from("messages")
-        .insert({ conversation_id: convId, sender_id: user.id, body });
-      if (merr) { setSending(false); setError(merr.message); return; }
-    }
-    setSending(false);
-    setStarterOpen(false);
-    setStarterBody("");
-    setStarterListing(null);
-    params.delete("listing"); setParams(params, { replace: true });
-    await loadConversations();
-    setActiveId(convId);
-  }
-
   function otherParty(c: ConversationRow) {
     const isBuyer = c.buyer_id === user?.id;
     return isBuyer ? c.seller : c.buyer;
   }
+
+  const filtered = conversations.filter((c) => {
+    if (!search.trim()) return true;
+    const other = otherParty(c);
+    const name = (other?.full_name ?? other?.username ?? "").toLowerCase();
+    return name.includes(search.toLowerCase()) || (c.listing?.title ?? "").toLowerCase().includes(search.toLowerCase());
+  });
 
   if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
   if (!user) return (
@@ -184,8 +197,8 @@ export default function Messages() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex items-center gap-3 mb-5">
         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary-500/15 text-primary-400"><MessageSquare size={22} /></div>
         <div>
           <h1 className="font-display text-2xl font-extrabold text-white">Messages</h1>
@@ -195,20 +208,31 @@ export default function Messages() {
 
       {error && <div className="card p-3 mb-4 text-sm text-error-400 border border-error-500/20">{error}</div>}
 
-      <div className="grid md:grid-cols-[300px_1fr] gap-5 h-[600px]">
-        <div className="card overflow-y-auto">
-          <div className="p-3 border-b border-ink-800 text-xs font-semibold uppercase tracking-wide text-ink-500">Conversations</div>
-          {loadingList ? (
-            <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
-          ) : conversations.length === 0 ? (
-            <div className="p-6 text-center">
-              <MessageSquare size={28} className="mx-auto text-ink-600" />
-              <p className="text-sm text-ink-400 mt-2">No conversations yet.</p>
-              <Link to="/browse" className="text-xs text-primary-400 hover:text-primary-300 mt-2 inline-block">Browse listings to start a chat →</Link>
+      <div className="card overflow-hidden h-[640px] flex">
+        {/* Sidebar */}
+        <div className={classNames("w-full md:w-[320px] flex flex-col border-r border-ink-800", activeId ? "hidden md:flex" : "flex")}>
+          <div className="p-3 border-b border-ink-800">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search conversations..."
+                className="input pl-9 py-2 text-sm"
+              />
             </div>
-          ) : (
-            <div className="py-1">
-              {conversations.map((c) => {
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {loadingList ? (
+              <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
+            ) : filtered.length === 0 ? (
+              <div className="p-6 text-center">
+                <MessageSquare size={28} className="mx-auto text-ink-600" />
+                <p className="text-sm text-ink-400 mt-2">{conversations.length === 0 ? "No conversations yet." : "No matches found."}</p>
+                {conversations.length === 0 && <Link to="/browse" className="text-xs text-primary-400 hover:text-primary-300 mt-2 inline-block">Browse listings to start a chat →</Link>}
+              </div>
+            ) : (
+              filtered.map((c) => {
                 const other = otherParty(c);
                 const unread = messages.filter((m) => m.conversation_id === c.id && m.sender_id !== user.id && !m.read_at).length;
                 const isActive = c.id === activeId;
@@ -217,8 +241,8 @@ export default function Messages() {
                     key={c.id}
                     onClick={() => setActiveId(c.id)}
                     className={classNames(
-                      "w-full text-left flex items-center gap-3 px-3 py-3 transition-colors",
-                      isActive ? "bg-primary-500/10" : "hover:bg-ink-800"
+                      "w-full text-left flex items-center gap-3 px-3 py-3 transition-colors border-l-2",
+                      isActive ? "bg-primary-500/10 border-primary-500" : "border-transparent hover:bg-ink-800"
                     )}
                   >
                     <div className="relative shrink-0">
@@ -229,27 +253,30 @@ export default function Messages() {
                           {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
                         </div>
                       )}
+                      {unread > 0 && <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary-500 px-1 text-[10px] font-bold text-white ring-2 ring-ink-900">{unread}</span>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-white truncate flex items-center gap-1">
+                        <p className={classNames("text-sm truncate flex items-center gap-1", unread > 0 ? "font-bold text-white" : "font-semibold text-ink-200")}>
                           {other?.full_name ?? other?.username ?? "User"}
                           {other?.is_verified && <ShieldCheck size={12} className="text-success-400 shrink-0" />}
                         </p>
-                        <span className="text-xs text-ink-500 shrink-0">{timeAgo(c.last_message_at)}</span>
+                        <span className="text-[11px] text-ink-500 shrink-0">{timeAgo(c.last_message_at)}</span>
                       </div>
-                      <p className="text-xs text-ink-400 truncate flex items-center gap-1"><Tag size={10} /> {c.listing?.title ?? "Listing"}</p>
+                      <p className="text-xs text-ink-400 truncate flex items-center gap-1 mt-0.5"><Tag size={10} className="shrink-0" /> {c.listing?.title ?? "Listing"}</p>
                     </div>
-                    {unread > 0 && <span className="badge bg-primary-500 text-white text-xs shrink-0">{unread}</span>}
                   </button>
                 );
-              })}
-            </div>
-          )}
+              })
+            )}
+          </div>
         </div>
 
-        <div className="card flex flex-col overflow-hidden">
-          {!active ? (
+        {/* Chat panel */}
+        <div className={classNames("flex-1 flex flex-col", activeId ? "flex" : "hidden md:flex")}>
+          {starting ? (
+            <div className="flex-1 grid place-items-center"><Loader2 className="animate-spin text-primary-500" size={26} /></div>
+          ) : !active ? (
             <div className="flex-1 grid place-items-center text-center p-6">
               <div>
                 <MessageSquare size={40} className="mx-auto text-ink-600" />
@@ -259,7 +286,7 @@ export default function Messages() {
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3 p-4 border-b border-ink-800">
+              <div className="flex items-center gap-3 p-4 border-b border-ink-800 bg-ink-900/30">
                 <button onClick={() => setActiveId(null)} className="md:hidden btn-ghost p-1"><ArrowLeft size={18} /></button>
                 <div className="flex items-center gap-3 min-w-0">
                   {(() => {
@@ -273,22 +300,23 @@ export default function Messages() {
                     );
                   })()}
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate">
+                    <p className="text-sm font-semibold text-white truncate flex items-center gap-1">
                       {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
+                      {otherParty(active)?.is_verified && <ShieldCheck size={12} className="text-success-400" />}
                     </p>
-                    <Link to={`/listing/${active.listing_id}`} className="text-xs text-primary-400 hover:text-primary-300 truncate flex items-center gap-1">
+                    <Link to={`/listing/${active.listing_id}`} className="text-xs text-primary-400 hover:text-primary-300 truncate flex items-center gap-1 mt-0.5">
                       <Tag size={10} /> {active.listing?.title ?? "Listing"} • {active.listing ? formatBDT(active.listing.price) : ""}
                     </Link>
                   </div>
                 </div>
               </div>
 
-              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-ink-900/40">
+              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-ink-950/30">
                 {loadingThread ? (
                   <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
                 ) : messages.length === 0 ? (
                   <div className="grid place-items-center py-10 text-center">
-                    <Circle size={24} className="text-ink-600" />
+                    <MessageSquare size={24} className="text-ink-600" />
                     <p className="text-sm text-ink-400 mt-2">No messages yet. Say hello!</p>
                   </div>
                 ) : (
@@ -297,12 +325,12 @@ export default function Messages() {
                     return (
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div className={classNames(
-                          "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
-                          mine ? "bg-primary-600 text-white rounded-br-sm" : "bg-ink-800 text-ink-100 rounded-bl-sm"
+                          "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-sm",
+                          mine ? "bg-primary-600 text-white rounded-br-md" : "bg-ink-800 text-ink-100 rounded-bl-md"
                         )}>
-                          <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                          <p className={classNames("text-[10px] mt-1", mine ? "text-primary-200" : "text-ink-500")}>
-                            {timeAgo(m.created_at)}{mine && m.read_at && " · read"}
+                          <p className="whitespace-pre-wrap break-words leading-relaxed">{m.body}</p>
+                          <p className={classNames("text-[10px] mt-1.5 flex items-center gap-1", mine ? "text-primary-200" : "text-ink-500")}>
+                            {timeAgo(m.created_at)}{mine && m.read_at && <span className="text-primary-200">· read</span>}
                           </p>
                         </div>
                       </div>
@@ -311,14 +339,15 @@ export default function Messages() {
                 )}
               </div>
 
-              <form onSubmit={handleSend} className="flex items-center gap-2 p-3 border-t border-ink-800">
+              <form onSubmit={handleSend} className="flex items-center gap-2 p-3 border-t border-ink-800 bg-ink-900/30">
                 <input
+                  ref={draftRef}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder="Type a message..."
                   className="input flex-1"
                 />
-                <button type="submit" disabled={sending || !draft.trim()} className="btn-primary">
+                <button type="submit" disabled={sending || !draft.trim()} className="btn-primary px-4" aria-label="Send message">
                   {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                 </button>
               </form>
@@ -326,40 +355,6 @@ export default function Messages() {
           )}
         </div>
       </div>
-
-      {starterOpen && starterListing && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={() => setStarterOpen(false)}>
-          <div className="card p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-display text-lg font-bold text-white">Message the seller</h3>
-            <div className="mt-3 flex items-center gap-3 rounded-xl bg-ink-800 p-3">
-              <div className="h-12 w-12 rounded-lg bg-ink-900 overflow-hidden shrink-0">
-                {starterListing.images?.[0] && <img src={starterListing.images[0]} alt="" className="h-full w-full object-cover" />}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{starterListing.title}</p>
-                <p className="text-sm text-primary-400">{formatBDT(starterListing.price)}</p>
-              </div>
-            </div>
-            <form onSubmit={startConversation} className="mt-4 space-y-3">
-              <textarea
-                value={starterBody}
-                onChange={(e) => setStarterBody(e.target.value)}
-                rows={3}
-                className="input"
-                placeholder="Hi, I'm interested in this account. Is it still available?"
-                autoFocus
-              />
-              {error && <p className="text-sm text-error-400">{error}</p>}
-              <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => { setStarterOpen(false); params.delete("listing"); setParams(params, { replace: true }); }} className="btn-secondary">Cancel</button>
-                <button type="submit" disabled={sending || !starterBody.trim()} className="btn-primary">
-                  {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={16} />} Send
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {!profile?.full_name && (
         <p className="text-xs text-ink-500 mt-4 text-center">Tip: complete your <Link to="/profile" className="text-primary-400">profile</Link> so sellers recognize you in chats.</p>

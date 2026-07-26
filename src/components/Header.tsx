@@ -1,10 +1,11 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search, User, LogOut, PlusCircle, ShieldCheck,
   Settings, Wallet, Star, LifeBuoy, ChevronRight, HelpCircle, Home as HomeIcon,
   Tag, MessageSquare, X,
 } from "lucide-react";
+import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import { classNames } from "../lib/utils";
@@ -14,6 +15,31 @@ export default function Header() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  async function loadUnread() {
+    if (!user) { setUnreadCount(0); return; }
+    const { count } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .neq("sender_id", user.id)
+      .is("read_at", null);
+    setUnreadCount(count ?? 0);
+  }
+
+  useEffect(() => {
+    loadUnread();
+    if (!user) return;
+    const channel = supabase
+      .channel("nav-unread")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const msg = payload.new as { sender_id: string; read_at: string | null };
+        if (msg.sender_id !== user.id && !msg.read_at) setUnreadCount((c) => c + 1);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => loadUnread())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     classNames(
@@ -47,7 +73,7 @@ export default function Header() {
             <nav className="flex items-center gap-1 overflow-x-auto scrollbar-thin">
               <NavLink to="/" end className={linkClass}><span className="flex items-center gap-1.5"><HomeIcon size={15} /> Home</span></NavLink>
               <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
-              <NavLink to="/messages" className={linkClass}><span className="flex items-center gap-1.5"><MessageSquare size={15} /> Message</span></NavLink>
+              <NavLink to="/messages" className={linkClass}><span className="relative flex items-center gap-1.5"><MessageSquare size={15} /> Message{unreadCount > 0 && <span className="absolute -top-2 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-error-500 px-1 text-[9px] font-bold text-white ring-2 ring-ink-900 animate-pulse">{unreadCount > 9 ? "9+" : unreadCount}</span>}</span></NavLink>
               <NavLink to="/faq" className={linkClass}><span className="flex items-center gap-1.5"><HelpCircle size={15} /> FAQ</span></NavLink>
               <NavLink to="/support" className={linkClass}><span className="flex items-center gap-1.5"><LifeBuoy size={15} /> Support</span></NavLink>
               {user ? (
