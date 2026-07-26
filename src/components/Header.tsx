@@ -30,6 +30,8 @@ export default function Header() {
   useEffect(() => {
     loadUnread();
     if (!user) return;
+    const onRead = () => loadUnread();
+    window.addEventListener("messages-read", onRead);
     const channel = supabase
       .channel("nav-unread")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
@@ -38,7 +40,10 @@ export default function Header() {
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => loadUnread())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("messages-read", onRead);
+    };
   }, [user]);
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>

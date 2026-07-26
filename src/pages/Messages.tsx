@@ -103,6 +103,13 @@ export default function Messages() {
 
   async function markRead(convId: string) {
     if (!user) return;
+    const { count } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("conversation_id", convId)
+      .neq("sender_id", user.id)
+      .is("read_at", null);
+    if (!count) return;
     await supabase
       .from("messages")
       .update({ read_at: new Date().toISOString() })
@@ -110,6 +117,7 @@ export default function Messages() {
       .neq("sender_id", user.id)
       .is("read_at", null);
     setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
+    window.dispatchEvent(new CustomEvent("messages-read"));
   }
 
   useEffect(() => {
@@ -121,7 +129,7 @@ export default function Messages() {
   useEffect(() => {
     if (activeId) {
       loadThread(activeId);
-      markRead(activeId).then(loadConversations);
+      markRead(activeId).then(() => { loadConversations(); loadUnreadCounts(); });
     }
   }, [activeId]);
 
@@ -594,31 +602,14 @@ export default function Messages() {
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 font-display font-bold text-primary-400">৳</span>
                     <input
-                      type="number"
-                      min="1"
-                      step="1"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={offerPrice}
-                      onChange={(e) => setOfferPrice(e.target.value)}
-                      placeholder="1500"
+                      onChange={(e) => setOfferPrice(e.target.value.replace(/[^0-9]/g, ""))}
                       className="input pl-8 text-lg font-semibold"
                       autoFocus
                     />
-                  </div>
-                  {/* Quick suggest buttons */}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {[0.95, 0.9, 0.8, 0.75].map((pct) => {
-                      const val = Math.round(selectedListing.price * pct);
-                      return (
-                        <button
-                          key={pct}
-                          type="button"
-                          onClick={() => setOfferPrice(String(val))}
-                          className="rounded-lg border border-ink-700 bg-ink-800 px-2.5 py-1 text-xs font-medium text-ink-300 transition-colors hover:border-primary-500/50 hover:text-primary-300"
-                        >
-                          {formatBDT(val)}
-                        </button>
-                      );
-                    })}
                   </div>
                   {offerPrice && parseFloat(offerPrice) > 0 && (
                     <p className="text-xs text-ink-400 mt-2">
