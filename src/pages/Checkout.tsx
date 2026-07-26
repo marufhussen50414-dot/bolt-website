@@ -50,7 +50,7 @@ export default function Checkout() {
   if (!user) return <div className="mx-auto max-w-md py-16 text-center"><p className="text-ink-400">Please log in to buy.</p><Link to="/login" className="btn-primary mt-4 inline-flex">Log In</Link></div>;
 
   // If an offer was supplied it must be accepted and belong to this user.
-  const useOffer = !!offer && offer.status === "accepted" && offer.buyer_id === user.id && offer.listing_id === listing.id;
+  const useOffer = !!offer && offer.status === "pending" && offer.buyer_id === user.id && offer.listing_id === listing.id;
   if (offerId && !useOffer) {
     return (
       <div className="mx-auto max-w-md py-16 text-center">

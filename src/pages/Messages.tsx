@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
-  HandCoins, X, Check, ShoppingBag, ImageIcon,
+  HandCoins, X, ShoppingBag, ImageIcon,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -232,8 +232,6 @@ export default function Messages() {
 
   async function openOfferModal() {
     if (!active || !user) return;
-    const other = otherParty(active);
-    if (!other?.id) return;
     setShowOfferModal(true);
     setSelectedListing(null);
     setOfferPrice("");
@@ -242,7 +240,7 @@ export default function Messages() {
     const { data, error: err } = await supabase
       .from("game_listings")
       .select("id, title, price, images, game_name, status")
-      .eq("seller_id", other.id)
+      .eq("seller_id", user.id)
       .in("status", ["active", "approved"])
       .order("created_at", { ascending: false });
     if (err) setOfferError(err.message);
@@ -270,13 +268,14 @@ export default function Messages() {
     if (!price || price <= 0) { setOfferError("Enter a valid offer amount."); return; }
     setSendingOffer(true);
     setOfferError("");
+    const otherPartyId = active.buyer_id === user.id ? active.seller_id : active.buyer_id;
     const { data: offerRow, error: offerErr } = await supabase
       .from("offers")
       .insert({
         conversation_id: active.id,
         listing_id: selectedListing.id,
-        buyer_id: user.id,
-        seller_id: active.seller_id === user.id ? active.buyer_id : active.seller_id,
+        buyer_id: otherPartyId,
+        seller_id: user.id,
         offer_price: price,
       })
       .select("*")
@@ -294,25 +293,6 @@ export default function Messages() {
     setMessages((m) => [...m, msgRow as Message]);
     loadConversations();
     closeOfferModal();
-  }
-
-  async function respondToOffer(offerId: string, accept: boolean) {
-    const status: OfferStatus = accept ? "accepted" : "declined";
-    const { data, error: err } = await supabase
-      .from("offers")
-      .update({ status, responded_at: new Date().toISOString() })
-      .eq("id", offerId)
-      .select("*")
-      .maybeSingle();
-    if (err) { setError(err.message); return; }
-    if (data) {
-      const updated = data as Offer;
-      setMessages((prev) => prev.map((m) =>
-        m.offer_id === updated.id && m.offer
-          ? { ...m, offer: { ...m.offer, ...updated, listing: m.offer.listing } }
-          : m
-      ));
-    }
   }
 
   function otherParty(c: ConversationRow) {
@@ -338,7 +318,7 @@ export default function Messages() {
     </div>
   );
 
-  const offerSellerName = active ? (otherParty(active)?.full_name ?? otherParty(active)?.username ?? "seller") : "";
+  const iAmSeller = !!active && !!user && active.seller_id === user.id;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -477,8 +457,6 @@ export default function Messages() {
                           mine={mine}
                           message={m}
                           userId={user.id}
-                          onAccept={(id) => respondToOffer(id, true)}
-                          onDecline={(id) => respondToOffer(id, false)}
                         />
                       );
                     }
@@ -505,15 +483,17 @@ export default function Messages() {
               </div>
 
               <form onSubmit={handleSend} className="flex items-center gap-2 p-3 border-t border-ink-800 bg-ink-900/30">
+                {iAmSeller && (
                 <button
                   type="button"
                   onClick={openOfferModal}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm font-semibold text-primary-300 transition-colors hover:bg-primary-500/20"
-                  title="Make an offer on a listing"
+                  title="Give the buyer a discounted offer"
                 >
                   <HandCoins size={18} />
-                  <span className="hidden sm:inline">Offer</span>
+                  <span className="hidden sm:inline">Give Offer</span>
                 </button>
+                )}
                 <input
                   ref={draftRef}
                   value={draft}
@@ -547,8 +527,8 @@ export default function Messages() {
                   <button type="button" onClick={() => setSelectedListing(null)} className="btn-ghost p-1 -ml-1"><ArrowLeft size={16} /></button>
                 )}
                 <div>
-                  <h3 className="font-display text-lg font-bold text-white">Make an Offer</h3>
-                  <p className="text-xs text-ink-400">{selectedListing ? "Set your offer price" : `Pick a listing from ${offerSellerName}`}</p>
+                  <h3 className="font-display text-lg font-bold text-white">Give an Offer</h3>
+                  <p className="text-xs text-ink-400">{selectedListing ? "Set your discounted price" : "Pick one of your listings"}</p>
                 </div>
               </div>
               <button type="button" onClick={closeOfferModal} className="btn-ghost p-1"><X size={18} /></button>
@@ -563,7 +543,7 @@ export default function Messages() {
                 ) : sellerListings.length === 0 ? (
                   <div className="py-10 text-center">
                     <Tag size={32} className="mx-auto text-ink-600" />
-                    <p className="text-sm text-ink-400 mt-2">{offerSellerName} has no active listings right now.</p>
+                    <p className="text-sm text-ink-400 mt-2">You have no active listings right now.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -610,7 +590,7 @@ export default function Messages() {
 
                 {/* Offer price input */}
                 <div>
-                  <label className="label">Your Offer Price</label>
+                  <label className="label">Discounted Price</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 font-display font-bold text-primary-400">৳</span>
                     <input
@@ -642,7 +622,7 @@ export default function Messages() {
                   </div>
                   {offerPrice && parseFloat(offerPrice) > 0 && (
                     <p className="text-xs text-ink-400 mt-2">
-                      You save <span className="text-success-400 font-semibold">{formatBDT(selectedListing.price - parseFloat(offerPrice))}</span> off the listed price.
+                      Buyer saves <span className="text-success-400 font-semibold">{formatBDT(selectedListing.price - parseFloat(offerPrice))}</span> off the listed price.
                     </p>
                   )}
                 </div>
@@ -665,13 +645,11 @@ export default function Messages() {
 
 // ===== Offer card rendered inline in the chat thread =====
 function OfferBubble({
-  mine, message, userId, onAccept, onDecline,
+  mine, message, userId,
 }: {
   mine: boolean;
   message: Message;
   userId: string;
-  onAccept: (offerId: string) => void;
-  onDecline: (offerId: string) => void;
 }) {
   const offer = message.offer!;
   const isBuyer = offer.buyer_id === userId;
@@ -728,20 +706,7 @@ function OfferBubble({
             )}
           </div>
 
-          {offer.status === "pending" && isSeller && (
-            <div className="flex gap-2">
-              <button onClick={() => onAccept(offer.id)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-success-500/90 px-3 py-2 text-sm font-bold text-ink-950 transition-colors hover:bg-success-400">
-                <Check size={15} /> Accept
-              </button>
-              <button onClick={() => onDecline(offer.id)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-ink-700 bg-ink-800 px-3 py-2 text-sm font-semibold text-ink-300 transition-colors hover:bg-ink-700">
-                <X size={15} /> Decline
-              </button>
-            </div>
-          )}
           {offer.status === "pending" && isBuyer && (
-            <p className="text-center text-[11px] text-ink-500 py-1.5">Waiting for {offer.seller_id === userId ? "buyer" : "seller"}'s response…</p>
-          )}
-          {offer.status === "accepted" && isBuyer && (
             <Link
               to={`/checkout/${offer.listing_id}?offer=${offer.id}`}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-400"
@@ -749,14 +714,11 @@ function OfferBubble({
               <ShoppingBag size={16} /> Pay {formatBDT(offer.offer_price)}
             </Link>
           )}
-          {offer.status === "accepted" && isSeller && (
-            <p className="text-center text-[11px] text-primary-300 py-1.5">Accepted — waiting for payment.</p>
+          {offer.status === "pending" && isSeller && (
+            <p className="text-center text-[11px] text-ink-500 py-1.5">Waiting for the buyer to pay…</p>
           )}
           {offer.status === "paid" && (
             <p className="text-center text-[11px] text-success-400 py-1.5 font-medium">Payment completed — order placed.</p>
-          )}
-          {offer.status === "declined" && (
-            <p className="text-center text-[11px] text-ink-500 py-1.5">This offer was declined.</p>
           )}
         </div>
       </div>
