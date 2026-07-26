@@ -6,7 +6,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { Conversation, GameListing, Message, Profile } from "../lib/types";
-import { classNames, formatBDT, timeAgo } from "../lib/utils";
+import { classNames, timeAgo } from "../lib/utils";
 
 type ConversationRow = Conversation & {
   listing: Pick<GameListing, "id" | "title" | "price" | "images"> | null;
@@ -328,13 +328,7 @@ export default function Messages() {
                       {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
                       {otherParty(active)?.is_verified && <ShieldCheck size={12} className="text-success-400" />}
                     </p>
-                    {active.listing_id && active.listing ? (
-                      <Link to={`/listing/${active.listing_id}`} className="text-xs text-primary-400 hover:text-primary-300 truncate flex items-center gap-1 mt-0.5">
-                        <Tag size={10} /> {active.listing.title} • {formatBDT(active.listing.price)}
-                      </Link>
-                    ) : (
-                      <p className="text-xs text-ink-500 mt-0.5">Direct conversation</p>
-                    )}
+                    <p className="text-[11px] text-ink-500 mt-0.5">Direct conversation</p>
                   </div>
                 </div>
               </div>
@@ -353,16 +347,18 @@ export default function Messages() {
                     return (
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div className={classNames(
-                          "max-w-[78%] rounded-2xl px-3.5 py-2 text-[13px] leading-snug shadow-sm",
+                          "max-w-[80%] rounded-2xl px-3 py-1.5 text-[13px] leading-snug shadow-sm",
                           mine ? "bg-primary-600 text-white rounded-br-md" : "bg-ink-800 text-ink-100 rounded-bl-md"
                         )}>
-                          <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                          <span className={classNames(
-                            "block text-right text-[10px] mt-1 leading-none",
-                            mine ? "text-primary-200/70" : "text-ink-500"
-                          )}>
-                            {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
-                          </span>
+                          <p className="whitespace-pre-wrap break-words">
+                            <span>{m.body}</span>
+                            <span className={classNames(
+                              "inline-block ml-1.5 translate-y-[1px] text-[10px] leading-none whitespace-nowrap",
+                              mine ? "text-primary-200/70" : "text-ink-500"
+                            )}>
+                              {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     );
