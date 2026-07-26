@@ -312,11 +312,14 @@ export default function Messages() {
             <>
               <div className="flex items-center gap-3 p-4 border-b border-ink-800 bg-ink-900/30">
                 <button onClick={() => setActiveId(null)} className="md:hidden btn-ghost p-1"><ArrowLeft size={18} /></button>
-                <div className="flex items-center gap-3 min-w-0">
+                <Link
+                  to={`/profile/${otherParty(active)?.id ?? ""}`}
+                  className="flex items-center gap-3 min-w-0 rounded-lg p-1 -m-1 transition-colors hover:bg-ink-800/60"
+                >
                   {(() => {
                     const other = otherParty(active);
                     return other?.avatar_url ? (
-                      <img src={other.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                      <img src={other.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-ink-700" />
                     ) : (
                       <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-sm font-bold">
                         {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
@@ -324,16 +327,16 @@ export default function Messages() {
                     );
                   })()}
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate flex items-center gap-1">
+                    <p className="text-sm font-semibold text-white truncate flex items-center gap-1 group-hover:text-primary-300">
                       {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
                       {otherParty(active)?.is_verified && <ShieldCheck size={12} className="text-success-400" />}
                     </p>
                     <p className="text-[11px] text-ink-500 mt-0.5">Direct conversation</p>
                   </div>
-                </div>
+                </Link>
               </div>
 
-              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-ink-950/30">
+              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-2" style={{ backgroundColor: "#18181B" }}>
                 {loadingThread ? (
                   <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
                 ) : messages.length === 0 ? (
@@ -348,13 +351,13 @@ export default function Messages() {
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div className={classNames(
                           "max-w-[80%] rounded-2xl px-3 py-1.5 text-[13px] leading-snug shadow-sm",
-                          mine ? "bg-primary-600 text-white rounded-br-md" : "bg-ink-800 text-ink-100 rounded-bl-md"
-                        )}>
+                          mine ? "text-white rounded-br-md" : "text-ink-100 rounded-bl-md"
+                        )} style={mine ? { backgroundColor: "#164E63" } : { backgroundColor: "#333333" }}>
                           <p className="whitespace-pre-wrap break-words">
                             <span>{m.body}</span>
                             <span className={classNames(
                               "inline-block ml-1.5 translate-y-[1px] text-[10px] leading-none whitespace-nowrap",
-                              mine ? "text-primary-200/70" : "text-ink-500"
+                              mine ? "text-white/60" : "text-ink-500"
                             )}>
                               {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
                             </span>
