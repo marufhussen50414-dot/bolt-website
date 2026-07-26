@@ -18,7 +18,7 @@ export default function Sell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "", game_name: "" });
+  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "Bangladesh", game_name: "" });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -124,7 +124,7 @@ export default function Sell() {
       title: form.title, description: form.description || null, price,
       account_level: !isOthers && form.account_level ? parseInt(form.account_level) : null,
       prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
-      server_region: !isOthers ? (form.server_region || null) : null,
+      server_region: !isOthers ? "Bangladesh" : null,
       images: imageUrls.length ? imageUrls : null, tags: tags.length > 0 ? tags : null, status: "active",
     }).select().single();
     setLoading(false);
@@ -134,7 +134,7 @@ export default function Sell() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-6"><h1 className="font-display text-3xl font-extrabold text-white">Sell a Game ID</h1><p className="text-ink-400 mt-1">List your account — only 2% commission when it sells</p></div>
+      <div className="mb-6"><h1 className="font-display text-3xl font-extrabold text-white">Sell a Game ID</h1></div>
       {success ? (
         <div className="card p-8 text-center animate-scale-in">
           <CheckCircle2 size={48} className="mx-auto text-success-400" />
@@ -155,13 +155,14 @@ export default function Sell() {
               ); })}
             </div>
           </div>
+          {isOthers && (
+            <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="e.g. Clash Royale" /></div>
+          )}
           <div><label className="label">Listing Title</label><input required value={form.title} onChange={(e) => update("title", e.target.value)} className="input" placeholder="e.g. Free Fire MAX — Level 70, Heroic Grandmaster" /></div>
           <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder="Describe the account — skins, characters, diamonds, binds, etc." /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="label">Price (৳)</label><input type="number" required value={form.price} onChange={(e) => update("price", e.target.value)} className="input" placeholder="1500" /></div>
-            {isOthers ? (
-              <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="e.g. Clash Royale" /></div>
-            ) : (
+            {!isOthers && (
               <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" placeholder="70" /></div>
             )}
             {isFreeFire && (
@@ -172,7 +173,12 @@ export default function Sell() {
               </div>
             )}
             {!isOthers && (
-              <div><label className="label">Server / Region</label><input value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input" placeholder="BD/Asia" /></div>
+              <div>
+                <label className="label">Server / Region</label>
+                <select value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input">
+                  <option value="Bangladesh">Bangladesh</option>
+                </select>
+              </div>
             )}
           </div>
 
