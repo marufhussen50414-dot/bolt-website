@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tag, Loader2, AlertCircle, CheckCircle2, Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, UploadCloud, X, ImageIcon } from "lucide-react";
+import { Tag, Loader2, AlertCircle, CheckCircle2, Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, UploadCloud, X, ImageIcon, Star, GripVertical } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { Category } from "../lib/types";
@@ -29,6 +29,8 @@ export default function Sell() {
   const [imageError, setImageError] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   useEffect(() => { supabase.from("categories").select("*").order("sort_order").then(({ data }) => setCategories((data as Category[]) ?? [])); }, []);
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
@@ -84,11 +86,12 @@ export default function Sell() {
     });
   }
 
-  function moveImage(from: number, to: number) {
-    if (to < 0 || to >= images.length) return;
-    setImages((prev) => { const n = [...prev]; [n[from], n[to]] = [n[to], n[from]]; return n; });
-    setPreviews((prev) => { const n = [...prev]; [n[from], n[to]] = [n[to], n[from]]; return n; });
+  function reorderImage(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || from >= images.length || to >= images.length) return;
+    setImages((prev) => { const n = [...prev]; const [item] = n.splice(from, 1); n.splice(to, 0, item); return n; });
+    setPreviews((prev) => { const n = [...prev]; const [item] = n.splice(from, 1); n.splice(to, 0, item); return n; });
   }
+  function setThumbnail(i: number) { reorderImage(i, 0); }
 
   async function uploadAll(userId: string): Promise<UploadedImage[] | null> {
     if (images.length === 0) return [];
@@ -158,12 +161,12 @@ export default function Sell() {
           {isOthers && (
             <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="e.g. Clash Royale" /></div>
           )}
-          <div><label className="label">Listing Title</label><input required value={form.title} onChange={(e) => update("title", e.target.value)} className="input" placeholder="e.g. Free Fire MAX — Level 70, Heroic Grandmaster" /></div>
+          <div><label className="label">Listing Title</label><input required value={form.title} onChange={(e) => update("title", e.target.value)} className="input" placeholder="e.g. Free Fire Max ID" /></div>
           <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder="Describe the account — skins, characters, diamonds, binds, etc." /></div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Price (৳)</label><input type="number" required value={form.price} onChange={(e) => update("price", e.target.value)} className="input" placeholder="1500" /></div>
+            <div><label className="label">Price (৳)</label><input type="number" required value={form.price} onChange={(e) => update("price", e.target.value)} className="input" /></div>
             {!isOthers && (
-              <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" placeholder="70" /></div>
+              <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" /></div>
             )}
             {isFreeFire && (
               <div>
@@ -191,7 +194,7 @@ export default function Sell() {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
-                placeholder="e.g. hero, rare skins, diamonds"
+                placeholder=""
                 className="input"
               />
               <button type="button" onClick={addTag} className="shrink-0 rounded-xl border-2 border-ink-700 bg-ink-900 px-4 py-2 text-sm font-semibold text-ink-300 hover:border-primary-500/50 hover:bg-ink-800 transition-all">Add</button>
@@ -208,7 +211,7 @@ export default function Sell() {
 
           <div>
             <label className="label">Listing Images</label>
-            <p className="text-xs text-ink-400 mb-2">Upload up to {MAX_FILES} images (JPG, PNG, WebP, GIF — max 5MB each). The first image is your thumbnail.</p>
+            <p className="text-xs text-ink-400 mb-2">Upload up to {MAX_FILES} images (JPG, PNG, WebP, GIF — max 5MB each). Drag to reorder and set your thumbnail.</p>
             <label
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -229,13 +232,29 @@ export default function Sell() {
             {previews.length > 0 && (
               <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {previews.map((src, i) => (
-                  <div key={i} className="group relative aspect-square rounded-xl overflow-hidden border border-ink-700 bg-ink-900">
-                    <img src={src} alt={`Preview ${i + 1}`} className="h-full w-full object-cover" />
-                    {i === 0 && <span className="absolute top-1 left-1 badge bg-primary-600 text-white text-[10px] px-1.5 py-0.5">Thumbnail</span>}
+                  <div
+                    key={i}
+                    draggable
+                    onDragStart={() => setDragIndex(i)}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+                    onDragLeave={() => setDragOverIndex((cur) => cur === i ? null : cur)}
+                    onDrop={() => { if (dragIndex !== null) reorderImage(dragIndex, i); setDragIndex(null); setDragOverIndex(null); }}
+                    onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                    className={classNames(
+                      "group relative aspect-square rounded-xl overflow-hidden border-2 bg-ink-900 transition-all cursor-grab active:cursor-grabbing",
+                      dragOverIndex === i ? "border-primary-500 scale-105 ring-2 ring-primary-500/30" : i === 0 ? "border-primary-500/50" : "border-ink-700"
+                    )}
+                  >
+                    <img src={src} alt={`Preview ${i + 1}`} className="h-full w-full object-cover pointer-events-none select-none" />
+                    {i === 0 ? (
+                      <span className="absolute top-1 left-1 badge bg-primary-600 text-white text-[10px] px-1.5 py-0.5 flex items-center gap-1"><Star size={9} className="fill-white" />Thumbnail</span>
+                    ) : (
+                      <button type="button" onClick={() => setThumbnail(i)} className="absolute top-1 left-1 flex items-center gap-1 rounded-full bg-black/80 px-2 py-0.5 text-[10px] font-semibold text-white opacity-0 group-hover:opacity-100 hover:bg-primary-600 transition-all"><Star size={9} />Set Thumbnail</button>
+                    )}
                     <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-white hover:bg-error-500 transition-colors" aria-label="Remove image"><X size={14} /></button>
-                    <div className="absolute bottom-0 inset-x-0 flex justify-between bg-black/70 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" onClick={() => moveImage(i, i - 1)} disabled={i === 0} className="text-xs text-white disabled:opacity-30 px-1">◀</button>
-                      <button type="button" onClick={() => moveImage(i, i + 1)} disabled={i === previews.length - 1} className="text-xs text-white disabled:opacity-30 px-1">▶</button>
+                    <div className="absolute bottom-0 inset-x-0 flex items-center justify-center gap-1 bg-black/70 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripVertical size={12} className="text-ink-300" />
+                      <span className="text-[9px] text-ink-400">Drag to reorder</span>
                     </div>
                   </div>
                 ))}
@@ -250,7 +269,6 @@ export default function Sell() {
             )}
           </div>
 
-          <div className="rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 text-xs text-primary-300">You receive 98% of the sale price. Only 2% commission. Example: sell for ৳1000 → you get ৳980.</div>
           <button type="submit" disabled={loading || uploading} className="btn-primary w-full">
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Tag size={18} />}
             {uploading ? "Uploading images..." : loading ? "Creating..." : "Create Listing"}
