@@ -9,7 +9,7 @@ import type { Conversation, GameListing, Message, Profile } from "../lib/types";
 import { classNames, formatBDT, timeAgo } from "../lib/utils";
 
 type ConversationRow = Conversation & {
-  listing: Pick<GameListing, "id" | "title" | "price" | "images">;
+  listing: Pick<GameListing, "id" | "title" | "price" | "images"> | null;
   buyer: Pick<Profile, "id" | "full_name" | "username" | "avatar_url" | "is_verified">;
   seller: Pick<Profile, "id" | "full_name" | "username" | "avatar_url" | "is_verified">;
 };
@@ -20,6 +20,7 @@ export default function Messages() {
   const listingIdParam = params.get("listing");
 
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
@@ -52,6 +53,20 @@ export default function Messages() {
     setLoadingList(false);
   }
 
+  async function loadUnreadCounts() {
+    if (!user) return;
+    const { data } = await supabase
+      .from("messages")
+      .select("conversation_id")
+      .neq("sender_id", user.id)
+      .is("read_at", null);
+    const map: Record<string, number> = {};
+    for (const m of (data ?? []) as { conversation_id: string }[]) {
+      map[m.conversation_id] = (map[m.conversation_id] ?? 0) + 1;
+    }
+    setUnreadMap(map);
+  }
+
   async function loadThread(convId: string) {
     setLoadingThread(true);
     const { data, error: err } = await supabase
@@ -72,11 +87,13 @@ export default function Messages() {
       .eq("conversation_id", convId)
       .neq("sender_id", user.id)
       .is("read_at", null);
+    setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
   }
 
   useEffect(() => {
     if (!user) return;
     loadConversations();
+    loadUnreadCounts();
   }, [user]);
 
   useEffect(() => {
@@ -90,7 +107,9 @@ export default function Messages() {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [messages, activeId]);
 
-  // When arriving via ?listing=, auto-create/find the conversation and open it directly.
+  // Arriving via ?listing=: find or create ONE thread for this buyer+seller pair,
+  // then open it directly with the composer focused. The listing is kept as
+  // optional context on the conversation, never as a grouping key.
   useEffect(() => {
     if (!listingIdParam || !user) return;
     setStarting(true);
@@ -107,10 +126,10 @@ export default function Messages() {
         setStarting(false);
         return;
       }
+      // One thread per (buyer, seller) pair regardless of listing.
       const { data: existing } = await supabase
         .from("conversations")
         .select("id")
-        .eq("listing_id", listing.id)
         .eq("buyer_id", user.id)
         .eq("seller_id", listing.seller_id)
         .maybeSingle();
@@ -131,7 +150,7 @@ export default function Messages() {
     })();
   }, [listingIdParam, user, params, setParams]);
 
-  // Realtime: refresh conversations + thread when new messages arrive.
+  // Realtime: live updates for conversations, thread, and unread counts.
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -149,8 +168,11 @@ export default function Messages() {
         if (msg.conversation_id === activeId) {
           setMessages((m) => [...m, msg]);
           if (msg.sender_id !== user.id) markRead(msg.conversation_id).then(loadConversations);
+        } else if (msg.sender_id !== user.id) {
+          setUnreadMap((prev) => ({ ...prev, [msg.conversation_id]: (prev[msg.conversation_id] ?? 0) + 1 }));
         }
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => loadUnreadCounts())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, activeId]);
@@ -202,7 +224,7 @@ export default function Messages() {
         <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary-500/15 text-primary-400"><MessageSquare size={22} /></div>
         <div>
           <h1 className="font-display text-2xl font-extrabold text-white">Messages</h1>
-          <p className="text-sm text-ink-400">Private chats with buyers and sellers about listings.</p>
+          <p className="text-sm text-ink-400">One unified thread per buyer and seller.</p>
         </div>
       </div>
 
@@ -234,7 +256,7 @@ export default function Messages() {
             ) : (
               filtered.map((c) => {
                 const other = otherParty(c);
-                const unread = messages.filter((m) => m.conversation_id === c.id && m.sender_id !== user.id && !m.read_at).length;
+                const unread = unreadMap[c.id] ?? 0;
                 const isActive = c.id === activeId;
                 return (
                   <button
@@ -263,7 +285,9 @@ export default function Messages() {
                         </p>
                         <span className="text-[11px] text-ink-500 shrink-0">{timeAgo(c.last_message_at)}</span>
                       </div>
-                      <p className="text-xs text-ink-400 truncate flex items-center gap-1 mt-0.5"><Tag size={10} className="shrink-0" /> {c.listing?.title ?? "Listing"}</p>
+                      {c.listing?.title && (
+                        <p className="text-xs text-ink-400 truncate flex items-center gap-1 mt-0.5"><Tag size={10} className="shrink-0" /> {c.listing.title}</p>
+                      )}
                     </div>
                   </button>
                 );
@@ -304,14 +328,18 @@ export default function Messages() {
                       {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
                       {otherParty(active)?.is_verified && <ShieldCheck size={12} className="text-success-400" />}
                     </p>
-                    <Link to={`/listing/${active.listing_id}`} className="text-xs text-primary-400 hover:text-primary-300 truncate flex items-center gap-1 mt-0.5">
-                      <Tag size={10} /> {active.listing?.title ?? "Listing"} • {active.listing ? formatBDT(active.listing.price) : ""}
-                    </Link>
+                    {active.listing_id && active.listing ? (
+                      <Link to={`/listing/${active.listing_id}`} className="text-xs text-primary-400 hover:text-primary-300 truncate flex items-center gap-1 mt-0.5">
+                        <Tag size={10} /> {active.listing.title} • {formatBDT(active.listing.price)}
+                      </Link>
+                    ) : (
+                      <p className="text-xs text-ink-500 mt-0.5">Direct conversation</p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-ink-950/30">
+              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-2 bg-ink-950/30">
                 {loadingThread ? (
                   <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
                 ) : messages.length === 0 ? (
@@ -325,13 +353,16 @@ export default function Messages() {
                     return (
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div className={classNames(
-                          "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-sm",
+                          "max-w-[78%] rounded-2xl px-3.5 py-2 text-[13px] leading-snug shadow-sm",
                           mine ? "bg-primary-600 text-white rounded-br-md" : "bg-ink-800 text-ink-100 rounded-bl-md"
                         )}>
-                          <p className="whitespace-pre-wrap break-words leading-relaxed">{m.body}</p>
-                          <p className={classNames("text-[10px] mt-1.5 flex items-center gap-1", mine ? "text-primary-200" : "text-ink-500")}>
-                            {timeAgo(m.created_at)}{mine && m.read_at && <span className="text-primary-200">· read</span>}
-                          </p>
+                          <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                          <span className={classNames(
+                            "block text-right text-[10px] mt-1 leading-none",
+                            mine ? "text-primary-200/70" : "text-ink-500"
+                          )}>
+                            {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
+                          </span>
                         </div>
                       </div>
                     );

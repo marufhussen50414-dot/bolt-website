@@ -94,12 +94,12 @@ export type Review = {
 
 export type Conversation = {
   id: string;
-  listing_id: string;
+  listing_id: string | null;
   buyer_id: string;
   seller_id: string;
   last_message_at: string;
   created_at: string;
-  listing?: GameListing;
+  listing?: GameListing | null;
   buyer?: Profile;
   seller?: Profile;
 };
