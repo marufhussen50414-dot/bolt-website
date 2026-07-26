@@ -104,6 +104,23 @@ export type Conversation = {
   seller?: Profile;
 };
 
+export type OfferStatus = "pending" | "accepted" | "declined" | "paid" | "expired";
+
+export type Offer = {
+  id: string;
+  conversation_id: string;
+  listing_id: string;
+  buyer_id: string;
+  seller_id: string;
+  offer_price: number;
+  status: OfferStatus;
+  responded_at: string | null;
+  paid_order_id: string | null;
+  created_at: string;
+  updated_at: string;
+  listing?: Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status"> | null;
+};
+
 export type Message = {
   id: string;
   conversation_id: string;
@@ -111,4 +128,6 @@ export type Message = {
   body: string;
   read_at: string | null;
   created_at: string;
+  offer_id: string | null;
+  offer?: Offer | null;
 };

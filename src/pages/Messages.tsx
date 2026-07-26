@@ -2,17 +2,20 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
+  HandCoins, X, Check, ShoppingBag, ImageIcon,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
-import type { Conversation, GameListing, Message, Profile } from "../lib/types";
-import { classNames, timeAgo } from "../lib/utils";
+import type { Conversation, GameListing, Message, Offer, OfferStatus, Profile } from "../lib/types";
+import { classNames, timeAgo, formatBDT } from "../lib/utils";
 
 type ConversationRow = Conversation & {
   listing: Pick<GameListing, "id" | "title" | "price" | "images"> | null;
   buyer: Pick<Profile, "id" | "full_name" | "username" | "avatar_url" | "is_verified">;
   seller: Pick<Profile, "id" | "full_name" | "username" | "avatar_url" | "is_verified">;
 };
+
+type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
 
 export default function Messages() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -32,6 +35,15 @@ export default function Messages() {
   const [starting, setStarting] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef<HTMLInputElement>(null);
+
+  // Offer modal state
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [sellerListings, setSellerListings] = useState<SellerListing[]>([]);
+  const [loadingListings, setLoadingListings] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<SellerListing | null>(null);
+  const [offerPrice, setOfferPrice] = useState("");
+  const [sendingOffer, setSendingOffer] = useState(false);
+  const [offerError, setOfferError] = useState("");
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
@@ -67,11 +79,21 @@ export default function Messages() {
     setUnreadMap(map);
   }
 
+  async function attachOffer(msg: Message): Promise<Message> {
+    if (!msg.offer_id) return msg;
+    const { data } = await supabase
+      .from("offers")
+      .select("*, listing:game_listings(id, title, price, images, game_name, status)")
+      .eq("id", msg.offer_id)
+      .maybeSingle();
+    return { ...msg, offer: (data as Offer | null) ?? null };
+  }
+
   async function loadThread(convId: string) {
     setLoadingThread(true);
     const { data, error: err } = await supabase
       .from("messages")
-      .select("*")
+      .select("*, offer:offers(*, listing:game_listings(id, title, price, images, game_name, status))")
       .eq("conversation_id", convId)
       .order("created_at", { ascending: true });
     if (err) setError(err.message);
@@ -150,7 +172,7 @@ export default function Messages() {
     })();
   }, [listingIdParam, user, params, setParams]);
 
-  // Realtime: live updates for conversations, thread, and unread counts.
+  // Realtime: live updates for conversations, thread, unread counts, and offers.
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -166,13 +188,24 @@ export default function Messages() {
           return next;
         });
         if (msg.conversation_id === activeId) {
-          setMessages((m) => [...m, msg]);
-          if (msg.sender_id !== user.id) markRead(msg.conversation_id).then(loadConversations);
+          (async () => {
+            const withOffer = await attachOffer(msg);
+            setMessages((m) => [...m, withOffer]);
+            if (msg.sender_id !== user.id) markRead(msg.conversation_id).then(loadConversations);
+          })();
         } else if (msg.sender_id !== user.id) {
           setUnreadMap((prev) => ({ ...prev, [msg.conversation_id]: (prev[msg.conversation_id] ?? 0) + 1 }));
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => loadUnreadCounts())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "offers" }, (payload) => {
+        const updated = payload.new as Offer;
+        setMessages((prev) => prev.map((m) =>
+          m.offer_id === updated.id && m.offer
+            ? { ...m, offer: { ...m.offer, ...updated, listing: m.offer.listing } }
+            : m
+        ));
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, activeId]);
@@ -193,6 +226,93 @@ export default function Messages() {
     setDraft("");
     setMessages((m) => [...m, data as Message]);
     loadConversations();
+  }
+
+  // ===== Make an Offer flow =====
+
+  async function openOfferModal() {
+    if (!active || !user) return;
+    const other = otherParty(active);
+    if (!other?.id) return;
+    setShowOfferModal(true);
+    setSelectedListing(null);
+    setOfferPrice("");
+    setOfferError("");
+    setLoadingListings(true);
+    const { data, error: err } = await supabase
+      .from("game_listings")
+      .select("id, title, price, images, game_name, status")
+      .eq("seller_id", other.id)
+      .in("status", ["active", "approved"])
+      .order("created_at", { ascending: false });
+    if (err) setOfferError(err.message);
+    setSellerListings((data as SellerListing[]) ?? []);
+    setLoadingListings(false);
+  }
+
+  function closeOfferModal() {
+    setShowOfferModal(false);
+    setSelectedListing(null);
+    setOfferPrice("");
+    setOfferError("");
+  }
+
+  function selectListing(li: SellerListing) {
+    setSelectedListing(li);
+    setOfferPrice("");
+    setOfferError("");
+  }
+
+  async function handleSendOffer(e: FormEvent) {
+    e.preventDefault();
+    if (!active || !user || !selectedListing) return;
+    const price = parseFloat(offerPrice);
+    if (!price || price <= 0) { setOfferError("Enter a valid offer amount."); return; }
+    setSendingOffer(true);
+    setOfferError("");
+    const { data: offerRow, error: offerErr } = await supabase
+      .from("offers")
+      .insert({
+        conversation_id: active.id,
+        listing_id: selectedListing.id,
+        buyer_id: user.id,
+        seller_id: active.seller_id === user.id ? active.buyer_id : active.seller_id,
+        offer_price: price,
+      })
+      .select("*")
+      .single();
+    if (offerErr) { setSendingOffer(false); setOfferError(offerErr.message); return; }
+    const offer = offerRow as Offer;
+    const summary = `Offered ${formatBDT(price)} for "${selectedListing.title}"`;
+    const { data: msgRow, error: msgErr } = await supabase
+      .from("messages")
+      .insert({ conversation_id: active.id, sender_id: user.id, body: summary, offer_id: offer.id })
+      .select("*, offer:offers(*, listing:game_listings(id, title, price, images, game_name, status))")
+      .single();
+    setSendingOffer(false);
+    if (msgErr) { setOfferError(msgErr.message); return; }
+    setMessages((m) => [...m, msgRow as Message]);
+    loadConversations();
+    closeOfferModal();
+  }
+
+  async function respondToOffer(offerId: string, accept: boolean) {
+    const status: OfferStatus = accept ? "accepted" : "declined";
+    const { data, error: err } = await supabase
+      .from("offers")
+      .update({ status, responded_at: new Date().toISOString() })
+      .eq("id", offerId)
+      .select("*")
+      .maybeSingle();
+    if (err) { setError(err.message); return; }
+    if (data) {
+      const updated = data as Offer;
+      setMessages((prev) => prev.map((m) =>
+        m.offer_id === updated.id && m.offer
+          ? { ...m, offer: { ...m.offer, ...updated, listing: m.offer.listing } }
+          : m
+      ));
+    }
   }
 
   function otherParty(c: ConversationRow) {
@@ -217,6 +337,8 @@ export default function Messages() {
       </div>
     </div>
   );
+
+  const offerSellerName = active ? (otherParty(active)?.full_name ?? otherParty(active)?.username ?? "seller") : "";
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -347,6 +469,19 @@ export default function Messages() {
                 ) : (
                   messages.map((m) => {
                     const mine = m.sender_id === user.id;
+                    // Offer card
+                    if (m.offer_id && m.offer) {
+                      return (
+                        <OfferBubble
+                          key={m.id}
+                          mine={mine}
+                          message={m}
+                          userId={user.id}
+                          onAccept={(id) => respondToOffer(id, true)}
+                          onDecline={(id) => respondToOffer(id, false)}
+                        />
+                      );
+                    }
                     return (
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div className={classNames(
@@ -370,6 +505,15 @@ export default function Messages() {
               </div>
 
               <form onSubmit={handleSend} className="flex items-center gap-2 p-3 border-t border-ink-800 bg-ink-900/30">
+                <button
+                  type="button"
+                  onClick={openOfferModal}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm font-semibold text-primary-300 transition-colors hover:bg-primary-500/20"
+                  title="Make an offer on a listing"
+                >
+                  <HandCoins size={18} />
+                  <span className="hidden sm:inline">Offer</span>
+                </button>
                 <input
                   ref={draftRef}
                   value={draft}
@@ -389,6 +533,233 @@ export default function Messages() {
       {!profile?.full_name && (
         <p className="text-xs text-ink-500 mt-4 text-center">Tip: complete your <Link to="/profile" className="text-primary-400">profile</Link> so sellers recognize you in chats.</p>
       )}
+
+      {/* ===== Make an Offer Modal ===== */}
+      {showOfferModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={closeOfferModal}>
+          <div
+            className="card w-full max-w-md max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-ink-800 sticky top-0 bg-ink-900/95 backdrop-blur z-10">
+              <div className="flex items-center gap-2">
+                {selectedListing && (
+                  <button type="button" onClick={() => setSelectedListing(null)} className="btn-ghost p-1 -ml-1"><ArrowLeft size={16} /></button>
+                )}
+                <div>
+                  <h3 className="font-display text-lg font-bold text-white">Make an Offer</h3>
+                  <p className="text-xs text-ink-400">{selectedListing ? "Set your offer price" : `Pick a listing from ${offerSellerName}`}</p>
+                </div>
+              </div>
+              <button type="button" onClick={closeOfferModal} className="btn-ghost p-1"><X size={18} /></button>
+            </div>
+
+            {offerError && <div className="mx-4 mt-3 rounded-lg bg-error-500/10 border border-error-500/20 p-2.5 text-sm text-error-400">{offerError}</div>}
+
+            {!selectedListing ? (
+              <div className="p-4">
+                {loadingListings ? (
+                  <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
+                ) : sellerListings.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <Tag size={32} className="mx-auto text-ink-600" />
+                    <p className="text-sm text-ink-400 mt-2">{offerSellerName} has no active listings right now.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sellerListings.map((li) => (
+                      <button
+                        key={li.id}
+                        type="button"
+                        onClick={() => selectListing(li)}
+                        className="flex w-full items-center gap-3 rounded-xl border border-ink-700 bg-ink-800/50 p-2.5 text-left transition-all hover:border-primary-500/50 hover:bg-ink-800"
+                      >
+                        <img
+                          src={li.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=200"}
+                          alt=""
+                          className="h-12 w-12 rounded-lg object-cover shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{li.title}</p>
+                          <p className="text-xs text-ink-400 flex items-center gap-1"><Tag size={10} /> {li.game_name}</p>
+                        </div>
+                        <span className="font-display font-bold text-primary-400 shrink-0">{formatBDT(li.price)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <form onSubmit={handleSendOffer} className="p-4 space-y-4">
+                {/* Selected listing details */}
+                <div className="rounded-xl border border-ink-700 bg-ink-800/50 p-3">
+                  <div className="flex gap-3">
+                    <img
+                      src={selectedListing.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=300"}
+                      alt={selectedListing.title}
+                      className="h-20 w-20 rounded-lg object-cover shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="badge glass text-white text-[10px]"><Tag size={10} /> {selectedListing.game_name}</span>
+                      <p className="font-semibold text-white mt-1.5 leading-snug">{selectedListing.title}</p>
+                      <p className="text-sm text-ink-400 mt-1">Listed price</p>
+                      <p className="font-display text-xl font-extrabold text-white">{formatBDT(selectedListing.price)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Offer price input */}
+                <div>
+                  <label className="label">Your Offer Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-display font-bold text-primary-400">৳</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={offerPrice}
+                      onChange={(e) => setOfferPrice(e.target.value)}
+                      placeholder="1500"
+                      className="input pl-8 text-lg font-semibold"
+                      autoFocus
+                    />
+                  </div>
+                  {/* Quick suggest buttons */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {[0.95, 0.9, 0.8, 0.75].map((pct) => {
+                      const val = Math.round(selectedListing.price * pct);
+                      return (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => setOfferPrice(String(val))}
+                          className="rounded-lg border border-ink-700 bg-ink-800 px-2.5 py-1 text-xs font-medium text-ink-300 transition-colors hover:border-primary-500/50 hover:text-primary-300"
+                        >
+                          {formatBDT(val)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {offerPrice && parseFloat(offerPrice) > 0 && (
+                    <p className="text-xs text-ink-400 mt-2">
+                      You save <span className="text-success-400 font-semibold">{formatBDT(selectedListing.price - parseFloat(offerPrice))}</span> off the listed price.
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={sendingOffer || !offerPrice || parseFloat(offerPrice) <= 0}
+                  className="btn-primary w-full inline-flex items-center justify-center gap-2"
+                >
+                  {sendingOffer ? <Loader2 size={18} className="animate-spin" /> : <><HandCoins size={18} /> Send Offer</>}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===== Offer card rendered inline in the chat thread =====
+function OfferBubble({
+  mine, message, userId, onAccept, onDecline,
+}: {
+  mine: boolean;
+  message: Message;
+  userId: string;
+  onAccept: (offerId: string) => void;
+  onDecline: (offerId: string) => void;
+}) {
+  const offer = message.offer!;
+  const isBuyer = offer.buyer_id === userId;
+  const isSeller = offer.seller_id === userId;
+  const listing = offer.listing;
+  const img = listing?.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=300";
+  const originalPrice = listing?.price ?? 0;
+  const savings = originalPrice - offer.offer_price;
+
+  const statusStyles: Record<OfferStatus, string> = {
+    pending: "bg-warning-500/15 text-warning-400 border-warning-500/20",
+    accepted: "bg-primary-500/15 text-primary-300 border-primary-500/20",
+    declined: "bg-ink-700 text-ink-400 border-ink-600",
+    paid: "bg-success-500/15 text-success-400 border-success-500/20",
+    expired: "bg-ink-700 text-ink-400 border-ink-600",
+  };
+  const statusLabel: Record<OfferStatus, string> = {
+    pending: "Pending", accepted: "Accepted", declined: "Declined", paid: "Paid", expired: "Expired",
+  };
+
+  return (
+    <div className={classNames("flex", mine ? "justify-end" : "justify-start")}>
+      <div className="max-w-[85%] w-[300px] rounded-2xl overflow-hidden border border-primary-500/30 bg-ink-900 shadow-lg" style={{ backgroundColor: "#1C1C22" }}>
+        {/* Header strip */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500/10 text-primary-300 text-[11px] font-semibold">
+          <HandCoins size={12} />
+          <span>OFFER</span>
+          <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-ink-500 font-normal">{timeAgo(message.created_at)}</span>
+        </div>
+
+        {/* Listing summary */}
+        <div className="flex gap-2.5 p-3">
+          {img ? (
+            <img src={img} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
+          ) : (
+            <div className="grid h-14 w-14 place-items-center rounded-lg bg-ink-800 text-ink-600 shrink-0"><ImageIcon size={20} /></div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white truncate leading-snug">{listing?.title ?? "Listing"}</p>
+            {listing?.game_name && <p className="text-[11px] text-ink-400 mt-0.5">{listing.game_name}</p>}
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-xs text-ink-500 line-through">{formatBDT(originalPrice)}</span>
+              <span className="font-display text-lg font-extrabold text-primary-400">{formatBDT(offer.offer_price)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Status + actions */}
+        <div className="px-3 pb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className={classNames("badge border text-[10px]", statusStyles[offer.status])}>{statusLabel[offer.status]}</span>
+            {savings > 0 && offer.status !== "declined" && (
+              <span className="text-[11px] text-success-400 font-medium">Save {formatBDT(savings)}</span>
+            )}
+          </div>
+
+          {offer.status === "pending" && isSeller && (
+            <div className="flex gap-2">
+              <button onClick={() => onAccept(offer.id)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-success-500/90 px-3 py-2 text-sm font-bold text-ink-950 transition-colors hover:bg-success-400">
+                <Check size={15} /> Accept
+              </button>
+              <button onClick={() => onDecline(offer.id)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-ink-700 bg-ink-800 px-3 py-2 text-sm font-semibold text-ink-300 transition-colors hover:bg-ink-700">
+                <X size={15} /> Decline
+              </button>
+            </div>
+          )}
+          {offer.status === "pending" && isBuyer && (
+            <p className="text-center text-[11px] text-ink-500 py-1.5">Waiting for {offer.seller_id === userId ? "buyer" : "seller"}'s response…</p>
+          )}
+          {offer.status === "accepted" && isBuyer && (
+            <Link
+              to={`/checkout/${offer.listing_id}?offer=${offer.id}`}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-400"
+            >
+              <ShoppingBag size={16} /> Pay {formatBDT(offer.offer_price)}
+            </Link>
+          )}
+          {offer.status === "accepted" && isSeller && (
+            <p className="text-center text-[11px] text-primary-300 py-1.5">Accepted — waiting for payment.</p>
+          )}
+          {offer.status === "paid" && (
+            <p className="text-center text-[11px] text-success-400 py-1.5 font-medium">Payment completed — order placed.</p>
+          )}
+          {offer.status === "declined" && (
+            <p className="text-center text-[11px] text-ink-500 py-1.5">This offer was declined.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
