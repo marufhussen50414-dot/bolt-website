@@ -336,7 +336,7 @@ export default function Messages() {
                 </Link>
               </div>
 
-              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-2" style={{ backgroundColor: "#1E293B" }}>
+              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-2" style={{ backgroundColor: "#18181B" }}>
                 {loadingThread ? (
                   <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
                 ) : messages.length === 0 ? (
@@ -351,13 +351,13 @@ export default function Messages() {
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div className={classNames(
                           "max-w-[80%] rounded-2xl px-3 py-1.5 text-[13px] leading-snug shadow-sm",
-                          mine ? "text-white rounded-br-md" : "text-slate-100 rounded-bl-md"
-                        )} style={mine ? { backgroundColor: "#0E7490" } : { backgroundColor: "#334155" }}>
+                          mine ? "text-white rounded-br-md" : "text-ink-100 rounded-bl-md"
+                        )} style={mine ? { backgroundColor: "#164E63" } : { backgroundColor: "#333333" }}>
                           <p className="whitespace-pre-wrap break-words">
                             <span>{m.body}</span>
                             <span className={classNames(
                               "inline-block ml-1.5 translate-y-[1px] text-[10px] leading-none whitespace-nowrap",
-                              mine ? "text-white/60" : "text-slate-400"
+                              mine ? "text-white/60" : "text-ink-500"
                             )}>
                               {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
                             </span>
