@@ -58,6 +58,20 @@ export default function Messages() {
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!lightboxSrc) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxSrc(null);
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [lightboxSrc]);
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
@@ -633,13 +647,13 @@ export default function Messages() {
                           mine ? "rounded-br-md" : "rounded-bl-md"
         )} style={mine ? { backgroundColor: "#164E63" } : { backgroundColor: "#333333" }}>
                           {m.image_url && (
-                            <a href={m.image_url} target="_blank" rel="noopener noreferrer" className="block">
+                            <button type="button" onClick={() => setLightboxSrc(m.image_url!)} className="block">
                               <img
                                 src={m.image_url}
                                 alt="Chat image"
                                 className="w-full max-w-[260px] max-h-[280px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
                               />
-                            </a>
+                            </button>
                           )}
                           {m.body && (
                             <p className={classNames("whitespace-pre-wrap break-words px-3 py-1.5 text-[13px] leading-snug", mine ? "text-white" : "text-ink-100")}>
@@ -836,6 +850,29 @@ export default function Messages() {
               </form>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ===== Image Lightbox ===== */}
+      {lightboxSrc && (
+        <div
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={() => setLightboxSrc(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxSrc(null)}
+            className="absolute top-4 right-4 inline-grid place-items-center h-11 w-11 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            aria-label="Close image"
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={lightboxSrc}
+            alt="Chat image"
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[92vw] max-h-[88vh] rounded-xl object-contain shadow-2xl animate-scale-in"
+          />
         </div>
       )}
     </div>
