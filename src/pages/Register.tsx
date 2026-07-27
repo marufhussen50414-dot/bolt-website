@@ -4,7 +4,6 @@ import { Mail, Lock, User, Phone, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { GoogleIcon } from "../components/GoogleIcon";
-import { getRedirectURL } from "../lib/utils";
 
 type AuthMode = "email" | "phone";
 
@@ -36,7 +35,7 @@ export default function Register() {
     setError(""); setInfo(""); setGoogleLoading(true);
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: getRedirectURL("/profile") },
+      options: { redirectTo: `${window.location.origin}/profile` },
     });
     if (oauthError) { setError(oauthError.message); setGoogleLoading(false); }
   }

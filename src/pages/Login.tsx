@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, Phone, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { GoogleIcon } from "../components/GoogleIcon";
-import { getRedirectURL } from "../lib/utils";
 
 type AuthMode = "email" | "phone";
 
@@ -32,7 +31,7 @@ export default function Login() {
 
   async function handleGoogle() {
     setError(""); setGoogleLoading(true);
-    const redirectTo = getRedirectURL(params.get("redirect") ?? "/profile");
+    const redirectTo = `${window.location.origin}${params.get("redirect") ?? "/profile"}`;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },
