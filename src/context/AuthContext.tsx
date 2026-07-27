@@ -40,25 +40,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      if (data.session?.user) {
-        loadProfile(data.session.user.id).finally(() => mounted && setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    let profileUid: string | null = null;
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, newSession) => {
-      (async () => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        if (newSession?.user) await loadProfile(newSession.user.id);
-        else setProfile(null);
-        setLoading(false);
-      })();
+    async function applySession(newSession: Session | null) {
+      if (!mounted) return;
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      if (newSession?.user) {
+        // TOKEN_REFRESHED reuses the same user id, so skip re-fetching the
+        // profile on every silent token renewal — only load it when the
+        // signed-in user actually changes.
+        if (profileUid !== newSession.user.id) {
+          profileUid = newSession.user.id;
+          await loadProfile(newSession.user.id);
+        }
+      } else {
+        profileUid = null;
+        setProfile(null);
+      }
+      setLoading(false);
+    }
+
+    // Restore any session persisted in localStorage on first load so a
+    // returning user — or one redirected back from Google — is recognized
+    // immediately instead of flashing the login screen.
+    supabase.auth
+      .getSession()
+      .then(({ data }) => { if (mounted) applySession(data.session); });
+
+    // Covers SIGNED_IN (email/password + Google OAuth callback), SIGNED_OUT,
+    // TOKEN_REFRESHED (silent renewal), and USER_UPDATED. The profile fetch is
+    // wrapped in an IIFE because awaiting a Supabase call directly inside the
+    // callback deadlocks the event listener.
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      (async () => { await applySession(newSession); })();
     });
 
     return () => { mounted = false; listener.subscription.unsubscribe(); };
