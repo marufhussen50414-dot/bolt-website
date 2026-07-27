@@ -7,6 +7,15 @@ export function classNames(...c: (string | false | null | undefined)[]): string 
   return c.filter(Boolean).join(" ");
 }
 
+export function getRedirectURL(path = "/profile"): string {
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}${path}`;
+  }
+  const fallback = import.meta.env.VITE_PRODUCTION_URL as string | undefined;
+  if (fallback) return `${fallback.replace(/\/$/, "")}${path}`;
+  return path;
+}
+
 export function formatBDT(n: number): string {
   return "৳" + new Intl.NumberFormat("en-BD", { maximumFractionDigits: 0 }).format(n);
 }
