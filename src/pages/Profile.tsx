@@ -5,7 +5,7 @@ import {
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
   Gift, BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
-  AlertCircle,
+  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -433,6 +433,34 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* Essential Links */}
+      <div className="mt-8">
+        <h2 className="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Sparkles size={18} className="text-primary-400" />
+          Helpful Links
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { to: "/faq", icon: HelpCircle, label: "FAQ", desc: "Common questions" },
+            { to: "/support", icon: LifeBuoy, label: "Support", desc: "Get help fast" },
+            { to: "/terms", icon: FileText, label: "Terms & Conditions", desc: "Platform rules" },
+            { to: "/privacy", icon: ScrollText, label: "Privacy Policy", desc: "Your data, safe" },
+          ].map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              className="card p-4 group transition-all hover:border-primary-500/40 hover:-translate-y-0.5 hover:shadow-glow"
+            >
+              <div className="inline-grid place-items-center h-10 w-10 rounded-xl bg-ink-800 text-ink-400 transition-colors group-hover:bg-primary-500/15 group-hover:text-primary-400">
+                <l.icon size={20} />
+              </div>
+              <p className="font-semibold text-white text-sm mt-2.5 group-hover:text-primary-300 transition-colors">{l.label}</p>
+              <p className="text-xs text-ink-500 mt-0.5">{l.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -14,6 +14,8 @@ import FAQ from "./pages/FAQ";
 import Support from "./pages/Support";
 import Messages from "./pages/Messages";
 import MyListings from "./pages/MyListings";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
           <Route path="/faq" element={<FAQ />} />
           <Route path="/support" element={<Support />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Routes>
       </main>
       <Footer />
