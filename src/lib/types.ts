@@ -129,5 +129,6 @@ export type Message = {
   read_at: string | null;
   created_at: string;
   offer_id: string | null;
+  image_url: string | null;
   offer?: Offer | null;
 };

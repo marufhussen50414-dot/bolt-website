@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
   HandCoins, X, ShoppingBag, ImageIcon, Store, ChevronDown, ChevronUp,
+  ImagePlus,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -51,6 +52,12 @@ export default function Messages() {
   const [showSellerListings, setShowSellerListings] = useState(false);
   const [browseListings, setBrowseListings] = useState<SellerListing[]>([]);
   const [loadingBrowse, setLoadingBrowse] = useState(false);
+
+  // Image attachment state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
@@ -227,20 +234,62 @@ export default function Messages() {
     return () => { supabase.removeChannel(channel); };
   }, [user, activeId]);
 
+  function onPickImage() {
+    fileInputRef.current?.click();
+  }
+
+  function onFileChosen(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Please select an image file."); return; }
+    if (file.size > 8 * 1024 * 1024) { setError("Image must be under 8 MB."); return; }
+    setPendingFile(file);
+    setPendingImage(URL.createObjectURL(file));
+  }
+
+  function clearPendingImage() {
+    if (pendingImage) URL.revokeObjectURL(pendingImage);
+    setPendingImage(null);
+    setPendingFile(null);
+  }
+
   async function handleSend(e: FormEvent) {
     e.preventDefault();
     if (!activeId || !user) return;
     const body = draft.trim();
-    if (!body) return;
+    if (!body && !pendingFile) return;
+
+    let imageUrl: string | null = null;
+    if (pendingFile) {
+      setUploadingImage(true);
+      const ext = pendingFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-images")
+        .upload(path, pendingFile, { cacheControl: "3600", upsert: false });
+      setUploadingImage(false);
+      if (upErr) { setError(upErr.message); return; }
+      const { data: pub } = supabase.storage.from("chat-images").getPublicUrl(path);
+      imageUrl = pub.publicUrl;
+    }
+
     setSending(true);
+    const insertPayload: { conversation_id: string; sender_id: string; body: string; image_url?: string } = {
+      conversation_id: activeId,
+      sender_id: user.id,
+      body,
+    };
+    if (imageUrl) insertPayload.image_url = imageUrl;
     const { data, error: err } = await supabase
       .from("messages")
-      .insert({ conversation_id: activeId, sender_id: user.id, body })
+      .insert(insertPayload)
       .select("*")
       .single();
     setSending(false);
     if (err) { setError(err.message); return; }
     setDraft("");
+    clearPendingImage();
     setMessages((m) => [...m, data as Message]);
     loadConversations();
   }
@@ -578,20 +627,39 @@ export default function Messages() {
                       );
                     }
                     return (
-                      <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
+                      <div key={m.id} className={classNames("flex flex-col gap-0.5", mine ? "items-end" : "items-start")}>
                         <div className={classNames(
-                          "max-w-[80%] rounded-2xl px-3 py-1.5 text-[13px] leading-snug shadow-sm",
-                          mine ? "text-white rounded-br-md" : "text-ink-100 rounded-bl-md"
-                        )} style={mine ? { backgroundColor: "#164E63" } : { backgroundColor: "#333333" }}>
-                          <p className="whitespace-pre-wrap break-words">
-                            <span>{m.body}</span>
+                          "max-w-[80%] rounded-2xl shadow-sm overflow-hidden",
+                          mine ? "rounded-br-md" : "rounded-bl-md"
+        )} style={mine ? { backgroundColor: "#164E63" } : { backgroundColor: "#333333" }}>
+                          {m.image_url && (
+                            <a href={m.image_url} target="_blank" rel="noopener noreferrer" className="block">
+                              <img
+                                src={m.image_url}
+                                alt="Chat image"
+                                className="w-full max-w-[260px] max-h-[280px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                              />
+                            </a>
+                          )}
+                          {m.body && (
+                            <p className={classNames("whitespace-pre-wrap break-words px-3 py-1.5 text-[13px] leading-snug", mine ? "text-white" : "text-ink-100")}>
+                              <span>{m.body}</span>
+                              <span className={classNames(
+                                "inline-block ml-1.5 translate-y-[1px] text-[10px] leading-none whitespace-nowrap",
+                                mine ? "text-white/60" : "text-ink-500"
+                              )}>
+                                {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
+                              </span>
+                            </p>
+                          )}
+                          {m.image_url && !m.body && (
                             <span className={classNames(
-                              "inline-block ml-1.5 translate-y-[1px] text-[10px] leading-none whitespace-nowrap",
-                              mine ? "text-white/60" : "text-ink-500"
+                              "block px-2 pb-1.5 text-[10px] leading-none whitespace-nowrap",
+                              mine ? "text-white/60 text-right" : "text-ink-500"
                             )}>
                               {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
                             </span>
-                          </p>
+                          )}
                         </div>
                       </div>
                     );
@@ -599,28 +667,59 @@ export default function Messages() {
                 )}
               </div>
 
-              <form onSubmit={handleSend} className="flex items-center gap-2 p-3 border-t border-ink-800 bg-ink-900/30">
-                {iAmSeller && (
-                <button
-                  type="button"
-                  onClick={openOfferModal}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm font-semibold text-primary-300 transition-colors hover:bg-primary-500/20"
-                  title="Give the buyer a discounted offer"
-                >
-                  <HandCoins size={18} />
-                  <span className="hidden sm:inline">Give Offer</span>
-                </button>
+              <form onSubmit={handleSend} className="flex flex-col gap-2 p-3 border-t border-ink-800 bg-ink-900/30">
+                {pendingImage && (
+                  <div className="flex items-start gap-2 rounded-lg border border-ink-700 bg-ink-800/50 p-2">
+                    <img src={pendingImage} alt="Preview" className="h-14 w-14 rounded-lg object-cover shrink-0" />
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <p className="text-xs text-ink-300 truncate">Image ready to send</p>
+                      <p className="text-[10px] text-ink-500 mt-0.5">Add a caption below or send as-is.</p>
+                    </div>
+                    <button type="button" onClick={clearPendingImage} className="shrink-0 rounded-md p-1 text-ink-500 transition-colors hover:bg-ink-700 hover:text-ink-200" aria-label="Remove image">
+                      <X size={14} />
+                    </button>
+                  </div>
                 )}
-                <input
-                  ref={draftRef}
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Type a message..."
-                  className="input flex-1"
-                />
-                <button type="submit" disabled={sending || !draft.trim()} className="btn-primary px-4" aria-label="Send message">
-                  {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={onFileChosen}
+                    className="hidden"
+                  />
+                  {iAmSeller && (
+                  <button
+                    type="button"
+                    onClick={openOfferModal}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm font-semibold text-primary-300 transition-colors hover:bg-primary-500/20"
+                    title="Give the buyer a discounted offer"
+                  >
+                    <HandCoins size={18} />
+                    <span className="hidden sm:inline">Give Offer</span>
+                  </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onPickImage}
+                    disabled={uploadingImage || sending}
+                    className="inline-flex items-center justify-center rounded-xl border border-ink-700 bg-ink-800/50 px-2.5 py-2 text-ink-300 transition-colors hover:border-primary-500/40 hover:text-primary-300 disabled:opacity-50"
+                    title="Attach image"
+                    aria-label="Attach image"
+                  >
+                    {uploadingImage ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
+                  </button>
+                  <input
+                    ref={draftRef}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder={pendingImage ? "Add a caption (optional)..." : "Type a message..."}
+                    className="input flex-1"
+                  />
+                  <button type="submit" disabled={sending || uploadingImage || (!draft.trim() && !pendingFile)} className="btn-primary px-4" aria-label="Send message">
+                    {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  </button>
+                </div>
               </form>
             </>
           )}
