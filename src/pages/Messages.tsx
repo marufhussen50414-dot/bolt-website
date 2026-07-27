@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
-  HandCoins, X, ShoppingBag, ImageIcon,
+  HandCoins, X, ShoppingBag, ImageIcon, Store, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -44,6 +44,13 @@ export default function Messages() {
   const [offerPrice, setOfferPrice] = useState("");
   const [sendingOffer, setSendingOffer] = useState(false);
   const [offerError, setOfferError] = useState("");
+
+  // Listing context card + browse-seller-listings state
+  const [contextListing, setContextListing] = useState<GameListing | null>(null);
+  const [contextDismissed, setContextDismissed] = useState(false);
+  const [showSellerListings, setShowSellerListings] = useState(false);
+  const [browseListings, setBrowseListings] = useState<SellerListing[]>([]);
+  const [loadingBrowse, setLoadingBrowse] = useState(false);
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
@@ -172,6 +179,8 @@ export default function Messages() {
           .single();
         if (created) convId = (created as { id: string }).id;
       }
+      setContextListing(listing);
+      setContextDismissed(false);
       params.delete("listing"); setParams(params, { replace: true });
       await loadConversations();
       if (convId) setActiveId(convId);
@@ -327,6 +336,29 @@ export default function Messages() {
   );
 
   const iAmSeller = !!active && !!user && active.seller_id === user.id;
+  const iAmBuyer = !!active && !!user && active.buyer_id === user.id;
+
+  async function loadSellerListings(sellerId: string, excludeId?: string) {
+    setLoadingBrowse(true);
+    const { data, error: err } = await supabase
+      .from("game_listings")
+      .select("id, title, price, images, game_name, status")
+      .eq("seller_id", sellerId)
+      .in("status", ["active", "approved"])
+      .neq("id", excludeId ?? "")
+      .order("created_at", { ascending: false })
+      .limit(8);
+    if (err) setError(err.message);
+    setBrowseListings((data as SellerListing[]) ?? []);
+    setLoadingBrowse(false);
+  }
+
+  function toggleSellerListings() {
+    if (!active) return;
+    const next = !showSellerListings;
+    setShowSellerListings(next);
+    if (next) loadSellerListings(iAmBuyer ? active.seller_id : active.buyer_id, active.listing_id ?? undefined);
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -445,6 +477,83 @@ export default function Messages() {
                   </div>
                 </Link>
               </div>
+
+              {/* Listing context card — shows which item the buyer is asking about */}
+              {(contextListing || active?.listing) && !contextDismissed && (
+                <div className="px-3 pt-3">
+                  <div className="flex items-start gap-2.5 rounded-xl border border-primary-500/25 bg-primary-500/5 p-2.5">
+                    <img
+                      src={(contextListing ?? (active?.listing as GameListing | undefined))?.images?.[0]
+                        ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=200"}
+                      alt=""
+                      className="h-10 w-10 rounded-lg object-cover shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-primary-300/80">Discussing</p>
+                      <p className="text-sm font-semibold text-white truncate leading-tight">
+                        {(contextListing ?? (active?.listing as GameListing | undefined))?.title ?? "Listing"}
+                      </p>
+                      <p className="text-xs text-primary-400 font-display font-bold">
+                        {formatBDT((contextListing ?? (active?.listing as GameListing | undefined))?.price ?? 0)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setContextDismissed(true)}
+                      className="shrink-0 rounded-md p-1 text-ink-500 transition-colors hover:bg-ink-800 hover:text-ink-200"
+                      aria-label="Dismiss"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Browse seller's other listings (buyer only) */}
+              {iAmBuyer && (
+                <div className="px-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={toggleSellerListings}
+                    className="flex w-full items-center gap-2 rounded-lg border border-ink-700 bg-ink-800/40 px-3 py-2 text-xs font-semibold text-ink-300 transition-colors hover:border-primary-500/40 hover:text-primary-300"
+                  >
+                    <Store size={14} />
+                    <span>Browse {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "seller"}'s other listings</span>
+                    {showSellerListings ? <ChevronUp size={14} className="ml-auto" /> : <ChevronDown size={14} className="ml-auto" />}
+                  </button>
+                  {showSellerListings && (
+                    <div className="mt-2 rounded-xl border border-ink-800 bg-ink-900/50 p-2 max-h-64 overflow-y-auto">
+                      {loadingBrowse ? (
+                        <div className="grid place-items-center py-6"><Loader2 className="animate-spin text-primary-500" size={18} /></div>
+                      ) : browseListings.length === 0 ? (
+                        <p className="py-4 text-center text-xs text-ink-500">No other active listings.</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {browseListings.map((li) => (
+                            <Link
+                              key={li.id}
+                              to={`/listing/${li.id}`}
+                              className="flex w-full items-center gap-2.5 rounded-lg border border-ink-700/60 bg-ink-800/40 p-2 text-left transition-all hover:border-primary-500/50 hover:bg-ink-800"
+                            >
+                              <img
+                                src={li.images?.[0]
+                                  ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=200"}
+                                alt=""
+                                className="h-10 w-10 rounded-md object-cover shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-white truncate leading-tight">{li.title}</p>
+                                <p className="text-[11px] text-ink-400 flex items-center gap-1"><Tag size={9} /> {li.game_name}</p>
+                              </div>
+                              <span className="font-display text-sm font-bold text-primary-400 shrink-0">{formatBDT(li.price)}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-2" style={{ backgroundColor: "#18181B" }}>
                 {loadingThread ? (
