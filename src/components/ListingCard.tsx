@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Eye, Star, ShieldCheck, TrendingUp, User } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Eye, Star, ShieldCheck, TrendingUp, User, MessageSquare } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import type { GameListing, ListingStatus, OrderStatus } from "../lib/types";
 import { statusClass, statusLabel, classNames, IconType } from "../lib/utils";
 
@@ -44,8 +45,11 @@ export function EmptyState({ icon: Icon, title, subtitle }: { icon: IconType; ti
 }
 
 export default function ListingCard({ listing }: { listing: GameListing }) {
+  const { user } = useAuth();
   const img = listing.images?.[0] ?? fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
   const GameIcon = gameIcons[listing.game_name] ?? Gamepad2;
+  const isOwn = !!user && user.id === listing.seller_id;
+  const canMessage = !!user && !isOwn && (listing.status === "active" || listing.status === "approved");
 
   return (
     <RouterLink to={`/listing/${listing.id}`} className="card-hover overflow-hidden block group">
@@ -60,6 +64,18 @@ export default function ListingCard({ listing }: { listing: GameListing }) {
         )}
         {listing.status === "sold" && (
           <div className="absolute inset-0 grid place-items-center bg-ink-950/60"><span className="badge border border-ink-600 bg-ink-900 text-ink-300">SOLD</span></div>
+        )}
+        {canMessage && (
+          <RouterLink
+            to={`/messages?listing=${listing.id}`}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-lg bg-ink-950/80 px-2.5 py-1.5 text-xs font-semibold text-white ring-1 ring-inset ring-white/15 opacity-0 backdrop-blur transition-all hover:bg-primary-500 hover:text-ink-950 group-hover:opacity-100"
+            title="Message seller about this listing"
+            aria-label="Message seller"
+          >
+            <MessageSquare size={13} />
+            <span>Message</span>
+          </RouterLink>
         )}
       </div>
       <div className="p-4">
