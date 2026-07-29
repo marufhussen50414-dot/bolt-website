@@ -39,6 +39,7 @@ export default function App() {
           <Route path="/messages" element={<Messages />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
       </main>
       <Footer />
