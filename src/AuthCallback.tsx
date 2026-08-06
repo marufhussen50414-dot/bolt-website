@@ -1,7 +1,6 @@
-// src/components/AuthCallback.jsx
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -26,8 +25,8 @@ export default function AuthCallback() {
 
           if (data.session) {
             console.log('Session established:', data.session.user)
-            // Redirect to dashboard or home
-            navigate('/dashboard')
+            // Redirect to profile
+            navigate('/profile')
           } else {
             navigate('/login?error=no_session')
           }
@@ -35,7 +34,7 @@ export default function AuthCallback() {
           // No token in URL, check existing session
           const { data } = await supabase.auth.getSession()
           if (data.session) {
-            navigate('/dashboard')
+            navigate('/profile')
           } else {
             navigate('/login')
           }
