@@ -30,8 +30,11 @@ export default function Header() {
   useEffect(() => {
     loadUnread();
     if (!user) return;
+
+    // যখনই মেসেজ রিড করা হবে, সাথে সাথে কাউন্ট রিলোড হবে
     const onRead = () => loadUnread();
     window.addEventListener("messages-read", onRead);
+
     const channel = supabase
       .channel("nav-unread")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
@@ -40,9 +43,16 @@ export default function Header() {
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => loadUnread())
       .subscribe();
+
+    // ৫ সেকেন্ডের একটি ফলব্যাক পুলিং রাখা হলো যাতে কোনো কারণে রিয়েলটাইম মিস হলে সাথে সাথে সিঙ্ক হয়ে যায়
+    const interval = setInterval(() => {
+      loadUnread();
+    }, 5000);
+
     return () => {
       supabase.removeChannel(channel);
       window.removeEventListener("messages-read", onRead);
+      clearInterval(interval);
     };
   }, [user]);
 
@@ -78,7 +88,16 @@ export default function Header() {
             <nav className="flex items-center gap-1 overflow-x-auto scrollbar-thin">
               <NavLink to="/" end className={linkClass}><span className="flex items-center gap-1.5"><HomeIcon size={15} /> Home</span></NavLink>
               <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
-              <NavLink to="/messages" className={linkClass}><span className="relative flex items-center gap-1.5"><MessageSquare size={15} /> Message{unreadCount > 0 && <span className="absolute -top-2 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-error-500 px-1 text-[9px] font-bold text-white ring-2 ring-ink-900 animate-pulse">{unreadCount > 9 ? "9+" : unreadCount}</span>}</span></NavLink>
+              <NavLink to="/messages" className={linkClass}>
+                <span className="relative flex items-center gap-1.5">
+                  <MessageSquare size={15} /> Message
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-error-500 px-1 text-[9px] font-bold text-white ring-2 ring-ink-900 animate-pulse">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </span>
+              </NavLink>
               <NavLink to="/faq" className={linkClass}><span className="flex items-center gap-1.5"><HelpCircle size={15} /> FAQ</span></NavLink>
               <NavLink to="/support" className={linkClass}><span className="flex items-center gap-1.5"><LifeBuoy size={15} /> Support</span></NavLink>
               {user ? (
