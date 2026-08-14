@@ -18,7 +18,7 @@ type ConversationRow = Conversation & {
 
 type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
 
-// Authentic WhatsApp Style Double Checkmark Icon
+// Mathematically Perfect WhatsApp Double Check Icon (No 'W' shape)
 function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg
@@ -30,10 +30,10 @@ function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* 1st Full Checkmark */}
-      <path d="M2 12l5 5L18 6" />
-      {/* 2nd Checkmark (Starts behind the 1st check's stem to avoid 'W' shape) */}
-      <path d="M7 12l5 5L22 6" />
+      {/* 1st Checkmark */}
+      <path d="M1.5 12.5L6 17L16.5 6.5" />
+      {/* 2nd Checkmark (Starts exactly on 1st check's line) */}
+      <path d="M8 15L11 18L21.5 7.5" />
     </svg>
   );
 }
