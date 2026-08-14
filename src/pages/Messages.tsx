@@ -18,6 +18,16 @@ type ConversationRow = Conversation & {
 
 type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
 
+function formatMessageTime(dateStr: string) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const [params, setParams] = useSearchParams();
@@ -611,7 +621,7 @@ export default function Messages() {
               {/* Chat Thread with WhatsApp Background Doodle */}
               <div
                 ref={threadRef}
-                className="flex-1 overflow-y-auto p-4 space-y-3"
+                className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col"
                 style={{ background: whatsappDoodleBg }}
               >
                 {loadingThread ? (
@@ -630,12 +640,12 @@ export default function Messages() {
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div
                           className={classNames(
-                            "max-w-[82%] sm:max-w-[70%] rounded-lg px-2.5 py-1.5 text-sm shadow-md relative group",
+                            "max-w-[80%] sm:max-w-[65%] rounded-2xl px-3 py-1.5 text-sm shadow relative",
                             mine ? "bg-[#005c4b] text-white rounded-tr-none" : "bg-[#202c33] text-gray-100 rounded-tl-none"
                           )}
                         >
                           {m.image_url && (
-                            <button type="button" onClick={() => setLightboxSrc(m.image_url!)} className="block mb-1 overflow-hidden rounded">
+                            <button type="button" onClick={() => setLightboxSrc(m.image_url!)} className="block mb-1 overflow-hidden rounded-lg">
                               <img
                                 src={m.image_url}
                                 alt="Chat image"
@@ -644,12 +654,12 @@ export default function Messages() {
                             </button>
                           )}
                           {m.body && (
-                            <p className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed pr-12">
+                            <span className="whitespace-pre-wrap break-words text-[13.5px] leading-snug mr-1">
                               {m.body}
-                            </p>
+                            </span>
                           )}
-                          <div className="flex items-center justify-end gap-1 -mt-1 ml-auto text-[10px] text-gray-300/70 select-none float-right">
-                            <span>{timeAgo(m.created_at)}</span>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-gray-300/70 select-none float-right mt-1 ml-2 align-bottom">
+                            <span>{formatMessageTime(m.created_at)}</span>
                             {mine && (
                               m.read_at ? (
                                 <CheckCheck size={14} className="text-sky-400 inline" />
@@ -657,7 +667,7 @@ export default function Messages() {
                                 <Check size={14} className="text-gray-400 inline" />
                               )
                             )}
-                          </div>
+                          </span>
                         </div>
                       </div>
                     );
@@ -677,14 +687,16 @@ export default function Messages() {
                 <div className="flex items-center gap-2">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChosen} className="hidden" />
                   
+                  {/* Restored Give Offer Button with Text */}
                   {iAmSeller && (
                     <button
                       type="button"
                       onClick={openOfferModal}
-                      className="p-2 text-emerald-400 hover:bg-[#2a3942] rounded-full transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg text-xs font-semibold transition-colors shrink-0 border border-emerald-500/30"
                       title="Give Offer"
                     >
-                      <HandCoins size={20} />
+                      <HandCoins size={16} />
+                      <span>Give Offer</span>
                     </button>
                   )}
 
@@ -802,7 +814,7 @@ function OfferBubble({ mine, message, userId }: { mine: boolean; message: Messag
       <div className="w-[280px] rounded-lg overflow-hidden border border-emerald-500/30 bg-[#1f2c34] shadow-md">
         <div className="bg-emerald-600/20 px-3 py-1 text-[11px] font-bold text-emerald-400 flex items-center justify-between">
           <span>SPECIAL OFFER</span>
-          <span className="text-[10px] text-gray-400 font-normal">{timeAgo(message.created_at)}</span>
+          <span className="text-[10px] text-gray-400 font-normal">{formatMessageTime(message.created_at)}</span>
         </div>
         <div className="p-3 flex gap-2.5">
           <img src={listing?.images?.[0]} alt="" className="h-12 w-12 rounded object-cover" />
