@@ -113,7 +113,6 @@ export default function Messages() {
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
-  // Load conversation list without flashing UI spinner on updates
   async function loadConversations(silent = false) {
     if (!user) return;
     if (!silent) setLoadingList(true);
@@ -135,7 +134,6 @@ export default function Messages() {
 
   async function loadUnreadCounts() {
     if (!user) return;
-    
     const activeChat = localStorage.getItem("activeChatId") || activeIdRef.current;
 
     let query = supabase
@@ -192,8 +190,7 @@ export default function Messages() {
       prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
     );
 
-    window.dispatchEvent(new CustomEvent("messages-read"));
-
+    // Database update to clear unread status instantly
     await supabase
       .from("messages")
       .update({ read_at: nowIso })
@@ -201,6 +198,7 @@ export default function Messages() {
       .neq("sender_id", user.id)
       .is("read_at", null);
 
+    window.dispatchEvent(new CustomEvent("messages-read"));
     loadUnreadCounts();
   }
 
@@ -290,7 +288,6 @@ export default function Messages() {
             const newMsg = payload.new as Message;
             const currentActiveChat = localStorage.getItem("activeChatId") || activeIdRef.current;
 
-            // যদি ব্যবহারকারী ইতিমধ্যে এই চ্যাটের ভেতরেই থাকেন, তবে মেসেজ আসার সাথে সাথেই অটোমেটিক read করে ফেলা হবে
             if (newMsg.conversation_id === currentActiveChat) {
               if (newMsg.sender_id !== user.id) {
                 const nowIso = new Date().toISOString();
@@ -349,6 +346,7 @@ export default function Messages() {
       const currentActive = localStorage.getItem("activeChatId") || activeIdRef.current;
       if (currentActive) {
         fetchThreadSilent(currentActive);
+        markRead(currentActive); // Ensure unread messages are regularly marked read when active
       }
       loadConversations(true);
       loadUnreadCounts();
