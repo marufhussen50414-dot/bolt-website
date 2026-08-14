@@ -236,41 +236,82 @@ export default function Messages() {
     })();
   }, [listingIdParam, user, params, setParams]);
 
+  // REALTIME FIX: Full live messages & read receipt update
   useEffect(() => {
     if (!user) return;
+
     const channel = supabase
-      .channel("messages-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-        const msg = payload.new as Message;
-        setConversations((prev) => {
-          const idx = prev.findIndex((c) => c.id === msg.conversation_id);
-          if (idx < 0) return prev;
-          const next = [...prev];
-          next[idx] = { ...next[idx], last_message_at: msg.created_at };
-          next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-          return next;
-        });
-        if (msg.conversation_id === activeId) {
-          (async () => {
-            const withOffer = await attachOffer(msg);
-            setMessages((m) => [...m, withOffer]);
-            if (msg.sender_id !== user.id) markRead(msg.conversation_id).then(loadConversations);
-          })();
-        } else if (msg.sender_id !== user.id) {
-          setUnreadMap((prev) => ({ ...prev, [msg.conversation_id]: (prev[msg.conversation_id] ?? 0) + 1 }));
+      .channel(`chat-realtime-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        async (payload) => {
+          const newMsg = payload.new as Message;
+
+          // ১. Conversation List আপডেট করা
+          setConversations((prev) => {
+            const idx = prev.findIndex((c) => c.id === newMsg.conversation_id);
+            if (idx < 0) return prev;
+            const next = [...prev];
+            next[idx] = { ...next[idx], last_message_at: newMsg.created_at };
+            next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+            return next;
+          });
+
+          // ২. যদি অ্যাক্টিভ চ্যাটে মেসেজ আসে
+          if (newMsg.conversation_id === activeId) {
+            const withOffer = await attachOffer(newMsg);
+            setMessages((m) => {
+              if (m.some((item) => item.id === newMsg.id)) return m;
+              return [...m, withOffer];
+            });
+
+            // অন্যজন থেকে মেসেজ আসলে সাথে সাথে Auto Read Mark করা
+            if (newMsg.sender_id !== user.id) {
+              await supabase
+                .from("messages")
+                .update({ read_at: new Date().toISOString() })
+                .eq("id", newMsg.id);
+            }
+          } else if (newMsg.sender_id !== user.id) {
+            // অন্য চ্যাটের অনপঠিত মেসেজ সংখ্যা বাড়ানো
+            setUnreadMap((prev) => ({
+              ...prev,
+              [newMsg.conversation_id]: (prev[newMsg.conversation_id] ?? 0) + 1,
+            }));
+          }
         }
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => loadUnreadCounts())
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "offers" }, (payload) => {
-        const updated = payload.new as Offer;
-        setMessages((prev) => prev.map((m) =>
-          m.offer_id === updated.id && m.offer
-            ? { ...m, offer: { ...m.offer, ...updated, listing: m.offer.listing } }
-            : m
-        ));
-      })
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          const updatedMsg = payload.new as Message;
+          // মেসেজ সিন (Read Status / Double Check) সাথে সাথে আপডেট
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m))
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "offers" },
+        (payload) => {
+          const updated = payload.new as Offer;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.offer_id === updated.id && m.offer
+                ? { ...m, offer: { ...m.offer, ...updated, listing: m.offer.listing } }
+                : m
+            )
+          );
+        }
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, activeId]);
 
   function onPickImage() {
@@ -329,7 +370,10 @@ export default function Messages() {
     if (err) { setError(err.message); return; }
     setDraft("");
     clearPendingImage();
-    setMessages((m) => [...m, data as Message]);
+    setMessages((m) => {
+      if (m.some((item) => item.id === (data as Message).id)) return m;
+      return [...m, data as Message];
+    });
     loadConversations();
   }
 
@@ -393,7 +437,10 @@ export default function Messages() {
       .single();
     setSendingOffer(false);
     if (msgErr) { setOfferError(msgErr.message); return; }
-    setMessages((m) => [...m, msgRow as Message]);
+    setMessages((m) => {
+      if (m.some((item) => item.id === (msgRow as Message).id)) return m;
+      return [...m, msgRow as Message];
+    });
     loadConversations();
     closeOfferModal();
   }
