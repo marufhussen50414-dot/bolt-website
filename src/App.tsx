@@ -1,5 +1,5 @@
-import AuthCallback from './AuthCallback'
-import { Routes, Route } from "react-router-dom";
+import AuthCallback from './AuthCallback';
+import { Routes, Route, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -19,6 +19,9 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 
 export default function App() {
+  const location = useLocation();
+  const isMessagesPage = location.pathname.startsWith('/messages');
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -42,7 +45,9 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
       </main>
-      <Footer />
+      
+      {/* মেসেজ পেজে থাকলে ফুটার দেখাবে না */}
+      {!isMessagesPage && <Footer />}
     </div>
   );
 }
