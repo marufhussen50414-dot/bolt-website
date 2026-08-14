@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
   HandCoins, X, ShoppingBag, ImageIcon, Store, ChevronDown, ChevronUp,
-  ImagePlus,
+  ImagePlus, Check, CheckCheck
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -165,9 +165,6 @@ export default function Messages() {
     if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [messages, activeId]);
 
-  // Arriving via ?listing=: find or create ONE thread for this buyer+seller pair,
-  // then open it directly with the composer focused. The listing is kept as
-  // optional context on the conversation, never as a grouping key.
   useEffect(() => {
     if (!listingIdParam || !user) return;
     setStarting(true);
@@ -184,7 +181,6 @@ export default function Messages() {
         setStarting(false);
         return;
       }
-      // One thread per (buyer, seller) pair regardless of listing.
       const { data: existing } = await supabase
         .from("conversations")
         .select("id")
@@ -210,7 +206,6 @@ export default function Messages() {
     })();
   }, [listingIdParam, user, params, setParams]);
 
-  // Realtime: live updates for conversations, thread, unread counts, and offers.
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -307,8 +302,6 @@ export default function Messages() {
     setMessages((m) => [...m, data as Message]);
     loadConversations();
   }
-
-  // ===== Make an Offer flow =====
 
   async function openOfferModal() {
     if (!active || !user) return;
@@ -423,40 +416,43 @@ export default function Messages() {
     if (next) loadSellerListings(iAmBuyer ? active.seller_id : active.buyer_id, active.listing_id ?? undefined);
   }
 
+  // WhatsApp Dark Doodle SVG Background
+  const whatsappDoodleBg = `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 20 A 10 10 0 0 1 35 20 A 10 10 0 0 1 15 20 Z' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Cpath d='M65 70 L 85 70 L 75 90 Z' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Cpath d='M70 20 Q 80 10 90 20 T 100 20' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Cpath d='M20 75 Q 30 65 40 75 T 50 75' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3C/svg%3E"), #0b141a`;
+
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary-500/15 text-primary-400"><MessageSquare size={22} /></div>
+    <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-400"><MessageSquare size={22} /></div>
         <div>
           <h1 className="font-display text-2xl font-extrabold text-white">Messages</h1>
-          <p className="text-sm text-ink-400">One unified thread per buyer and seller.</p>
+          <p className="text-sm text-ink-400">WhatsApp-style unified chat</p>
         </div>
       </div>
 
       {error && <div className="card p-3 mb-4 text-sm text-error-400 border border-error-500/20">{error}</div>}
 
-      <div className="card overflow-hidden h-[640px] flex">
+      <div className="card overflow-hidden h-[calc(100vh-180px)] min-h-[550px] flex border border-gray-800 rounded-xl shadow-2xl bg-[#111b21]">
         {/* Sidebar */}
-        <div className={classNames("w-full md:w-[320px] flex flex-col border-r border-ink-800", activeId ? "hidden md:flex" : "flex")}>
-          <div className="p-3 border-b border-ink-800">
+        <div className={classNames("w-full md:w-[350px] lg:w-[380px] flex flex-col border-r border-[#222d34] bg-[#111b21]", activeId ? "hidden md:flex" : "flex")}>
+          <div className="p-3 bg-[#111b21] border-b border-[#222d34]">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-500" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search conversations..."
-                className="input pl-9 py-2 text-sm"
+                placeholder="Search or start new chat"
+                className="w-full bg-[#202c33] text-gray-200 placeholder-gray-400 text-sm rounded-lg pl-9 pr-4 py-2 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
               />
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto divide-y divide-[#222d34]/50">
             {loadingList ? (
-              <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
+              <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-emerald-500" size={22} /></div>
             ) : filtered.length === 0 ? (
               <div className="p-6 text-center">
-                <MessageSquare size={28} className="mx-auto text-ink-600" />
-                <p className="text-sm text-ink-400 mt-2">{conversations.length === 0 ? "No conversations yet." : "No matches found."}</p>
-                {conversations.length === 0 && <Link to="/browse" className="text-xs text-primary-400 hover:text-primary-300 mt-2 inline-block">Browse listings to start a chat →</Link>}
+                <MessageSquare size={28} className="mx-auto text-gray-600" />
+                <p className="text-sm text-gray-400 mt-2">{conversations.length === 0 ? "No chats available." : "No chats found."}</p>
+                {conversations.length === 0 && <Link to="/browse" className="text-xs text-emerald-400 hover:text-emerald-300 mt-2 inline-block">Browse listings to start a chat →</Link>}
               </div>
             ) : (
               filtered.map((c) => {
@@ -468,30 +464,30 @@ export default function Messages() {
                     key={c.id}
                     onClick={() => setActiveId(c.id)}
                     className={classNames(
-                      "w-full text-left flex items-center gap-3 px-3 py-3 transition-colors border-l-2",
-                      isActive ? "bg-primary-500/10 border-primary-500" : "border-transparent hover:bg-ink-800"
+                      "w-full text-left flex items-center gap-3 px-3 py-3 transition-colors",
+                      isActive ? "bg-[#2a3942]" : "hover:bg-[#202c33]"
                     )}
                   >
                     <div className="relative shrink-0">
                       {other?.avatar_url ? (
-                        <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                        <img src={other.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
                       ) : (
-                        <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-sm font-bold">
+                        <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-800 text-white text-base font-bold">
                           {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
                         </div>
                       )}
-                      {unread > 0 && <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary-500 px-1 text-[10px] font-bold text-white ring-2 ring-ink-900">{unread}</span>}
+                      {unread > 0 && <span className="absolute top-0 right-0 grid h-5 min-w-5 place-items-center rounded-full bg-emerald-500 px-1 text-[11px] font-bold text-black">{unread}</span>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className={classNames("text-sm truncate flex items-center gap-1", unread > 0 ? "font-bold text-white" : "font-semibold text-ink-200")}>
+                        <p className={classNames("text-sm truncate flex items-center gap-1", unread > 0 ? "font-bold text-white" : "font-medium text-gray-200")}>
                           {other?.full_name ?? other?.username ?? "User"}
-                          {other?.is_verified && <ShieldCheck size={12} className="text-success-400 shrink-0" />}
+                          {other?.is_verified && <ShieldCheck size={13} className="text-emerald-400 shrink-0" />}
                         </p>
-                        <span className="text-[11px] text-ink-500 shrink-0">{timeAgo(c.last_message_at)}</span>
+                        <span className={classNames("text-[11px] shrink-0", unread > 0 ? "text-emerald-400 font-semibold" : "text-gray-400")}>{timeAgo(c.last_message_at)}</span>
                       </div>
                       {c.listing?.title && (
-                        <p className="text-xs text-ink-400 truncate flex items-center gap-1 mt-0.5"><Tag size={10} className="shrink-0" /> {c.listing.title}</p>
+                        <p className="text-xs text-gray-400 truncate flex items-center gap-1 mt-1"><Tag size={10} className="shrink-0 text-gray-500" /> {c.listing.title}</p>
                       )}
                     </div>
                   </button>
@@ -501,114 +497,108 @@ export default function Messages() {
           </div>
         </div>
 
-        {/* Chat panel */}
-        <div className={classNames("flex-1 flex flex-col", activeId ? "flex" : "hidden md:flex")}>
+        {/* Chat Panel */}
+        <div className={classNames("flex-1 flex flex-col bg-[#0b141a]", activeId ? "flex" : "hidden md:flex")}>
           {starting ? (
-            <div className="flex-1 grid place-items-center"><Loader2 className="animate-spin text-primary-500" size={26} /></div>
+            <div className="flex-1 grid place-items-center"><Loader2 className="animate-spin text-emerald-500" size={26} /></div>
           ) : !active ? (
-            <div className="flex-1 grid place-items-center text-center p-6">
+            <div className="flex-1 grid place-items-center text-center p-6 bg-[#111b21]">
               <div>
-                <MessageSquare size={40} className="mx-auto text-ink-600" />
-                <p className="text-ink-400 mt-3">Select a conversation to view messages.</p>
-                <Link to="/browse" className="btn-secondary mt-4 inline-flex">Browse listings</Link>
+                <MessageSquare size={56} className="mx-auto text-gray-600 mb-2 opacity-40" />
+                <h3 className="text-lg font-medium text-gray-300">GameHaatBD Web Chat</h3>
+                <p className="text-xs text-gray-500 mt-1">Select a conversation to start messaging in real-time.</p>
               </div>
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3 p-4 border-b border-ink-800 bg-ink-900/30">
-                <button onClick={() => setActiveId(null)} className="md:hidden btn-ghost p-1"><ArrowLeft size={18} /></button>
-                <Link
-                  to={`/profile/${otherParty(active)?.id ?? ""}`}
-                  className="flex items-center gap-3 min-w-0 rounded-lg p-1 -m-1 transition-colors hover:bg-ink-800/60"
-                >
-                  {(() => {
-                    const other = otherParty(active);
-                    return other?.avatar_url ? (
-                      <img src={other.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-ink-700" />
-                    ) : (
-                      <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-sm font-bold">
-                        {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
-                      </div>
-                    );
-                  })()}
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-white truncate flex items-center gap-1 group-hover:text-primary-300">
-                      {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
-                      {otherParty(active)?.is_verified && <ShieldCheck size={12} className="text-success-400" />}
-                    </p>
-                    <p className="text-[11px] text-ink-500 mt-0.5">Direct conversation</p>
-                  </div>
-                </Link>
+              {/* WhatsApp Header */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-[#202c33] border-b border-[#222d34] z-10">
+                <div className="flex items-center gap-3 min-w-0">
+                  <button onClick={() => setActiveId(null)} className="md:hidden text-gray-300 p-1 hover:bg-[#2a3942] rounded-full"><ArrowLeft size={20} /></button>
+                  <Link
+                    to={`/profile/${otherParty(active)?.id ?? ""}`}
+                    className="flex items-center gap-3 min-w-0 group"
+                  >
+                    {(() => {
+                      const other = otherParty(active);
+                      return other?.avatar_url ? (
+                        <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-800 text-white text-sm font-bold">
+                          {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
+                        </div>
+                      );
+                    })()}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-100 truncate flex items-center gap-1 group-hover:text-emerald-400">
+                        {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
+                        {otherParty(active)?.is_verified && <ShieldCheck size={13} className="text-emerald-400" />}
+                      </p>
+                      <p className="text-[11px] text-gray-400">online</p>
+                    </div>
+                  </Link>
+                </div>
               </div>
 
-              {/* Listing context card — shows which item the buyer is asking about */}
+              {/* Listing context card */}
               {(contextListing || active?.listing) && !contextDismissed && (
-                <div className="px-3 pt-3">
-                  <div className="flex items-start gap-2.5 rounded-xl border border-primary-500/25 bg-primary-500/5 p-2.5">
+                <div className="px-4 pt-2 z-10">
+                  <div className="flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-[#1f2c34] p-2">
                     <img
                       src={(contextListing ?? (active?.listing as GameListing | undefined))?.images?.[0]
                         ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=200"}
                       alt=""
-                      className="h-10 w-10 rounded-lg object-cover shrink-0"
+                      className="h-9 w-9 rounded object-cover shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-primary-300/80">Discussing</p>
-                      <p className="text-sm font-semibold text-white truncate leading-tight">
+                      <p className="text-[10px] font-semibold uppercase text-emerald-400 tracking-wider">Discussing Item</p>
+                      <p className="text-xs font-medium text-gray-200 truncate leading-tight">
                         {(contextListing ?? (active?.listing as GameListing | undefined))?.title ?? "Listing"}
                       </p>
-                      <p className="text-xs text-primary-400 font-display font-bold">
-                        {formatBDT((contextListing ?? (active?.listing as GameListing | undefined))?.price ?? 0)}
-                      </p>
                     </div>
+                    <span className="text-xs font-bold text-emerald-400 mr-1">
+                      {formatBDT((contextListing ?? (active?.listing as GameListing | undefined))?.price ?? 0)}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setContextDismissed(true)}
-                      className="shrink-0 rounded-md p-1 text-ink-500 transition-colors hover:bg-ink-800 hover:text-ink-200"
-                      aria-label="Dismiss"
+                      className="text-gray-400 hover:text-gray-200 p-1"
                     >
-                      <X size={15} />
+                      <X size={14} />
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Browse seller's other listings (buyer only) */}
+              {/* Browse seller's other listings */}
               {iAmBuyer && (
-                <div className="px-3 pt-2">
+                <div className="px-4 pt-2 z-10">
                   <button
                     type="button"
                     onClick={toggleSellerListings}
-                    className="flex w-full items-center gap-2 rounded-lg border border-ink-700 bg-ink-800/40 px-3 py-2 text-xs font-semibold text-ink-300 transition-colors hover:border-primary-500/40 hover:text-primary-300"
+                    className="flex w-full items-center gap-2 rounded-lg bg-[#1f2c34] px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a3942]"
                   >
-                    <Store size={14} />
+                    <Store size={13} className="text-emerald-400" />
                     <span>Browse {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "seller"}'s other listings</span>
-                    {showSellerListings ? <ChevronUp size={14} className="ml-auto" /> : <ChevronDown size={14} className="ml-auto" />}
+                    {showSellerListings ? <ChevronUp size={13} className="ml-auto" /> : <ChevronDown size={13} className="ml-auto" />}
                   </button>
                   {showSellerListings && (
-                    <div className="mt-2 rounded-xl border border-ink-800 bg-ink-900/50 p-2 max-h-64 overflow-y-auto">
+                    <div className="mt-1.5 rounded-lg border border-[#222d34] bg-[#111b21] p-2 max-h-48 overflow-y-auto">
                       {loadingBrowse ? (
-                        <div className="grid place-items-center py-6"><Loader2 className="animate-spin text-primary-500" size={18} /></div>
+                        <div className="grid place-items-center py-4"><Loader2 className="animate-spin text-emerald-500" size={16} /></div>
                       ) : browseListings.length === 0 ? (
-                        <p className="py-4 text-center text-xs text-ink-500">No other active listings.</p>
+                        <p className="py-2 text-center text-xs text-gray-500">No other active listings.</p>
                       ) : (
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           {browseListings.map((li) => (
                             <Link
                               key={li.id}
                               to={`/listing/${li.id}`}
-                              className="flex w-full items-center gap-2.5 rounded-lg border border-ink-700/60 bg-ink-800/40 p-2 text-left transition-all hover:border-primary-500/50 hover:bg-ink-800"
+                              className="flex items-center gap-2 rounded bg-[#202c33] p-1.5 hover:bg-[#2a3942]"
                             >
-                              <img
-                                src={li.images?.[0]
-                                  ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=200"}
-                                alt=""
-                                className="h-10 w-10 rounded-md object-cover shrink-0"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-white truncate leading-tight">{li.title}</p>
-                                <p className="text-[11px] text-ink-400 flex items-center gap-1"><Tag size={9} /> {li.game_name}</p>
-                              </div>
-                              <span className="font-display text-sm font-bold text-primary-400 shrink-0">{formatBDT(li.price)}</span>
+                              <img src={li.images?.[0]} alt="" className="h-8 w-8 rounded object-cover" />
+                              <p className="text-xs text-gray-200 truncate flex-1">{li.title}</p>
+                              <span className="text-xs font-bold text-emerald-400">{formatBDT(li.price)}</span>
                             </Link>
                           ))}
                         </div>
@@ -618,62 +608,56 @@ export default function Messages() {
                 </div>
               )}
 
-              <div ref={threadRef} className="flex-1 overflow-y-auto p-4 space-y-2" style={{ backgroundColor: "#18181B" }}>
+              {/* Chat Thread with WhatsApp Background Doodle */}
+              <div
+                ref={threadRef}
+                className="flex-1 overflow-y-auto p-4 space-y-3"
+                style={{ background: whatsappDoodleBg }}
+              >
                 {loadingThread ? (
-                  <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
+                  <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-emerald-500" size={22} /></div>
                 ) : messages.length === 0 ? (
                   <div className="grid place-items-center py-10 text-center">
-                    <MessageSquare size={24} className="text-ink-600" />
-                    <p className="text-sm text-ink-400 mt-2">No messages yet. Say hello!</p>
+                    <p className="text-xs text-[#8696a0] bg-[#182229] px-3 py-1.5 rounded-lg shadow">Messages are end-to-end encrypted on GameHaatBD.</p>
                   </div>
                 ) : (
                   messages.map((m) => {
                     const mine = m.sender_id === user.id;
-                    // Offer card
                     if (m.offer_id && m.offer) {
-                      return (
-                        <OfferBubble
-                          key={m.id}
-                          mine={mine}
-                          message={m}
-                          userId={user.id}
-                        />
-                      );
+                      return <OfferBubble key={m.id} mine={mine} message={m} userId={user.id} />;
                     }
                     return (
-                      <div key={m.id} className={classNames("flex flex-col gap-0.5", mine ? "items-end" : "items-start")}>
-                        <div className={classNames(
-                          "max-w-[80%] rounded-2xl shadow-sm overflow-hidden",
-                          mine ? "rounded-br-md" : "rounded-bl-md"
-        )} style={mine ? { backgroundColor: "#164E63" } : { backgroundColor: "#333333" }}>
+                      <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
+                        <div
+                          className={classNames(
+                            "max-w-[82%] sm:max-w-[70%] rounded-lg px-2.5 py-1.5 text-sm shadow-md relative group",
+                            mine ? "bg-[#005c4b] text-white rounded-tr-none" : "bg-[#202c33] text-gray-100 rounded-tl-none"
+                          )}
+                        >
                           {m.image_url && (
-                            <button type="button" onClick={() => setLightboxSrc(m.image_url!)} className="block">
+                            <button type="button" onClick={() => setLightboxSrc(m.image_url!)} className="block mb-1 overflow-hidden rounded">
                               <img
                                 src={m.image_url}
                                 alt="Chat image"
-                                className="w-full max-w-[260px] max-h-[280px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                className="w-full max-w-[280px] max-h-[300px] object-cover hover:opacity-90 transition-opacity"
                               />
                             </button>
                           )}
                           {m.body && (
-                            <p className={classNames("whitespace-pre-wrap break-words px-3 py-1.5 text-[13px] leading-snug", mine ? "text-white" : "text-ink-100")}>
-                              <span>{m.body}</span>
-                              <span className={classNames(
-                                "inline-block ml-1.5 translate-y-[1px] text-[10px] leading-none whitespace-nowrap",
-                                mine ? "text-white/60" : "text-ink-500"
-                              )}>
-                                {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
-                              </span>
+                            <p className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed pr-12">
+                              {m.body}
                             </p>
                           )}
-                          {m.image_url && !m.body && (
-                            <span className={classNames(
-                              "block px-2 pb-1.5 text-[10px] leading-none whitespace-nowrap",
-                              mine ? "text-white/60 text-right" : "text-ink-500"
-                            )}>
-                              {timeAgo(m.created_at)}{mine && m.read_at ? " · read" : ""}
-                            </span>
-                          )}
+                          <div className="flex items-center justify-end gap-1 -mt-1 ml-auto text-[10px] text-gray-300/70 select-none float-right">
+                            <span>{timeAgo(m.created_at)}</span>
+                            {mine && (
+                              m.read_at ? (
+                                <CheckCheck size={14} className="text-sky-400 inline" />
+                              ) : (
+                                <Check size={14} className="text-gray-400 inline" />
+                              )
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -681,57 +665,53 @@ export default function Messages() {
                 )}
               </div>
 
-              <form onSubmit={handleSend} className="flex flex-col gap-2 p-3 border-t border-ink-800 bg-ink-900/30">
+              {/* Input Area */}
+              <form onSubmit={handleSend} className="p-2.5 bg-[#202c33] flex flex-col gap-2 border-t border-[#222d34]">
                 {pendingImage && (
-                  <div className="flex items-start gap-2 rounded-lg border border-ink-700 bg-ink-800/50 p-2">
-                    <img src={pendingImage} alt="Preview" className="h-14 w-14 rounded-lg object-cover shrink-0" />
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <p className="text-xs text-ink-300 truncate">Image ready to send</p>
-                      <p className="text-[10px] text-ink-500 mt-0.5">Add a caption below or send as-is.</p>
-                    </div>
-                    <button type="button" onClick={clearPendingImage} className="shrink-0 rounded-md p-1 text-ink-500 transition-colors hover:bg-ink-700 hover:text-ink-200" aria-label="Remove image">
-                      <X size={14} />
-                    </button>
+                  <div className="flex items-center gap-2 rounded-lg bg-[#111b21] p-2">
+                    <img src={pendingImage} alt="Preview" className="h-12 w-12 rounded object-cover shrink-0" />
+                    <p className="text-xs text-gray-300 flex-1 truncate">Image selected</p>
+                    <button type="button" onClick={clearPendingImage} className="text-gray-400 hover:text-white"><X size={16} /></button>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={onFileChosen}
-                    className="hidden"
-                  />
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChosen} className="hidden" />
+                  
                   {iAmSeller && (
-                  <button
-                    type="button"
-                    onClick={openOfferModal}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-primary-500/40 bg-primary-500/10 px-3 py-2 text-sm font-semibold text-primary-300 transition-colors hover:bg-primary-500/20"
-                    title="Give the buyer a discounted offer"
-                  >
-                    <HandCoins size={18} />
-                    <span className="hidden sm:inline">Give Offer</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={openOfferModal}
+                      className="p-2 text-emerald-400 hover:bg-[#2a3942] rounded-full transition-colors"
+                      title="Give Offer"
+                    >
+                      <HandCoins size={20} />
+                    </button>
                   )}
+
                   <button
                     type="button"
                     onClick={onPickImage}
                     disabled={uploadingImage || sending}
-                    className="inline-flex items-center justify-center rounded-xl border border-ink-700 bg-ink-800/50 px-2.5 py-2 text-ink-300 transition-colors hover:border-primary-500/40 hover:text-primary-300 disabled:opacity-50"
-                    title="Attach image"
-                    aria-label="Attach image"
+                    className="p-2 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-full transition-colors"
+                    title="Attach Image"
                   >
-                    {uploadingImage ? <Loader2 size={18} className="animate-spin" /> : <ImagePlus size={18} />}
+                    {uploadingImage ? <Loader2 size={20} className="animate-spin" /> : <ImagePlus size={20} />}
                   </button>
+
                   <input
                     ref={draftRef}
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    placeholder={pendingImage ? "Add a caption (optional)..." : "Type a message..."}
-                    className="input flex-1"
+                    placeholder="Type a message"
+                    className="flex-1 bg-[#2a3942] text-gray-100 placeholder-gray-400 text-sm rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-emerald-500 border-none"
                   />
-                  <button type="submit" disabled={sending || uploadingImage || (!draft.trim() && !pendingFile)} className="btn-primary px-4" aria-label="Send message">
-                    {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+
+                  <button
+                    type="submit"
+                    disabled={sending || uploadingImage || (!draft.trim() && !pendingFile)}
+                    className="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-black rounded-full transition-colors disabled:opacity-40"
+                  >
+                    {sending ? <Loader2 size={18} className="animate-spin text-white" /> : <Send size={18} className="text-white fill-white" />}
                   </button>
                 </div>
               </form>
@@ -740,112 +720,60 @@ export default function Messages() {
         </div>
       </div>
 
-      {!profile?.full_name && (
-        <p className="text-xs text-ink-500 mt-4 text-center">Tip: complete your <Link to="/profile" className="text-primary-400">profile</Link> so sellers recognize you in chats.</p>
-      )}
-
-      {/* ===== Make an Offer Modal ===== */}
+      {/* Offer Modal */}
       {showOfferModal && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={closeOfferModal}>
-          <div
-            className="card w-full max-w-md max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-ink-800 sticky top-0 bg-ink-900/95 backdrop-blur z-10">
-              <div className="flex items-center gap-2">
-                {selectedListing && (
-                  <button type="button" onClick={() => setSelectedListing(null)} className="btn-ghost p-1 -ml-1"><ArrowLeft size={16} /></button>
-                )}
-                <div>
-                  <h3 className="font-display text-lg font-bold text-white">Give an Offer</h3>
-                  <p className="text-xs text-ink-400">{selectedListing ? "Set your discounted price" : "Pick one of your listings"}</p>
-                </div>
-              </div>
-              <button type="button" onClick={closeOfferModal} className="btn-ghost p-1"><X size={18} /></button>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4" onClick={closeOfferModal}>
+          <div className="card w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#111b21] border border-gray-800" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[#222d34]">
+              <h3 className="text-base font-bold text-white">Give Discounted Offer</h3>
+              <button type="button" onClick={closeOfferModal} className="text-gray-400 hover:text-white"><X size={18} /></button>
             </div>
 
-            {offerError && <div className="mx-4 mt-3 rounded-lg bg-error-500/10 border border-error-500/20 p-2.5 text-sm text-error-400">{offerError}</div>}
+            {offerError && <div className="mx-4 mt-3 rounded bg-red-500/10 border border-red-500/20 p-2 text-xs text-red-400">{offerError}</div>}
 
             {!selectedListing ? (
-              <div className="p-4">
+              <div className="p-4 space-y-2">
                 {loadingListings ? (
-                  <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-primary-500" size={22} /></div>
-                ) : sellerListings.length === 0 ? (
-                  <div className="py-10 text-center">
-                    <Tag size={32} className="mx-auto text-ink-600" />
-                    <p className="text-sm text-ink-400 mt-2">You have no active listings right now.</p>
-                  </div>
+                  <div className="grid place-items-center py-8"><Loader2 className="animate-spin text-emerald-500" size={20} /></div>
                 ) : (
-                  <div className="space-y-2">
-                    {sellerListings.map((li) => (
-                      <button
-                        key={li.id}
-                        type="button"
-                        onClick={() => selectListing(li)}
-                        className="flex w-full items-center gap-3 rounded-xl border border-ink-700 bg-ink-800/50 p-2.5 text-left transition-all hover:border-primary-500/50 hover:bg-ink-800"
-                      >
-                        <img
-                          src={li.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=200"}
-                          alt=""
-                          className="h-12 w-12 rounded-lg object-cover shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white truncate">{li.title}</p>
-                          <p className="text-xs text-ink-400 flex items-center gap-1"><Tag size={10} /> {li.game_name}</p>
-                        </div>
-                        <span className="font-display font-bold text-primary-400 shrink-0">{formatBDT(li.price)}</span>
-                      </button>
-                    ))}
-                  </div>
+                  sellerListings.map((li) => (
+                    <button
+                      key={li.id}
+                      type="button"
+                      onClick={() => selectListing(li)}
+                      className="flex w-full items-center gap-3 rounded-lg bg-[#202c33] p-2.5 text-left hover:bg-[#2a3942]"
+                    >
+                      <img src={li.images?.[0]} alt="" className="h-10 w-10 rounded object-cover" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-white truncate">{li.title}</p>
+                        <p className="text-[11px] text-gray-400">{formatBDT(li.price)}</p>
+                      </div>
+                    </button>
+                  ))
                 )}
               </div>
             ) : (
-              <form onSubmit={handleSendOffer} className="p-4 space-y-4">
-                {/* Selected listing details */}
-                <div className="rounded-xl border border-ink-700 bg-ink-800/50 p-3">
-                  <div className="flex gap-3">
-                    <img
-                      src={selectedListing.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=300"}
-                      alt={selectedListing.title}
-                      className="h-20 w-20 rounded-lg object-cover shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="badge glass text-white text-[10px]"><Tag size={10} /> {selectedListing.game_name}</span>
-                      <p className="font-semibold text-white mt-1.5 leading-snug">{selectedListing.title}</p>
-                      <p className="text-sm text-ink-400 mt-1">Listed price</p>
-                      <p className="font-display text-xl font-extrabold text-white">{formatBDT(selectedListing.price)}</p>
-                    </div>
+              <form onSubmit={handleSendOffer} className="p-4 space-y-3">
+                <div className="rounded bg-[#202c33] p-3 flex gap-3">
+                  <img src={selectedListing.images?.[0]} alt="" className="h-14 w-14 rounded object-cover" />
+                  <div>
+                    <p className="text-xs font-bold text-white leading-tight">{selectedListing.title}</p>
+                    <p className="text-xs text-emerald-400 mt-1 font-bold">List Price: {formatBDT(selectedListing.price)}</p>
                   </div>
                 </div>
-
-                {/* Offer price input */}
                 <div>
-                  <label className="label">Discounted Price</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-display font-bold text-primary-400">৳</span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={offerPrice}
-                      onChange={(e) => setOfferPrice(e.target.value.replace(/[^0-9]/g, ""))}
-                      className="input pl-8 text-lg font-semibold"
-                      autoFocus
-                    />
-                  </div>
-                  {offerPrice && parseFloat(offerPrice) > 0 && (
-                    <p className="text-xs text-ink-400 mt-2">
-                      Buyer saves <span className="text-success-400 font-semibold">{formatBDT(selectedListing.price - parseFloat(offerPrice))}</span> off the listed price.
-                    </p>
-                  )}
+                  <label className="text-xs text-gray-300 block mb-1">Offer Price (BDT)</label>
+                  <input
+                    type="number"
+                    value={offerPrice}
+                    onChange={(e) => setOfferPrice(e.target.value)}
+                    className="w-full bg-[#2a3942] text-white px-3 py-2 rounded text-sm outline-none border-none"
+                    placeholder="Enter discounted price"
+                    autoFocus
+                  />
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={sendingOffer || !offerPrice || parseFloat(offerPrice) <= 0}
-                  className="btn-primary w-full inline-flex items-center justify-center gap-2"
-                >
-                  {sendingOffer ? <Loader2 size={18} className="animate-spin" /> : <><HandCoins size={18} /> Send Offer</>}
+                <button type="submit" disabled={sendingOffer} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded">
+                  {sendingOffer ? "Sending..." : "Send Offer"}
                 </button>
               </form>
             )}
@@ -853,108 +781,49 @@ export default function Messages() {
         </div>
       )}
 
-      {/* ===== Image Lightbox ===== */}
+      {/* Lightbox */}
       {lightboxSrc && (
-        <div
-          className="fixed inset-0 z-[60] grid place-items-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
-          onClick={() => setLightboxSrc(null)}
-        >
-          <button
-            type="button"
-            onClick={() => setLightboxSrc(null)}
-            className="absolute top-4 right-4 inline-grid place-items-center h-11 w-11 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-            aria-label="Close image"
-          >
-            <X size={24} />
-          </button>
-          <img
-            src={lightboxSrc}
-            alt="Chat image"
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-[92vw] max-h-[88vh] rounded-xl object-contain shadow-2xl animate-scale-in"
-          />
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-4" onClick={() => setLightboxSrc(null)}>
+          <img src={lightboxSrc} alt="" className="max-w-full max-h-full rounded" />
         </div>
       )}
     </div>
   );
 }
 
-// ===== Offer card rendered inline in the chat thread =====
-function OfferBubble({
-  mine, message, userId,
-}: {
-  mine: boolean;
-  message: Message;
-  userId: string;
-}) {
+// WhatsApp-style Offer Bubble
+function OfferBubble({ mine, message, userId }: { mine: boolean; message: Message; userId: string; }) {
   const offer = message.offer!;
   const isBuyer = offer.buyer_id === userId;
-  const isSeller = offer.seller_id === userId;
   const listing = offer.listing;
-  const img = listing?.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=300";
-  const originalPrice = listing?.price ?? 0;
-  const savings = originalPrice - offer.offer_price;
-
-  const statusStyles: Record<OfferStatus, string> = {
-    pending: "bg-warning-500/15 text-warning-400 border-warning-500/20",
-    accepted: "bg-primary-500/15 text-primary-300 border-primary-500/20",
-    declined: "bg-ink-700 text-ink-400 border-ink-600",
-    paid: "bg-success-500/15 text-success-400 border-success-500/20",
-    expired: "bg-ink-700 text-ink-400 border-ink-600",
-  };
-  const statusLabel: Record<OfferStatus, string> = {
-    pending: "Pending", accepted: "Accepted", declined: "Declined", paid: "Paid", expired: "Expired",
-  };
 
   return (
     <div className={classNames("flex", mine ? "justify-end" : "justify-start")}>
-      <div className="max-w-[85%] w-[300px] rounded-2xl overflow-hidden border border-primary-500/30 bg-ink-900 shadow-lg" style={{ backgroundColor: "#1C1C22" }}>
-        {/* Header strip */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-500/10 text-primary-300 text-[11px] font-semibold">
-          <HandCoins size={12} />
-          <span>OFFER</span>
-          <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-ink-500 font-normal">{timeAgo(message.created_at)}</span>
+      <div className="w-[280px] rounded-lg overflow-hidden border border-emerald-500/30 bg-[#1f2c34] shadow-md">
+        <div className="bg-emerald-600/20 px-3 py-1 text-[11px] font-bold text-emerald-400 flex items-center justify-between">
+          <span>SPECIAL OFFER</span>
+          <span className="text-[10px] text-gray-400 font-normal">{timeAgo(message.created_at)}</span>
         </div>
-
-        {/* Listing summary */}
-        <div className="flex gap-2.5 p-3">
-          {img ? (
-            <img src={img} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
-          ) : (
-            <div className="grid h-14 w-14 place-items-center rounded-lg bg-ink-800 text-ink-600 shrink-0"><ImageIcon size={20} /></div>
-          )}
+        <div className="p-3 flex gap-2.5">
+          <img src={listing?.images?.[0]} alt="" className="h-12 w-12 rounded object-cover" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate leading-snug">{listing?.title ?? "Listing"}</p>
-            {listing?.game_name && <p className="text-[11px] text-ink-400 mt-0.5">{listing.game_name}</p>}
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-xs text-ink-500 line-through">{formatBDT(originalPrice)}</span>
-              <span className="font-display text-lg font-extrabold text-primary-400">{formatBDT(offer.offer_price)}</span>
+            <p className="text-xs font-semibold text-white truncate">{listing?.title}</p>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              <span className="text-[11px] text-gray-400 line-through">{formatBDT(listing?.price ?? 0)}</span>
+              <span className="text-sm font-bold text-emerald-400">{formatBDT(offer.offer_price)}</span>
             </div>
           </div>
         </div>
-
-        {/* Status + actions */}
-        <div className="px-3 pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className={classNames("badge border text-[10px]", statusStyles[offer.status])}>{statusLabel[offer.status]}</span>
-            {savings > 0 && offer.status !== "declined" && (
-              <span className="text-[11px] text-success-400 font-medium">Save {formatBDT(savings)}</span>
-            )}
-          </div>
-
-          {offer.status === "pending" && isBuyer && (
+        <div className="p-2.5 bg-[#111b21]">
+          {offer.status === "pending" && isBuyer ? (
             <Link
               to={`/checkout/${offer.listing_id}?offer=${offer.id}`}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-400"
+              className="block w-full text-center py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold text-xs rounded transition-colors"
             >
-              <ShoppingBag size={16} /> Pay {formatBDT(offer.offer_price)}
+              Accept & Pay {formatBDT(offer.offer_price)}
             </Link>
-          )}
-          {offer.status === "pending" && isSeller && (
-            <p className="text-center text-[11px] text-ink-500 py-1.5">Waiting for the buyer to pay…</p>
-          )}
-          {offer.status === "paid" && (
-            <p className="text-center text-[11px] text-success-400 py-1.5 font-medium">Payment completed — order placed.</p>
+          ) : (
+            <span className="block text-center text-[11px] text-gray-400 capitalize">Status: {offer.status}</span>
           )}
         </div>
       </div>
