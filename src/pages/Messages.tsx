@@ -137,7 +137,6 @@ export default function Messages() {
       .is("read_at", null);
     const map: Record<string, number> = {};
     for (const m of (data ?? []) as { conversation_id: string }[]) {
-      // যদি ইউজার বর্তমানে এই চ্যাটে ঢুকে থাকে তবে তার আনরিড কাউন্ট সবসময় ০ রাখো
       if (m.conversation_id === activeIdRef.current) {
         map[m.conversation_id] = 0;
       } else {
@@ -172,29 +171,30 @@ export default function Messages() {
     if (!user) return;
     const nowIso = new Date().toISOString();
 
-    // ১. লোকালি সাথে সাথে জিরো করে দাও
+    // ১. লোকালি সাথে সাথে আনরিড কাউন্ট জিরো করে দেওয়া এবং মেসেজের read_at আপডেট করা
     setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
     setMessages((prev) =>
       prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
     );
 
-    // ২. ন্যাভবারকে নোটিফিকেশন পাঠাও
+    // ২. হেডার এবং অন্যান্য কম্পোনেন্টকে জানানোর জন্য ইভেন্ট ফায়ার করা
     window.dispatchEvent(new CustomEvent("messages-read"));
 
-    // ৩. সুপাবেজ ডাটাবেজে আপডেট চালাও
+    // ৩. সুপাবেজ ডাটাবেজে পার্মানেন্টলি আপডেট সেভ করা যাতে লাল ডট স্থায়ীভাবে চলে যায়
     await supabase
       .from("messages")
       .update({ read_at: nowIso })
       .eq("conversation_id", convId)
       .neq("sender_id", user.id)
       .is("read_at", null);
+
+    loadUnreadCounts();
   }
 
   async function loadThread(convId: string) {
     setLoadingThread(true);
     await fetchThreadSilent(convId);
     setLoadingThread(false);
-    // মেসেজ লোড হওয়ার সাথে সাথে রিড স্টেট আপডেট করো
     await markRead(convId);
   }
 
@@ -263,7 +263,6 @@ export default function Messages() {
   useEffect(() => {
     if (!user) return;
 
-    // Realtime Postgres Changes Listener
     const channel = supabase
       .channel(`chat-channel-${user.id}`)
       .on(
@@ -316,7 +315,6 @@ export default function Messages() {
       )
       .subscribe();
 
-    // 5-second polling fallback for guaranteed sync
     const interval = setInterval(() => {
       if (activeIdRef.current) {
         fetchThreadSilent(activeIdRef.current);
@@ -557,7 +555,6 @@ export default function Messages() {
                     key={c.id}
                     onClick={() => {
                       setActiveId(c.id);
-                      markRead(c.id);
                     }}
                     className={classNames(
                       "w-full text-left flex items-center gap-3 px-3 py-3 transition-colors",
