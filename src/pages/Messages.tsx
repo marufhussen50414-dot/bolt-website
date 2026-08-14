@@ -68,6 +68,11 @@ export default function Messages() {
   const activeIdRef = useRef<string | null>(null);
   useEffect(() => {
     activeIdRef.current = activeId;
+    if (activeId) {
+      localStorage.setItem("activeChatId", activeId);
+    } else {
+      localStorage.removeItem("activeChatId");
+    }
   }, [activeId]);
 
   // Offer modal state
@@ -131,15 +136,16 @@ export default function Messages() {
   async function loadUnreadCounts() {
     if (!user) return;
     
-    // বর্তমান ওপেন থাকা চ্যাট আইডি কুয়েরি থেকে বাদ দেওয়া হলো যাতে অ্যাক্টিভ চ্যাটে নতুন মেসেজ আসলে আনরিড কাউন্ট না বাড়ে
+    const activeChat = localStorage.getItem("activeChatId") || activeIdRef.current;
+
     let query = supabase
       .from("messages")
       .select("conversation_id")
       .neq("sender_id", user.id)
       .is("read_at", null);
 
-    if (activeIdRef.current) {
-      query = query.neq("conversation_id", activeIdRef.current);
+    if (activeChat) {
+      query = query.neq("conversation_id", activeChat);
     }
 
     const { data } = await query;
@@ -148,11 +154,12 @@ export default function Messages() {
       map[m.conversation_id] = (map[m.conversation_id] ?? 0) + 1;
     }
     
-    if (activeIdRef.current) {
-      map[activeIdRef.current] = 0;
+    if (activeChat) {
+      map[activeChat] = 0;
     }
     
     setUnreadMap(map);
+    window.dispatchEvent(new CustomEvent("messages-read"));
   }
 
   async function attachOffer(msg: Message): Promise<Message> {
@@ -208,6 +215,10 @@ export default function Messages() {
     if (!user) return;
     loadConversations(false);
     loadUnreadCounts();
+
+    return () => {
+      localStorage.removeItem("activeChatId");
+    };
   }, [user]);
 
   useEffect(() => {
@@ -277,9 +288,10 @@ export default function Messages() {
         async (payload) => {
           if (payload.eventType === "INSERT") {
             const newMsg = payload.new as Message;
+            const currentActiveChat = localStorage.getItem("activeChatId") || activeIdRef.current;
 
             // যদি ব্যবহারকারী ইতিমধ্যে এই চ্যাটের ভেতরেই থাকেন, তবে মেসেজ আসার সাথে সাথেই অটোমেটিক read করে ফেলা হবে
-            if (newMsg.conversation_id === activeIdRef.current) {
+            if (newMsg.conversation_id === currentActiveChat) {
               if (newMsg.sender_id !== user.id) {
                 const nowIso = new Date().toISOString();
                 newMsg.read_at = nowIso;
@@ -306,6 +318,7 @@ export default function Messages() {
               }));
             }
             loadConversations(true);
+            loadUnreadCounts();
           }
 
           if (payload.eventType === "UPDATE") {
@@ -333,8 +346,9 @@ export default function Messages() {
       .subscribe();
 
     const interval = setInterval(() => {
-      if (activeIdRef.current) {
-        fetchThreadSilent(activeIdRef.current);
+      const currentActive = localStorage.getItem("activeChatId") || activeIdRef.current;
+      if (currentActive) {
+        fetchThreadSilent(currentActive);
       }
       loadConversations(true);
       loadUnreadCounts();
