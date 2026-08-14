@@ -13,7 +13,6 @@ export default function AuthCallback() {
         const code = searchParams.get('code')
 
         if (code) {
-          // Supabase PKCE code দিয়ে Session তৈরি করা
           const { error } = await supabase.auth.exchangeCodeForSession(code)
           if (error) {
             console.error('Error exchanging code for session:', error)
@@ -22,11 +21,7 @@ export default function AuthCallback() {
           }
         }
 
-        // ২. Hash fragment চেক করা (যদি Implicit flow হয়)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-
-        // ৩. ফাইনাল সেশন ভেরিফাই করা
+        // ২. ফাইনাল সেশন ভেরিফাই করা
         const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
@@ -37,11 +32,10 @@ export default function AuthCallback() {
 
         if (session) {
           console.log('Session successfully established:', session.user)
-          // সফলভাবে লগইন হলে হোমপেজে রিডাইরেক্ট করবে
           navigate('/', { replace: true })
         } else {
-          // সেশন না পেলে ২ সেকেন্ডের একটি fallback listener চালু রাখা
-          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+          // সেশন না পেলে fallback listener চালু রাখা (_event ব্যবহার করে TypeScript warning বন্ধ করা)
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
             if (currentSession) {
               subscription.unsubscribe()
               navigate('/', { replace: true })
