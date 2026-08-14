@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase } from './lib/supabase'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -25,7 +25,7 @@ export default function AuthCallback() {
 
           if (data.session) {
             console.log('Session established:', data.session.user)
-            // Redirect to profile
+            // Redirect to profile page
             navigate('/profile')
           } else {
             navigate('/login?error=no_session')
