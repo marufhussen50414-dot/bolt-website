@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
   HandCoins, X, Store, ChevronDown, ChevronUp,
-  ImagePlus, Check, CheckCheck
+  ImagePlus, Check
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -17,6 +17,26 @@ type ConversationRow = Conversation & {
 };
 
 type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
+
+// Custom Perfect Parallel Double Check SVG Icon (WhatsApp structure with custom theme color)
+function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {/* 1st Checkmark */}
+      <path d="M1.5 12.5l4 4L14 7" />
+      {/* 2nd Full Parallel Checkmark */}
+      <path d="M8.5 12.5l4 4L22.5 7" />
+    </svg>
+  );
+}
 
 function formatMessageTime(dateStr: string) {
   if (!dateStr) return "";
@@ -650,9 +670,9 @@ export default function Messages() {
                             <span>{formatMessageTime(m.created_at)}</span>
                             {mine && (
                               m.read_at ? (
-                                <CheckCheck size={14} className="text-white inline" />
+                                <DoubleCheckIcon className="w-4 h-4 text-white inline-block -mt-0.5" />
                               ) : (
-                                <Check size={14} className="text-cyan-200 inline" />
+                                <Check size={14} className="text-cyan-200 inline-block" />
                               )
                             )}
                           </span>
