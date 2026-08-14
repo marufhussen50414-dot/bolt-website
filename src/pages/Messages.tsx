@@ -18,7 +18,7 @@ type ConversationRow = Conversation & {
 
 type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
 
-// Mathematically Perfect WhatsApp Double Check Icon (No 'W' shape)
+// Double Check Icon Component
 function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg
@@ -30,9 +30,7 @@ function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* 1st Checkmark */}
       <path d="M1.5 12.5L6 17L16.5 6.5" />
-      {/* 2nd Checkmark (Starts exactly on 1st check's line) */}
       <path d="M8 15L11 18L21.5 7.5" />
     </svg>
   );
@@ -67,7 +65,7 @@ export default function Messages() {
   const threadRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef<HTMLInputElement>(null);
 
-  // Active ID Ref for avoiding Realtime listener channel re-subscriptions
+  // Active ID Reference for keeping Realtime socket updated seamlessly
   const activeIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -166,22 +164,24 @@ export default function Messages() {
     setLoadingThread(false);
   }
 
+  // Instant Read Marker with Database update & local UI sync
   async function markRead(convId: string) {
     if (!user) return;
-    const { count } = await supabase
+    const nowIso = new Date().toISOString();
+
+    const { error: updateErr } = await supabase
       .from("messages")
-      .select("id", { count: "exact", head: true })
+      .update({ read_at: nowIso })
       .eq("conversation_id", convId)
       .neq("sender_id", user.id)
       .is("read_at", null);
-    if (!count) return;
-    await supabase
-      .from("messages")
-      .update({ read_at: new Date().toISOString() })
-      .eq("conversation_id", convId)
-      .neq("sender_id", user.id)
-      .is("read_at", null);
-    setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
+
+    if (!updateErr) {
+      setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
+      setMessages((prev) =>
+        prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
+      );
+    }
     window.dispatchEvent(new CustomEvent("messages-read"));
   }
 
@@ -194,7 +194,7 @@ export default function Messages() {
   useEffect(() => {
     if (activeId) {
       loadThread(activeId);
-      markRead(activeId).then(() => { loadConversations(); loadUnreadCounts(); });
+      markRead(activeId);
     }
   }, [activeId]);
 
@@ -243,19 +243,19 @@ export default function Messages() {
     })();
   }, [listingIdParam, user, params, setParams]);
 
-  // FIX: Realtime Listener using activeIdRef (Does not disconnect channel when switching active chat)
+  // Realtime Global Listener (Subscribes to all INSERTs and UPDATEs across tables)
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel(`chat-realtime-global-${user.id}`)
+      .channel(`chat-realtime-v2-${user.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         async (payload) => {
           const newMsg = payload.new as Message;
 
-          // 1. Update conversations order & sidebar
+          // Update sidebar order
           setConversations((prev) => {
             const idx = prev.findIndex((c) => c.id === newMsg.conversation_id);
             if (idx < 0) return prev;
@@ -265,7 +265,7 @@ export default function Messages() {
             return next;
           });
 
-          // 2. Append directly to active conversation if open
+          // Append to active conversation window instantly
           if (newMsg.conversation_id === activeIdRef.current) {
             const withOffer = await attachOffer(newMsg);
             setMessages((prevMessages) => {
@@ -273,15 +273,19 @@ export default function Messages() {
               return [...prevMessages, withOffer];
             });
 
-            // Automatically mark incoming messages as read if currently chatting
+            // Mark message read immediately if user is on this chat screen
             if (newMsg.sender_id !== user.id) {
+              const readTime = new Date().toISOString();
               await supabase
                 .from("messages")
-                .update({ read_at: new Date().toISOString() })
+                .update({ read_at: readTime })
                 .eq("id", newMsg.id);
+
+              setMessages((prev) =>
+                prev.map((m) => (m.id === newMsg.id ? { ...m, read_at: readTime } : m))
+              );
             }
           } else if (newMsg.sender_id !== user.id) {
-            // Update unread badges
             setUnreadMap((prev) => ({
               ...prev,
               [newMsg.conversation_id]: (prev[newMsg.conversation_id] ?? 0) + 1,
@@ -295,7 +299,7 @@ export default function Messages() {
         (payload) => {
           const updatedMsg = payload.new as Message;
           setMessages((prev) =>
-            prev.map((m) => (m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m))
+            prev.map((m) => (m.id === updatedMsg.id ? { ...m, read_at: updatedMsg.read_at, body: updatedMsg.body } : m))
           );
           loadUnreadCounts();
         }
@@ -718,9 +722,9 @@ export default function Messages() {
                             <span>{formatMessageTime(m.created_at)}</span>
                             {mine && (
                               m.read_at ? (
-                                <DoubleCheckIcon className="w-4 h-4 text-white inline-block -mt-0.5" />
+                                <DoubleCheckIcon className="w-4 h-4 text-cyan-200 inline-block -mt-0.5" />
                               ) : (
-                                <Check size={14} className="text-cyan-200 inline-block" />
+                                <Check size={14} className="text-cyan-100/70 inline-block" />
                               )
                             )}
                           </span>
@@ -859,7 +863,7 @@ export default function Messages() {
   );
 }
 
-// Custom Website Styled Offer Bubble
+// Offer Bubble Component
 function OfferBubble({ mine, message, userId }: { mine: boolean; message: Message; userId: string; }) {
   const offer = message.offer!;
   const isBuyer = offer.buyer_id === userId;
