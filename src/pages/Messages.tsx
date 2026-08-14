@@ -390,7 +390,7 @@ export default function Messages() {
     return name.includes(search.toLowerCase()) || (c.listing?.title ?? "").toLowerCase().includes(search.toLowerCase());
   });
 
-  if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
+  if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-cyan-500" size={28} /></div>;
   if (!user) return (
     <div className="mx-auto max-w-md py-16 text-center">
       <div className="card p-8">
@@ -426,43 +426,32 @@ export default function Messages() {
     if (next) loadSellerListings(iAmBuyer ? active.seller_id : active.buyer_id, active.listing_id ?? undefined);
   }
 
-  // WhatsApp Dark Doodle SVG Background
-  const whatsappDoodleBg = `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 20 A 10 10 0 0 1 35 20 A 10 10 0 0 1 15 20 Z' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Cpath d='M65 70 L 85 70 L 75 90 Z' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Cpath d='M70 20 Q 80 10 90 20 T 100 20' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Cpath d='M20 75 Q 30 65 40 75 T 50 75' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3Ccircle cx='50' cy='50' r='12' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3C/svg%3E"), #0b141a`;
-
   return (
     <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-400"><MessageSquare size={22} /></div>
-        <div>
-          <h1 className="font-display text-2xl font-extrabold text-white">Messages</h1>
-          <p className="text-sm text-ink-400">WhatsApp-style unified chat</p>
-        </div>
-      </div>
-
       {error && <div className="card p-3 mb-4 text-sm text-error-400 border border-error-500/20">{error}</div>}
 
-      <div className="card overflow-hidden h-[calc(100vh-180px)] min-h-[550px] flex border border-gray-800 rounded-xl shadow-2xl bg-[#111b21]">
+      <div className="card overflow-hidden h-[calc(100vh-100px)] min-h-[580px] flex border border-cyan-500/10 rounded-xl shadow-2xl bg-ink-950">
         {/* Sidebar */}
-        <div className={classNames("w-full md:w-[350px] lg:w-[380px] flex flex-col border-r border-[#222d34] bg-[#111b21]", activeId ? "hidden md:flex" : "flex")}>
-          <div className="p-3 bg-[#111b21] border-b border-[#222d34]">
+        <div className={classNames("w-full md:w-[350px] lg:w-[380px] flex flex-col border-r border-ink-800 bg-ink-900/60", activeId ? "hidden md:flex" : "flex")}>
+          <div className="p-3 border-b border-ink-800">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search or start new chat"
-                className="w-full bg-[#202c33] text-gray-200 placeholder-gray-400 text-sm rounded-lg pl-9 pr-4 py-2 border-none focus:ring-1 focus:ring-emerald-500 outline-none"
+                className="w-full bg-ink-950 text-gray-200 placeholder-ink-400 text-sm rounded-lg pl-9 pr-4 py-2 border border-ink-800 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
               />
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto divide-y divide-[#222d34]/50">
+          <div className="flex-1 overflow-y-auto divide-y divide-ink-800/40">
             {loadingList ? (
-              <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-emerald-500" size={22} /></div>
+              <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-cyan-400" size={22} /></div>
             ) : filtered.length === 0 ? (
               <div className="p-6 text-center">
-                <MessageSquare size={28} className="mx-auto text-gray-600" />
-                <p className="text-sm text-gray-400 mt-2">{conversations.length === 0 ? "No chats available." : "No chats found."}</p>
-                {conversations.length === 0 && <Link to="/browse" className="text-xs text-emerald-400 hover:text-emerald-300 mt-2 inline-block">Browse listings to start a chat →</Link>}
+                <MessageSquare size={28} className="mx-auto text-ink-500" />
+                <p className="text-sm text-ink-400 mt-2">{conversations.length === 0 ? "No chats available." : "No chats found."}</p>
+                {conversations.length === 0 && <Link to="/browse" className="text-xs text-cyan-400 hover:text-cyan-300 mt-2 inline-block">Browse listings to start a chat →</Link>}
               </div>
             ) : (
               filtered.map((c) => {
@@ -475,29 +464,29 @@ export default function Messages() {
                     onClick={() => setActiveId(c.id)}
                     className={classNames(
                       "w-full text-left flex items-center gap-3 px-3 py-3 transition-colors",
-                      isActive ? "bg-[#2a3942]" : "hover:bg-[#202c33]"
+                      isActive ? "bg-cyan-500/10 border-l-2 border-cyan-400" : "hover:bg-ink-800/50"
                     )}
                   >
                     <div className="relative shrink-0">
                       {other?.avatar_url ? (
-                        <img src={other.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
+                        <img src={other.avatar_url} alt="" className="h-11 w-11 rounded-full object-cover ring-1 ring-ink-700" />
                       ) : (
-                        <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-800 text-white text-base font-bold">
+                        <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 text-white text-base font-bold">
                           {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
                         </div>
                       )}
-                      {unread > 0 && <span className="absolute top-0 right-0 grid h-5 min-w-5 place-items-center rounded-full bg-emerald-500 px-1 text-[11px] font-bold text-black">{unread}</span>}
+                      {unread > 0 && <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-cyan-400 px-1 text-[11px] font-bold text-black">{unread}</span>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <p className={classNames("text-sm truncate flex items-center gap-1", unread > 0 ? "font-bold text-white" : "font-medium text-gray-200")}>
                           {other?.full_name ?? other?.username ?? "User"}
-                          {other?.is_verified && <ShieldCheck size={13} className="text-emerald-400 shrink-0" />}
+                          {other?.is_verified && <ShieldCheck size={13} className="text-cyan-400 shrink-0" />}
                         </p>
-                        <span className={classNames("text-[11px] shrink-0", unread > 0 ? "text-emerald-400 font-semibold" : "text-gray-400")}>{timeAgo(c.last_message_at)}</span>
+                        <span className={classNames("text-[11px] shrink-0", unread > 0 ? "text-cyan-400 font-semibold" : "text-ink-400")}>{timeAgo(c.last_message_at)}</span>
                       </div>
                       {c.listing?.title && (
-                        <p className="text-xs text-gray-400 truncate flex items-center gap-1 mt-1"><Tag size={10} className="shrink-0 text-gray-500" /> {c.listing.title}</p>
+                        <p className="text-xs text-ink-400 truncate flex items-center gap-1 mt-1"><Tag size={10} className="shrink-0 text-ink-500" /> {c.listing.title}</p>
                       )}
                     </div>
                   </button>
@@ -508,23 +497,23 @@ export default function Messages() {
         </div>
 
         {/* Chat Panel */}
-        <div className={classNames("flex-1 flex flex-col bg-[#0b141a]", activeId ? "flex" : "hidden md:flex")}>
+        <div className={classNames("flex-1 flex flex-col bg-ink-950", activeId ? "flex" : "hidden md:flex")}>
           {starting ? (
-            <div className="flex-1 grid place-items-center"><Loader2 className="animate-spin text-emerald-500" size={26} /></div>
+            <div className="flex-1 grid place-items-center"><Loader2 className="animate-spin text-cyan-400" size={26} /></div>
           ) : !active ? (
-            <div className="flex-1 grid place-items-center text-center p-6 bg-[#111b21]">
+            <div className="flex-1 grid place-items-center text-center p-6 bg-ink-950">
               <div>
-                <MessageSquare size={56} className="mx-auto text-gray-600 mb-2 opacity-40" />
-                <h3 className="text-lg font-medium text-gray-300">GameHaatBD Web Chat</h3>
-                <p className="text-xs text-gray-500 mt-1">Select a conversation to start messaging in real-time.</p>
+                <MessageSquare size={52} className="mx-auto text-ink-600 mb-2 opacity-50" />
+                <h3 className="text-lg font-medium text-gray-200">GameHaatBD Messages</h3>
+                <p className="text-xs text-ink-400 mt-1">Select a conversation to start messaging in real-time.</p>
               </div>
             </div>
           ) : (
             <>
-              {/* WhatsApp Header */}
-              <div className="flex items-center justify-between px-4 py-2.5 bg-[#202c33] border-b border-[#222d34] z-10">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 bg-ink-900/90 border-b border-ink-800 z-10">
                 <div className="flex items-center gap-3 min-w-0">
-                  <button onClick={() => setActiveId(null)} className="md:hidden text-gray-300 p-1 hover:bg-[#2a3942] rounded-full"><ArrowLeft size={20} /></button>
+                  <button onClick={() => setActiveId(null)} className="md:hidden text-ink-300 p-1 hover:bg-ink-800 rounded-full"><ArrowLeft size={20} /></button>
                   <Link
                     to={`/profile/${otherParty(active)?.id ?? ""}`}
                     className="flex items-center gap-3 min-w-0 group"
@@ -532,19 +521,19 @@ export default function Messages() {
                     {(() => {
                       const other = otherParty(active);
                       return other?.avatar_url ? (
-                        <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                        <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-1 ring-ink-700" />
                       ) : (
-                        <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-800 text-white text-sm font-bold">
+                        <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 text-white text-sm font-bold">
                           {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
                         </div>
                       );
                     })()}
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-100 truncate flex items-center gap-1 group-hover:text-emerald-400">
+                      <p className="text-sm font-semibold text-gray-100 truncate flex items-center gap-1 group-hover:text-cyan-400">
                         {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
-                        {otherParty(active)?.is_verified && <ShieldCheck size={13} className="text-emerald-400" />}
+                        {otherParty(active)?.is_verified && <ShieldCheck size={13} className="text-cyan-400" />}
                       </p>
-                      <p className="text-[11px] text-gray-400">online</p>
+                      <p className="text-[11px] text-cyan-400 font-medium">online</p>
                     </div>
                   </Link>
                 </div>
@@ -553,7 +542,7 @@ export default function Messages() {
               {/* Listing context card */}
               {(contextListing || active?.listing) && !contextDismissed && (
                 <div className="px-4 pt-2 z-10">
-                  <div className="flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-[#1f2c34] p-2">
+                  <div className="flex items-center gap-3 rounded-lg border border-cyan-500/20 bg-cyan-950/20 p-2">
                     <img
                       src={(contextListing ?? (active?.listing as GameListing | undefined))?.images?.[0]
                         ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=200"}
@@ -561,18 +550,18 @@ export default function Messages() {
                       className="h-9 w-9 rounded object-cover shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold uppercase text-emerald-400 tracking-wider">Discussing Item</p>
+                      <p className="text-[10px] font-semibold uppercase text-cyan-400 tracking-wider">Discussing Item</p>
                       <p className="text-xs font-medium text-gray-200 truncate leading-tight">
                         {(contextListing ?? (active?.listing as GameListing | undefined))?.title ?? "Listing"}
                       </p>
                     </div>
-                    <span className="text-xs font-bold text-emerald-400 mr-1">
+                    <span className="text-xs font-bold text-cyan-400 mr-1">
                       {formatBDT((contextListing ?? (active?.listing as GameListing | undefined))?.price ?? 0)}
                     </span>
                     <button
                       type="button"
                       onClick={() => setContextDismissed(true)}
-                      className="text-gray-400 hover:text-gray-200 p-1"
+                      className="text-ink-400 hover:text-gray-200 p-1"
                     >
                       <X size={14} />
                     </button>
@@ -586,29 +575,29 @@ export default function Messages() {
                   <button
                     type="button"
                     onClick={toggleSellerListings}
-                    className="flex w-full items-center gap-2 rounded-lg bg-[#1f2c34] px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a3942]"
+                    className="flex w-full items-center gap-2 rounded-lg bg-ink-900 border border-ink-800 px-3 py-1.5 text-xs text-gray-300 hover:bg-ink-800"
                   >
-                    <Store size={13} className="text-emerald-400" />
+                    <Store size={13} className="text-cyan-400" />
                     <span>Browse {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "seller"}'s other listings</span>
-                    {showSellerListings ? <ChevronUp size={13} className="ml-auto" /> : <ChevronDown size={13} className="ml-auto" />}
+                    {showSellerListings ? <ChevronUp size={13} className="ml-auto text-ink-400" /> : <ChevronDown size={13} className="ml-auto text-ink-400" />}
                   </button>
                   {showSellerListings && (
-                    <div className="mt-1.5 rounded-lg border border-[#222d34] bg-[#111b21] p-2 max-h-48 overflow-y-auto">
+                    <div className="mt-1.5 rounded-lg border border-ink-800 bg-ink-900 p-2 max-h-48 overflow-y-auto">
                       {loadingBrowse ? (
-                        <div className="grid place-items-center py-4"><Loader2 className="animate-spin text-emerald-500" size={16} /></div>
+                        <div className="grid place-items-center py-4"><Loader2 className="animate-spin text-cyan-400" size={16} /></div>
                       ) : browseListings.length === 0 ? (
-                        <p className="py-2 text-center text-xs text-gray-500">No other active listings.</p>
+                        <p className="py-2 text-center text-xs text-ink-400">No other active listings.</p>
                       ) : (
                         <div className="space-y-1">
                           {browseListings.map((li) => (
                             <Link
                               key={li.id}
                               to={`/listing/${li.id}`}
-                              className="flex items-center gap-2 rounded bg-[#202c33] p-1.5 hover:bg-[#2a3942]"
+                              className="flex items-center gap-2 rounded bg-ink-950 border border-ink-800 p-1.5 hover:bg-ink-800"
                             >
                               <img src={li.images?.[0]} alt="" className="h-8 w-8 rounded object-cover" />
                               <p className="text-xs text-gray-200 truncate flex-1">{li.title}</p>
-                              <span className="text-xs font-bold text-emerald-400">{formatBDT(li.price)}</span>
+                              <span className="text-xs font-bold text-cyan-400">{formatBDT(li.price)}</span>
                             </Link>
                           ))}
                         </div>
@@ -618,17 +607,16 @@ export default function Messages() {
                 </div>
               )}
 
-              {/* Chat Thread with WhatsApp Background Doodle */}
+              {/* Chat Thread */}
               <div
                 ref={threadRef}
-                className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col"
-                style={{ background: whatsappDoodleBg }}
+                className="flex-1 overflow-y-auto p-4 space-y-2 flex flex-col bg-ink-950"
               >
                 {loadingThread ? (
-                  <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-emerald-500" size={22} /></div>
+                  <div className="grid place-items-center py-10"><Loader2 className="animate-spin text-cyan-400" size={22} /></div>
                 ) : messages.length === 0 ? (
                   <div className="grid place-items-center py-10 text-center">
-                    <p className="text-xs text-[#8696a0] bg-[#182229] px-3 py-1.5 rounded-lg shadow">Messages are end-to-end encrypted on GameHaatBD.</p>
+                    <p className="text-xs text-ink-400 bg-ink-900 border border-ink-800 px-3 py-1.5 rounded-lg shadow">Messages are end-to-end encrypted on GameHaatBD.</p>
                   </div>
                 ) : (
                   messages.map((m) => {
@@ -640,8 +628,8 @@ export default function Messages() {
                       <div key={m.id} className={classNames("flex", mine ? "justify-end" : "justify-start")}>
                         <div
                           className={classNames(
-                            "max-w-[80%] sm:max-w-[65%] rounded-2xl px-3 py-1.5 text-sm shadow relative",
-                            mine ? "bg-[#005c4b] text-white rounded-tr-none" : "bg-[#202c33] text-gray-100 rounded-tl-none"
+                            "max-w-[80%] sm:max-w-[65%] rounded-2xl px-3.5 py-2 text-sm shadow relative",
+                            mine ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-none" : "bg-ink-900 border border-ink-800 text-gray-100 rounded-tl-none"
                           )}
                         >
                           {m.image_url && (
@@ -658,13 +646,13 @@ export default function Messages() {
                               {m.body}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 text-[10px] text-gray-300/70 select-none float-right mt-1 ml-2 align-bottom">
+                          <span className={classNames("inline-flex items-center gap-1 text-[10px] select-none float-right mt-1 ml-2 align-bottom", mine ? "text-cyan-100/80" : "text-ink-400")}>
                             <span>{formatMessageTime(m.created_at)}</span>
                             {mine && (
                               m.read_at ? (
-                                <CheckCheck size={14} className="text-sky-400 inline" />
+                                <CheckCheck size={14} className="text-white inline" />
                               ) : (
-                                <Check size={14} className="text-gray-400 inline" />
+                                <Check size={14} className="text-cyan-200 inline" />
                               )
                             )}
                           </span>
@@ -676,23 +664,23 @@ export default function Messages() {
               </div>
 
               {/* Input Area */}
-              <form onSubmit={handleSend} className="p-2.5 bg-[#202c33] flex flex-col gap-2 border-t border-[#222d34]">
+              <form onSubmit={handleSend} className="p-3 bg-ink-900 border-t border-ink-800 flex flex-col gap-2">
                 {pendingImage && (
-                  <div className="flex items-center gap-2 rounded-lg bg-[#111b21] p-2">
+                  <div className="flex items-center gap-2 rounded-lg bg-ink-950 border border-ink-800 p-2">
                     <img src={pendingImage} alt="Preview" className="h-12 w-12 rounded object-cover shrink-0" />
                     <p className="text-xs text-gray-300 flex-1 truncate">Image selected</p>
-                    <button type="button" onClick={clearPendingImage} className="text-gray-400 hover:text-white"><X size={16} /></button>
+                    <button type="button" onClick={clearPendingImage} className="text-ink-400 hover:text-white"><X size={16} /></button>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChosen} className="hidden" />
-                  
-                  {/* Restored Give Offer Button with Text */}
+
+                  {/* Give Offer Button */}
                   {iAmSeller && (
                     <button
                       type="button"
                       onClick={openOfferModal}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg text-xs font-semibold transition-colors shrink-0 border border-emerald-500/30"
+                      className="flex items-center gap-1.5 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-semibold transition-colors shrink-0 border border-cyan-500/30"
                       title="Give Offer"
                     >
                       <HandCoins size={16} />
@@ -704,26 +692,26 @@ export default function Messages() {
                     type="button"
                     onClick={onPickImage}
                     disabled={uploadingImage || sending}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-[#2a3942] rounded-full transition-colors"
+                    className="p-2 text-ink-400 hover:text-white hover:bg-ink-800 rounded-full transition-colors"
                     title="Attach Image"
                   >
-                    {uploadingImage ? <Loader2 size={20} className="animate-spin" /> : <ImagePlus size={20} />}
+                    {uploadingImage ? <Loader2 size={20} className="animate-spin text-cyan-400" /> : <ImagePlus size={20} />}
                   </button>
 
                   <input
                     ref={draftRef}
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Type a message"
-                    className="flex-1 bg-[#2a3942] text-gray-100 placeholder-gray-400 text-sm rounded-lg px-4 py-2.5 outline-none focus:ring-1 focus:ring-emerald-500 border-none"
+                    placeholder="Type a message..."
+                    className="flex-1 bg-ink-950 text-gray-100 placeholder-ink-400 text-sm rounded-lg px-4 py-2.5 outline-none border border-ink-800 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500"
                   />
 
                   <button
                     type="submit"
                     disabled={sending || uploadingImage || (!draft.trim() && !pendingFile)}
-                    className="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-black rounded-full transition-colors disabled:opacity-40"
+                    className="p-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg transition-all disabled:opacity-40 shadow-md"
                   >
-                    {sending ? <Loader2 size={18} className="animate-spin text-white" /> : <Send size={18} className="text-white fill-white" />}
+                    {sending ? <Loader2 size={18} className="animate-spin text-white" /> : <Send size={18} className="text-white" />}
                   </button>
                 </div>
               </form>
@@ -734,11 +722,11 @@ export default function Messages() {
 
       {/* Offer Modal */}
       {showOfferModal && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/75 p-4" onClick={closeOfferModal}>
-          <div className="card w-full max-w-md max-h-[85vh] overflow-y-auto bg-[#111b21] border border-gray-800" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[#222d34]">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 backdrop-blur-sm p-4" onClick={closeOfferModal}>
+          <div className="card w-full max-w-md max-h-[85vh] overflow-y-auto bg-ink-900 border border-ink-800 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-ink-800">
               <h3 className="text-base font-bold text-white">Give Discounted Offer</h3>
-              <button type="button" onClick={closeOfferModal} className="text-gray-400 hover:text-white"><X size={18} /></button>
+              <button type="button" onClick={closeOfferModal} className="text-ink-400 hover:text-white"><X size={18} /></button>
             </div>
 
             {offerError && <div className="mx-4 mt-3 rounded bg-red-500/10 border border-red-500/20 p-2 text-xs text-red-400">{offerError}</div>}
@@ -746,19 +734,19 @@ export default function Messages() {
             {!selectedListing ? (
               <div className="p-4 space-y-2">
                 {loadingListings ? (
-                  <div className="grid place-items-center py-8"><Loader2 className="animate-spin text-emerald-500" size={20} /></div>
+                  <div className="grid place-items-center py-8"><Loader2 className="animate-spin text-cyan-400" size={20} /></div>
                 ) : (
                   sellerListings.map((li) => (
                     <button
                       key={li.id}
                       type="button"
                       onClick={() => selectListing(li)}
-                      className="flex w-full items-center gap-3 rounded-lg bg-[#202c33] p-2.5 text-left hover:bg-[#2a3942]"
+                      className="flex w-full items-center gap-3 rounded-lg bg-ink-950 border border-ink-800 p-2.5 text-left hover:border-cyan-500/40"
                     >
                       <img src={li.images?.[0]} alt="" className="h-10 w-10 rounded object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-white truncate">{li.title}</p>
-                        <p className="text-[11px] text-gray-400">{formatBDT(li.price)}</p>
+                        <p className="text-[11px] text-cyan-400">{formatBDT(li.price)}</p>
                       </div>
                     </button>
                   ))
@@ -766,25 +754,25 @@ export default function Messages() {
               </div>
             ) : (
               <form onSubmit={handleSendOffer} className="p-4 space-y-3">
-                <div className="rounded bg-[#202c33] p-3 flex gap-3">
+                <div className="rounded-lg bg-ink-950 border border-ink-800 p-3 flex gap-3">
                   <img src={selectedListing.images?.[0]} alt="" className="h-14 w-14 rounded object-cover" />
                   <div>
                     <p className="text-xs font-bold text-white leading-tight">{selectedListing.title}</p>
-                    <p className="text-xs text-emerald-400 mt-1 font-bold">List Price: {formatBDT(selectedListing.price)}</p>
+                    <p className="text-xs text-cyan-400 mt-1 font-bold">List Price: {formatBDT(selectedListing.price)}</p>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-300 block mb-1">Offer Price (BDT)</label>
+                  <label className="text-xs text-ink-300 block mb-1">Offer Price (BDT)</label>
                   <input
                     type="number"
                     value={offerPrice}
                     onChange={(e) => setOfferPrice(e.target.value)}
-                    className="w-full bg-[#2a3942] text-white px-3 py-2 rounded text-sm outline-none border-none"
+                    className="w-full bg-ink-950 text-white px-3 py-2 rounded-lg text-sm outline-none border border-ink-800 focus:border-cyan-500"
                     placeholder="Enter discounted price"
                     autoFocus
                   />
                 </div>
-                <button type="submit" disabled={sendingOffer} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded">
+                <button type="submit" disabled={sendingOffer} className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold rounded-lg transition-all">
                   {sendingOffer ? "Sending..." : "Send Offer"}
                 </button>
               </form>
@@ -796,14 +784,14 @@ export default function Messages() {
       {/* Lightbox */}
       {lightboxSrc && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-4" onClick={() => setLightboxSrc(null)}>
-          <img src={lightboxSrc} alt="" className="max-w-full max-h-full rounded" />
+          <img src={lightboxSrc} alt="" className="max-w-full max-h-full rounded-lg border border-ink-800" />
         </div>
       )}
     </div>
   );
 }
 
-// WhatsApp-style Offer Bubble
+// Custom Website Styled Offer Bubble
 function OfferBubble({ mine, message, userId }: { mine: boolean; message: Message; userId: string; }) {
   const offer = message.offer!;
   const isBuyer = offer.buyer_id === userId;
@@ -811,31 +799,31 @@ function OfferBubble({ mine, message, userId }: { mine: boolean; message: Messag
 
   return (
     <div className={classNames("flex", mine ? "justify-end" : "justify-start")}>
-      <div className="w-[280px] rounded-lg overflow-hidden border border-emerald-500/30 bg-[#1f2c34] shadow-md">
-        <div className="bg-emerald-600/20 px-3 py-1 text-[11px] font-bold text-emerald-400 flex items-center justify-between">
+      <div className="w-[280px] rounded-xl overflow-hidden border border-cyan-500/30 bg-ink-900 shadow-lg">
+        <div className="bg-cyan-500/10 px-3 py-1.5 text-[11px] font-bold text-cyan-400 flex items-center justify-between border-b border-cyan-500/20">
           <span>SPECIAL OFFER</span>
-          <span className="text-[10px] text-gray-400 font-normal">{formatMessageTime(message.created_at)}</span>
+          <span className="text-[10px] text-ink-400 font-normal">{formatMessageTime(message.created_at)}</span>
         </div>
         <div className="p-3 flex gap-2.5">
           <img src={listing?.images?.[0]} alt="" className="h-12 w-12 rounded object-cover" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate">{listing?.title}</p>
             <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="text-[11px] text-gray-400 line-through">{formatBDT(listing?.price ?? 0)}</span>
-              <span className="text-sm font-bold text-emerald-400">{formatBDT(offer.offer_price)}</span>
+              <span className="text-[11px] text-ink-400 line-through">{formatBDT(listing?.price ?? 0)}</span>
+              <span className="text-sm font-bold text-cyan-400">{formatBDT(offer.offer_price)}</span>
             </div>
           </div>
         </div>
-        <div className="p-2.5 bg-[#111b21]">
+        <div className="p-2.5 bg-ink-950 border-t border-ink-800">
           {offer.status === "pending" && isBuyer ? (
             <Link
               to={`/checkout/${offer.listing_id}?offer=${offer.id}`}
-              className="block w-full text-center py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold text-xs rounded transition-colors"
+              className="block w-full text-center py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs rounded-lg transition-colors"
             >
               Accept & Pay {formatBDT(offer.offer_price)}
             </Link>
           ) : (
-            <span className="block text-center text-[11px] text-gray-400 capitalize">Status: {offer.status}</span>
+            <span className="block text-center text-[11px] text-ink-400 capitalize">Status: {offer.status}</span>
           )}
         </div>
       </div>
