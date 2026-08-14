@@ -65,9 +65,7 @@ export default function Messages() {
   const threadRef = useRef<HTMLDivElement>(null);
   const draftRef = useRef<HTMLInputElement>(null);
 
-  // Active ID Reference for keeping Realtime socket updated seamlessly
   const activeIdRef = useRef<string | null>(null);
-
   useEffect(() => {
     activeIdRef.current = activeId;
   }, [activeId]);
@@ -81,7 +79,7 @@ export default function Messages() {
   const [sendingOffer, setSendingOffer] = useState(false);
   const [offerError, setOfferError] = useState("");
 
-  // Listing context card + browse-seller-listings state
+  // Context listing state
   const [contextListing, setContextListing] = useState<GameListing | null>(null);
   const [contextDismissed, setContextDismissed] = useState(false);
   const [showSellerListings, setShowSellerListings] = useState(false);
@@ -164,24 +162,25 @@ export default function Messages() {
     setLoadingThread(false);
   }
 
-  // Instant Read Marker with Database update & local UI sync
+  // Instant Read Marker
   async function markRead(convId: string) {
     if (!user) return;
     const nowIso = new Date().toISOString();
 
-    const { error: updateErr } = await supabase
+    // Local UI Fast Update
+    setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
+    setMessages((prev) =>
+      prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
+    );
+
+    // Database Sync
+    await supabase
       .from("messages")
       .update({ read_at: nowIso })
       .eq("conversation_id", convId)
       .neq("sender_id", user.id)
       .is("read_at", null);
 
-    if (!updateErr) {
-      setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
-      setMessages((prev) =>
-        prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
-      );
-    }
     window.dispatchEvent(new CustomEvent("messages-read"));
   }
 
@@ -199,7 +198,9 @@ export default function Messages() {
   }, [activeId]);
 
   useEffect(() => {
-    if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
+    if (threadRef.current) {
+      threadRef.current.scrollTop = threadRef.current.scrollHeight;
+    }
   }, [messages, activeId]);
 
   useEffect(() => {
@@ -243,65 +244,60 @@ export default function Messages() {
     })();
   }, [listingIdParam, user, params, setParams]);
 
-  // Realtime Global Listener (Subscribes to all INSERTs and UPDATEs across tables)
+  // REALTIME ENGINE - HIGH SPEED SYNC
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase
-      .channel(`chat-realtime-v2-${user.id}`)
+      .channel(`global-chat-room-${user.id}`, {
+        config: { broadcast: { self: true } }
+      })
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        { event: "*", schema: "public", table: "messages" },
         async (payload) => {
-          const newMsg = payload.new as Message;
+          if (payload.eventType === "INSERT") {
+            const newMsg = payload.new as Message;
 
-          // Update sidebar order
-          setConversations((prev) => {
-            const idx = prev.findIndex((c) => c.id === newMsg.conversation_id);
-            if (idx < 0) return prev;
-            const next = [...prev];
-            next[idx] = { ...next[idx], last_message_at: newMsg.created_at };
-            next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-            return next;
-          });
-
-          // Append to active conversation window instantly
-          if (newMsg.conversation_id === activeIdRef.current) {
-            const withOffer = await attachOffer(newMsg);
-            setMessages((prevMessages) => {
-              if (prevMessages.some((m) => m.id === newMsg.id)) return prevMessages;
-              return [...prevMessages, withOffer];
+            // 1. Update Conversation list ordering
+            setConversations((prev) => {
+              const idx = prev.findIndex((c) => c.id === newMsg.conversation_id);
+              if (idx < 0) {
+                loadConversations();
+                return prev;
+              }
+              const next = [...prev];
+              next[idx] = { ...next[idx], last_message_at: newMsg.created_at };
+              next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+              return next;
             });
 
-            // Mark message read immediately if user is on this chat screen
-            if (newMsg.sender_id !== user.id) {
-              const readTime = new Date().toISOString();
-              await supabase
-                .from("messages")
-                .update({ read_at: readTime })
-                .eq("id", newMsg.id);
+            // 2. Direct Chat Feed Push
+            if (newMsg.conversation_id === activeIdRef.current) {
+              const withOffer = await attachOffer(newMsg);
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === newMsg.id)) return prev;
+                return [...prev, withOffer];
+              });
 
-              setMessages((prev) =>
-                prev.map((m) => (m.id === newMsg.id ? { ...m, read_at: readTime } : m))
-              );
+              // Mark read instantly if received while active
+              if (newMsg.sender_id !== user.id) {
+                markRead(newMsg.conversation_id);
+              }
+            } else if (newMsg.sender_id !== user.id) {
+              setUnreadMap((prev) => ({
+                ...prev,
+                [newMsg.conversation_id]: (prev[newMsg.conversation_id] ?? 0) + 1,
+              }));
             }
-          } else if (newMsg.sender_id !== user.id) {
-            setUnreadMap((prev) => ({
-              ...prev,
-              [newMsg.conversation_id]: (prev[newMsg.conversation_id] ?? 0) + 1,
-            }));
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages" },
-        (payload) => {
-          const updatedMsg = payload.new as Message;
-          setMessages((prev) =>
-            prev.map((m) => (m.id === updatedMsg.id ? { ...m, read_at: updatedMsg.read_at, body: updatedMsg.body } : m))
-          );
-          loadUnreadCounts();
+
+          if (payload.eventType === "UPDATE") {
+            const updatedMsg = payload.new as Message;
+            setMessages((prev) =>
+              prev.map((m) => (m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m))
+            );
+          }
         }
       )
       .on(
@@ -372,17 +368,44 @@ export default function Messages() {
       body,
     };
     if (imageUrl) insertPayload.image_url = imageUrl;
+
     const { data, error: err } = await supabase
       .from("messages")
       .insert(insertPayload)
       .select("*")
       .single();
+
     setSending(false);
     if (err) { setError(err.message); return; }
+
     setDraft("");
     clearPendingImage();
-    setMessages((m) => [...m, data as Message]);
-    loadConversations();
+
+    // Instant append on sender's UI
+    if (data) {
+      const newSentMsg = data as Message;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === newSentMsg.id)) return prev;
+        return [...prev, newSentMsg];
+      });
+
+      // Update conversation timestamp locally
+      setConversations((prev) => {
+        const next = [...prev];
+        const idx = next.findIndex((c) => c.id === activeId);
+        if (idx >= 0) {
+          next[idx] = { ...next[idx], last_message_at: newSentMsg.created_at };
+          next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+        }
+        return next;
+      });
+
+      // Update database conversation timestamp
+      await supabase
+        .from("conversations")
+        .update({ last_message_at: newSentMsg.created_at })
+        .eq("id", activeId);
+    }
   }
 
   async function openOfferModal() {
