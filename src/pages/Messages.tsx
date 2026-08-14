@@ -137,7 +137,12 @@ export default function Messages() {
       .is("read_at", null);
     const map: Record<string, number> = {};
     for (const m of (data ?? []) as { conversation_id: string }[]) {
-      map[m.conversation_id] = (map[m.conversation_id] ?? 0) + 1;
+      // যদি ইউজার বর্তমানে এই চ্যাটে ঢুকে থাকে তবে তার আনরিড কাউন্ট সবসময় ০ রাখো
+      if (m.conversation_id === activeIdRef.current) {
+        map[m.conversation_id] = 0;
+      } else {
+        map[m.conversation_id] = (map[m.conversation_id] ?? 0) + 1;
+      }
     }
     setUnreadMap(map);
   }
@@ -163,29 +168,34 @@ export default function Messages() {
     }
   }
 
-  async function loadThread(convId: string) {
-    setLoadingThread(true);
-    await fetchThreadSilent(convId);
-    setLoadingThread(false);
-  }
-
   async function markRead(convId: string) {
     if (!user) return;
     const nowIso = new Date().toISOString();
 
+    // ১. লোকালি সাথে সাথে জিরো করে দাও
     setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
     setMessages((prev) =>
       prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
     );
 
+    // ২. ন্যাভবারকে নোটিফিকেশন পাঠাও
+    window.dispatchEvent(new CustomEvent("messages-read"));
+
+    // ৩. সুপাবেজ ডাটাবেজে আপডেট চালাও
     await supabase
       .from("messages")
       .update({ read_at: nowIso })
       .eq("conversation_id", convId)
       .neq("sender_id", user.id)
       .is("read_at", null);
+  }
 
-    window.dispatchEvent(new CustomEvent("messages-read"));
+  async function loadThread(convId: string) {
+    setLoadingThread(true);
+    await fetchThreadSilent(convId);
+    setLoadingThread(false);
+    // মেসেজ লোড হওয়ার সাথে সাথে রিড স্টেট আপডেট করো
+    await markRead(convId);
   }
 
   useEffect(() => {
@@ -197,7 +207,6 @@ export default function Messages() {
   useEffect(() => {
     if (activeId) {
       loadThread(activeId);
-      markRead(activeId);
     }
   }, [activeId]);
 
@@ -546,7 +555,10 @@ export default function Messages() {
                 return (
                   <button
                     key={c.id}
-                    onClick={() => setActiveId(c.id)}
+                    onClick={() => {
+                      setActiveId(c.id);
+                      markRead(c.id);
+                    }}
                     className={classNames(
                       "w-full text-left flex items-center gap-3 px-3 py-3 transition-colors",
                       isActive ? "bg-cyan-500/10 border-l-2 border-cyan-400" : "hover:bg-ink-800/50"
