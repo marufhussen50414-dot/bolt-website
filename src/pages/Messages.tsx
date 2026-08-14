@@ -18,7 +18,7 @@ type ConversationRow = Conversation & {
 
 type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
 
-// 100% Mathematically Parallel Double Checkmark Icon
+// Authentic WhatsApp Style Double Checkmark Icon
 function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg
@@ -30,10 +30,10 @@ function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* 1st Checkmark */}
-      <path d="M1.5 12.5L7 18L16.5 8" />
-      {/* 2nd Checkmark (Exactly identical shape, parallel shifted +6px right) */}
-      <path d="M7.5 12.5L13 18L22.5 8" />
+      {/* 1st Full Checkmark */}
+      <path d="M2 12l5 5L18 6" />
+      {/* 2nd Checkmark (Starts behind the 1st check's stem to avoid 'W' shape) */}
+      <path d="M7 12l5 5L22 6" />
     </svg>
   );
 }
