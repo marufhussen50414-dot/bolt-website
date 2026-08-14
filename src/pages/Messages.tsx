@@ -2,12 +2,12 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
-  HandCoins, X, ShoppingBag, ImageIcon, Store, ChevronDown, ChevronUp,
+  HandCoins, X, Store, ChevronDown, ChevronUp,
   ImagePlus, Check, CheckCheck
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
-import type { Conversation, GameListing, Message, Offer, OfferStatus, Profile } from "../lib/types";
+import type { Conversation, GameListing, Message, Offer, Profile } from "../lib/types";
 import { classNames, timeAgo, formatBDT } from "../lib/utils";
 
 type ConversationRow = Conversation & {
@@ -19,7 +19,7 @@ type ConversationRow = Conversation & {
 type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
 
 export default function Messages() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [params, setParams] = useSearchParams();
   const listingIdParam = params.get("listing");
 
