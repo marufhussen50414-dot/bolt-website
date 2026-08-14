@@ -130,19 +130,28 @@ export default function Messages() {
 
   async function loadUnreadCounts() {
     if (!user) return;
-    const { data } = await supabase
+    
+    // বর্তমান ওপেন থাকা চ্যাট আইডি কুয়েরি থেকে বাদ দেওয়া হলো যাতে অ্যাক্টিভ চ্যাটে নতুন মেসেজ আসলে আনরিড কাউন্ট না বাড়ে
+    let query = supabase
       .from("messages")
       .select("conversation_id")
       .neq("sender_id", user.id)
       .is("read_at", null);
+
+    if (activeIdRef.current) {
+      query = query.neq("conversation_id", activeIdRef.current);
+    }
+
+    const { data } = await query;
     const map: Record<string, number> = {};
     for (const m of (data ?? []) as { conversation_id: string }[]) {
-      if (m.conversation_id === activeIdRef.current) {
-        map[m.conversation_id] = 0;
-      } else {
-        map[m.conversation_id] = (map[m.conversation_id] ?? 0) + 1;
-      }
+      map[m.conversation_id] = (map[m.conversation_id] ?? 0) + 1;
     }
+    
+    if (activeIdRef.current) {
+      map[activeIdRef.current] = 0;
+    }
+    
     setUnreadMap(map);
   }
 
@@ -171,16 +180,13 @@ export default function Messages() {
     if (!user) return;
     const nowIso = new Date().toISOString();
 
-    // ১. লোকালি সাথে সাথে আনরিড কাউন্ট জিরো করে দেওয়া এবং মেসেজের read_at আপডেট করা
     setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
     setMessages((prev) =>
       prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
     );
 
-    // ২. হেডার এবং অন্যান্য কম্পোনেন্টকে জানানোর জন্য ইভেন্ট ফায়ার করা
     window.dispatchEvent(new CustomEvent("messages-read"));
 
-    // ৩. সুপাবেজ ডাটাবেজে পার্মানেন্টলি আপডেট সেভ করা যাতে লাল ডট স্থায়ীভাবে চলে যায়
     await supabase
       .from("messages")
       .update({ read_at: nowIso })
@@ -272,7 +278,18 @@ export default function Messages() {
           if (payload.eventType === "INSERT") {
             const newMsg = payload.new as Message;
 
+            // যদি ব্যবহারকারী ইতিমধ্যে এই চ্যাটের ভেতরেই থাকেন, তবে মেসেজ আসার সাথে সাথেই অটোমেটিক read করে ফেলা হবে
             if (newMsg.conversation_id === activeIdRef.current) {
+              if (newMsg.sender_id !== user.id) {
+                const nowIso = new Date().toISOString();
+                newMsg.read_at = nowIso;
+                await supabase
+                  .from("messages")
+                  .update({ read_at: nowIso })
+                  .eq("id", newMsg.id)
+                  .is("read_at", null);
+              }
+
               const withOffer = await attachOffer(newMsg);
               setMessages((prev) => {
                 if (prev.some((m) => m.id === newMsg.id)) return prev;
