@@ -18,7 +18,7 @@ type ConversationRow = Conversation & {
 
 type SellerListing = Pick<GameListing, "id" | "title" | "price" | "images" | "game_name" | "status">;
 
-// Double Check Icon Component
+// Double Check Icon Component for Read Receipts
 function DoubleCheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg
@@ -108,9 +108,10 @@ export default function Messages() {
 
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
-  async function loadConversations() {
+  // Load conversation list without flashing UI spinner on updates
+  async function loadConversations(silent = false) {
     if (!user) return;
-    setLoadingList(true);
+    if (!silent) setLoadingList(true);
     const { data, error: err } = await supabase
       .from("conversations")
       .select(`
@@ -121,9 +122,10 @@ export default function Messages() {
       `)
       .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
       .order("last_message_at", { ascending: false });
+
     if (err) setError(err.message);
     setConversations((data as unknown as ConversationRow[]) ?? []);
-    setLoadingList(false);
+    if (!silent) setLoadingList(false);
   }
 
   async function loadUnreadCounts() {
@@ -150,30 +152,32 @@ export default function Messages() {
     return { ...msg, offer: (data as Offer | null) ?? null };
   }
 
-  async function loadThread(convId: string) {
-    setLoadingThread(true);
-    const { data, error: err } = await supabase
+  async function fetchThreadSilent(convId: string) {
+    const { data } = await supabase
       .from("messages")
       .select("*, offer:offers(*, listing:game_listings(id, title, price, images, game_name, status))")
       .eq("conversation_id", convId)
       .order("created_at", { ascending: true });
-    if (err) setError(err.message);
-    setMessages((data as Message[]) ?? []);
+    if (data) {
+      setMessages(data as Message[]);
+    }
+  }
+
+  async function loadThread(convId: string) {
+    setLoadingThread(true);
+    await fetchThreadSilent(convId);
     setLoadingThread(false);
   }
 
-  // Instant Read Marker
   async function markRead(convId: string) {
     if (!user) return;
     const nowIso = new Date().toISOString();
 
-    // Local UI Fast Update
     setUnreadMap((prev) => ({ ...prev, [convId]: 0 }));
     setMessages((prev) =>
       prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
     );
 
-    // Database Sync
     await supabase
       .from("messages")
       .update({ read_at: nowIso })
@@ -186,7 +190,7 @@ export default function Messages() {
 
   useEffect(() => {
     if (!user) return;
-    loadConversations();
+    loadConversations(false);
     loadUnreadCounts();
   }, [user]);
 
@@ -197,12 +201,14 @@ export default function Messages() {
     }
   }, [activeId]);
 
+  // Scroll to bottom when new messages arrive
   useEffect(() => {
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
   }, [messages, activeId]);
 
+  // Handle URL listing param
   useEffect(() => {
     if (!listingIdParam || !user) return;
     setStarting(true);
@@ -237,21 +243,20 @@ export default function Messages() {
       setContextListing(listing);
       setContextDismissed(false);
       params.delete("listing"); setParams(params, { replace: true });
-      await loadConversations();
+      await loadConversations(true);
       if (convId) setActiveId(convId);
       setStarting(false);
       setTimeout(() => draftRef.current?.focus(), 100);
     })();
   }, [listingIdParam, user, params, setParams]);
 
-  // REALTIME ENGINE - HIGH SPEED SYNC
+  // REALTIME SUBSCRIPTION & FALLBACK POLLING
   useEffect(() => {
     if (!user) return;
 
+    // Realtime Postgres Changes Listener
     const channel = supabase
-      .channel(`global-chat-room-${user.id}`, {
-        config: { broadcast: { self: true } }
-      })
+      .channel(`chat-channel-${user.id}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "messages" },
@@ -259,20 +264,6 @@ export default function Messages() {
           if (payload.eventType === "INSERT") {
             const newMsg = payload.new as Message;
 
-            // 1. Update Conversation list ordering
-            setConversations((prev) => {
-              const idx = prev.findIndex((c) => c.id === newMsg.conversation_id);
-              if (idx < 0) {
-                loadConversations();
-                return prev;
-              }
-              const next = [...prev];
-              next[idx] = { ...next[idx], last_message_at: newMsg.created_at };
-              next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-              return next;
-            });
-
-            // 2. Direct Chat Feed Push
             if (newMsg.conversation_id === activeIdRef.current) {
               const withOffer = await attachOffer(newMsg);
               setMessages((prev) => {
@@ -280,7 +271,6 @@ export default function Messages() {
                 return [...prev, withOffer];
               });
 
-              // Mark read instantly if received while active
               if (newMsg.sender_id !== user.id) {
                 markRead(newMsg.conversation_id);
               }
@@ -290,6 +280,7 @@ export default function Messages() {
                 [newMsg.conversation_id]: (prev[newMsg.conversation_id] ?? 0) + 1,
               }));
             }
+            loadConversations(true);
           }
 
           if (payload.eventType === "UPDATE") {
@@ -316,8 +307,18 @@ export default function Messages() {
       )
       .subscribe();
 
+    // 5-second polling fallback for guaranteed sync
+    const interval = setInterval(() => {
+      if (activeIdRef.current) {
+        fetchThreadSilent(activeIdRef.current);
+      }
+      loadConversations(true);
+      loadUnreadCounts();
+    }, 5000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [user]);
 
@@ -381,7 +382,6 @@ export default function Messages() {
     setDraft("");
     clearPendingImage();
 
-    // Instant append on sender's UI
     if (data) {
       const newSentMsg = data as Message;
       setMessages((prev) => {
@@ -389,22 +389,12 @@ export default function Messages() {
         return [...prev, newSentMsg];
       });
 
-      // Update conversation timestamp locally
-      setConversations((prev) => {
-        const next = [...prev];
-        const idx = next.findIndex((c) => c.id === activeId);
-        if (idx >= 0) {
-          next[idx] = { ...next[idx], last_message_at: newSentMsg.created_at };
-          next.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-        }
-        return next;
-      });
-
-      // Update database conversation timestamp
       await supabase
         .from("conversations")
         .update({ last_message_at: newSentMsg.created_at })
         .eq("id", activeId);
+
+      loadConversations(true);
     }
   }
 
@@ -469,7 +459,7 @@ export default function Messages() {
     setSendingOffer(false);
     if (msgErr) { setOfferError(msgErr.message); return; }
     setMessages((m) => [...m, msgRow as Message]);
-    loadConversations();
+    loadConversations(true);
     closeOfferModal();
   }
 
