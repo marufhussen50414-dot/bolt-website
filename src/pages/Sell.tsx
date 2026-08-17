@@ -136,7 +136,7 @@ export default function Sell() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-10">
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-10 pb-28">
       <div className="mb-6"><h1 className="font-display text-3xl font-extrabold text-white">Sell a Game ID</h1></div>
       {success ? (
         <div className="card p-8 text-center animate-scale-in">
