@@ -190,7 +190,6 @@ export default function Messages() {
       prev.map((m) => (m.sender_id !== user.id && !m.read_at ? { ...m, read_at: nowIso } : m))
     );
 
-    // Database update to clear unread status instantly
     await supabase
       .from("messages")
       .update({ read_at: nowIso })
@@ -225,14 +224,12 @@ export default function Messages() {
     }
   }, [activeId]);
 
-  // Scroll to bottom when new messages arrive
   useEffect(() => {
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
   }, [messages, activeId]);
 
-  // Handle URL listing param
   useEffect(() => {
     if (!listingIdParam || !user) return;
     setStarting(true);
@@ -274,7 +271,6 @@ export default function Messages() {
     })();
   }, [listingIdParam, user, params, setParams]);
 
-  // REALTIME SUBSCRIPTION & FALLBACK POLLING
   useEffect(() => {
     if (!user) return;
 
@@ -346,7 +342,7 @@ export default function Messages() {
       const currentActive = localStorage.getItem("activeChatId") || activeIdRef.current;
       if (currentActive) {
         fetchThreadSilent(currentActive);
-        markRead(currentActive); // Ensure unread messages are regularly marked read when active
+        markRead(currentActive);
       }
       loadConversations(true);
       loadUnreadCounts();
@@ -548,10 +544,10 @@ export default function Messages() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+    <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8 py-2 sm:py-4 pb-20 sm:pb-6">
       {error && <div className="card p-3 mb-4 text-sm text-error-400 border border-error-500/20">{error}</div>}
 
-      <div className="card overflow-hidden h-[calc(100vh-100px)] min-h-[580px] flex border border-cyan-500/10 rounded-xl shadow-2xl bg-ink-950">
+      <div className="card overflow-hidden h-[calc(100vh-130px)] sm:h-[calc(100vh-110px)] min-h-[500px] flex border border-cyan-500/10 rounded-xl shadow-2xl bg-ink-950">
         {/* Sidebar */}
         <div className={classNames("w-full md:w-[350px] lg:w-[380px] flex flex-col border-r border-ink-800 bg-ink-900/60", activeId ? "hidden md:flex" : "flex")}>
           <div className="p-3 border-b border-ink-800">
@@ -798,7 +794,6 @@ export default function Messages() {
                 <div className="flex items-center gap-2">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChosen} className="hidden" />
 
-                  {/* Give Offer Button */}
                   {iAmSeller && (
                     <button
                       type="button"
