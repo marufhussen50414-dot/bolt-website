@@ -159,7 +159,7 @@ export default function Sell() {
             </div>
           </div>
           {isOthers && (
-            <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="e.g. Clash Royale" /></div>
+            <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="Game Name" /></div>
           )}
           <div><label className="label">Listing Title</label><input required value={form.title} onChange={(e) => update("title", e.target.value)} className="input" placeholder="Title" /></div>
           <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder="Describe the account — skins, characters, diamonds, binds, etc." /></div>
