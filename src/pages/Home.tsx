@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star, Sparkles } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -48,50 +48,38 @@ export default function Home() {
 
   return (
     <div>
-      {/* SIMPLE UNIQUE LOOPING ANIMATION BANNER */}
-      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-6 px-4">
-        {/* Soft Background Neon Glows */}
-        <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-40 h-40 bg-primary-500/15 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/2 right-1/3 -translate-y-1/2 w-40 h-40 bg-accent-500/15 rounded-full blur-3xl animate-pulse delay-1000" />
-        
+      {/* NO TEXT - COMPACT UNIQUE LOOPING ANIMATION BANNER */}
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-4 px-4">
         <div className="relative mx-auto max-w-7xl flex items-center justify-center">
-          <div className="w-full max-w-3xl rounded-2xl bg-gradient-to-r from-ink-900 via-ink-900/90 to-ink-900 border border-primary-500/30 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between shadow-2xl overflow-hidden gap-6 relative">
+          <div className="w-full max-w-3xl h-24 sm:h-28 rounded-2xl bg-gradient-to-r from-ink-900 via-primary-950/40 to-ink-900 border border-primary-500/30 flex items-center justify-center shadow-2xl relative overflow-hidden">
             
-            {/* Left Side: Clean Text */}
-            <div className="relative z-10 space-y-2 text-center sm:text-left">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-xs font-bold tracking-wider uppercase animate-bounce duration-1000">
-                <Sparkles size={13} /> GameHaatBD Market
-              </span>
-              <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Secure & Fast <span className="text-primary-400">Account Trading</span>
-              </h1>
-              <p className="text-xs sm:text-sm text-ink-300 max-w-sm">
-                The most trusted gaming marketplace with 100% escrow protection.
-              </p>
-            </div>
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-primary-500/10 blur-xl animate-pulse" />
 
-            {/* Right Side: Unique Looping Animated Graphic */}
-            <div className="relative z-10 flex items-center justify-center">
-              <div className="relative flex items-center justify-center w-28 h-28 sm:w-32 sm:h-32">
-                
-                {/* Rotating Outer Ring */}
-                <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary-500/40 animate-spin duration-[8000ms]" />
-                
-                {/* Pulsing Middle Glow Ring */}
-                <div className="absolute inset-2 rounded-full bg-gradient-to-tr from-primary-500/20 to-accent-500/20 animate-pulse" />
-
-                {/* Center Floating Icon Box */}
-                <div className="relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-xl shadow-primary-500/30 animate-bounce duration-1000">
-                  <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-primary-400">
-                    <Gamepad2 size={36} className="animate-pulse text-white" />
-                  </div>
+            {/* Center Animated Unique Graphic without Text */}
+            <div className="relative z-10 flex items-center justify-center gap-6">
+              
+              {/* Rotating Ring Icon 1 */}
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-lg animate-bounce duration-1000">
+                <div className="w-full h-full bg-ink-950 rounded-[10px] flex items-center justify-center text-primary-400">
+                  <Gamepad2 size={24} className="animate-pulse text-white" />
                 </div>
-
-                {/* Tiny Floating Sparks */}
-                <span className="absolute top-0 right-4 w-2 h-2 bg-primary-400 rounded-full animate-ping" />
-                <span className="absolute bottom-2 left-3 w-1.5 h-1.5 bg-accent-400 rounded-full animate-ping delay-500" />
-
               </div>
+
+              {/* Pulsing Center Shield */}
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-accent-600 to-primary-500 p-0.5 shadow-lg animate-pulse">
+                <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-accent-400">
+                  <ShieldCheck size={28} className="animate-spin duration-[6000ms]" />
+                </div>
+              </div>
+
+              {/* Rotating Ring Icon 3 */}
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary-500 to-success-500 p-0.5 shadow-lg animate-bounce duration-1000 delay-500">
+                <div className="w-full h-full bg-ink-950 rounded-[10px] flex items-center justify-center text-success-400">
+                  <Zap size={24} className="animate-pulse text-white" />
+                </div>
+              </div>
+
             </div>
 
           </div>
