@@ -86,8 +86,8 @@ export default function Header() {
               <Link to="/" className="shrink-0"><Logo /></Link>
               <nav className="hidden md:flex items-center gap-1 overflow-x-auto scrollbar-thin">
                 <NavLink to="/" end className={linkClass}><span className="flex items-center gap-1.5"><HomeIcon size={15} /> Home</span></NavLink>
-                <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
                 <NavLink to="/browse" className={linkClass}><span className="flex items-center gap-1.5"><Search size={15} /> Search</span></NavLink>
+                <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
                 <NavLink to="/messages" className={linkClass}>
                   <span className="relative flex items-center gap-1.5">
                     <MessageSquare size={15} /> Message
