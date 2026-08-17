@@ -1,9 +1,9 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  Search, User, LogOut, ShieldCheck,
+  Search, User, LogOut, PlusCircle, ShieldCheck,
   Settings, Wallet, Star, LifeBuoy, ChevronRight, HelpCircle, Home as HomeIcon,
-  MessageSquare, X,
+  Tag, MessageSquare, X, Store,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -71,6 +71,7 @@ export default function Header() {
 
   const menuItems = [
     { to: "/profile", icon: User, label: "My Profile" },
+    { to: "/sell", icon: PlusCircle, label: "Sell an ID" },
     { to: "/my-listings", icon: Settings, label: "My Listings" },
     { to: "/profile", icon: Wallet, label: "Earnings & Wallet" },
     { to: "/profile", icon: Star, label: "My Purchases" },
@@ -85,6 +86,7 @@ export default function Header() {
               <Link to="/" className="shrink-0"><Logo /></Link>
               <nav className="hidden md:flex items-center gap-1 overflow-x-auto scrollbar-thin">
                 <NavLink to="/" end className={linkClass}><span className="flex items-center gap-1.5"><HomeIcon size={15} /> Home</span></NavLink>
+                <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
                 <NavLink to="/messages" className={linkClass}>
                   <span className="relative flex items-center gap-1.5">
                     <MessageSquare size={15} /> Message
@@ -194,6 +196,10 @@ export default function Header() {
         <Link to="/browse" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px]">
           <Search size={20} />
           <span>Browse</span>
+        </Link>
+        <Link to="/sell" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px]">
+          <Store size={20} />
+          <span>Sell ID</span>
         </Link>
         <Link to="/messages" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px] relative">
           <MessageSquare size={20} />
