@@ -48,26 +48,17 @@ export default function Home() {
 
   return (
     <div>
-      {/* HERO BANNER SECTION */}
-      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-12 md:py-16">
-        <div className="absolute inset-0 bg-glow-radial opacity-70" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-bold mb-6 animate-pulse">
-            <Sparkles size={14} /> Bangladesh's #1 Trusted Gaming Account Marketplace
+      {/* SLIM WIDE BANNER */}
+      <section className="bg-gradient-to-r from-primary-950 via-ink-900 to-accent-950 border-b border-ink-800 py-3 px-4">
+        <div className="mx-auto max-w-7xl flex items-center justify-between flex-wrap gap-2 text-xs sm:text-sm">
+          <div className="flex items-center gap-2 text-white font-medium">
+            <span className="flex h-2 w-2 rounded-full bg-primary-400 animate-ping" />
+            <Sparkles size={16} className="text-primary-400 shrink-0" />
+            <span>100% Secure Escrow & Lowest 2% Commission in Bangladesh!</span>
           </div>
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight max-w-3xl mx-auto leading-tight">
-            Buy & Sell Verified <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Game & Social IDs</span> Safely
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-ink-400 max-w-xl mx-auto">
-            Experience 100% secure escrow protection, instant transfers, and the lowest commission rates in the market.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-3.5 flex-wrap">
-            <Link to="/browse" className="btn-primary text-sm px-6 py-3 shadow-lg shadow-primary-500/25">
-              Browse IDs Now <ArrowRight size={16} />
-            </Link>
-            <Link to="/sell" className="btn-secondary text-sm px-6 py-3">
-              Sell Your ID
+          <div className="flex items-center gap-3">
+            <Link to="/sell" className="text-primary-400 hover:text-primary-300 font-semibold underline underline-offset-2">
+              Sell ID Now
             </Link>
           </div>
         </div>
