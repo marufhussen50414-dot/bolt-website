@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star, Sparkles } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -48,6 +48,31 @@ export default function Home() {
 
   return (
     <div>
+      {/* HERO BANNER SECTION */}
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-12 md:py-16">
+        <div className="absolute inset-0 bg-glow-radial opacity-70" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-bold mb-6 animate-pulse">
+            <Sparkles size={14} /> Bangladesh's #1 Trusted Gaming Account Marketplace
+          </div>
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight max-w-3xl mx-auto leading-tight">
+            Buy & Sell Verified <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Game & Social IDs</span> Safely
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-ink-400 max-w-xl mx-auto">
+            Experience 100% secure escrow protection, instant transfers, and the lowest commission rates in the market.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-3.5 flex-wrap">
+            <Link to="/browse" className="btn-primary text-sm px-6 py-3 shadow-lg shadow-primary-500/25">
+              Browse IDs Now <ArrowRight size={16} />
+            </Link>
+            <Link to="/sell" className="btn-secondary text-sm px-6 py-3">
+              Sell Your ID
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Latest Listings */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
