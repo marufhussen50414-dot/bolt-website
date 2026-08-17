@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star, Sparkles } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star, Trophy, Crown } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -48,45 +48,38 @@ export default function Home() {
 
   return (
     <div>
-      {/* SLIM ANIMATED HERO BANNER WITH CHARACTER ART & GLOW */}
-      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-6 sm:py-8 px-4">
-        {/* Animated background glows */}
-        <div className="absolute -top-12 -left-12 w-48 h-48 bg-primary-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+      {/* CUTE ANIMATED HERO BANNER */}
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-6 px-4">
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-40 h-40 bg-primary-500/20 rounded-full blur-2xl animate-pulse" />
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-40 h-40 bg-accent-500/20 rounded-full blur-2xl animate-pulse delay-700" />
         
-        <div className="relative mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left flex-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-xs font-semibold mb-3">
-              <Sparkles size={13} className="animate-spin" /> Trusted Gaming Marketplace
-            </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
-              Trade Pro <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Game IDs</span> Instantly
-            </h1>
-            <p className="mt-2 text-xs sm:text-sm text-ink-400 max-w-lg">
-              Safe escrow protection with the lowest 2% commission rate in Bangladesh. Buy & sell with 100% confidence.
-            </p>
-            <div className="mt-4 flex items-center justify-center md:justify-start gap-3">
-              <Link to="/browse" className="btn-primary text-xs sm:text-sm px-4 py-2.5 shadow-lg shadow-primary-500/20">
-                Explore IDs <ArrowRight size={14} />
-              </Link>
-              <Link to="/sell" className="btn-secondary text-xs sm:text-sm px-4 py-2.5">
-                Sell ID
-              </Link>
-            </div>
-          </div>
+        <div className="relative mx-auto max-w-7xl flex items-center justify-center">
+          <div className="relative w-full max-w-xl h-36 sm:h-44 rounded-2xl bg-gradient-to-r from-primary-950/80 via-ink-900 to-accent-950/80 border border-primary-500/30 p-4 flex items-center justify-between shadow-2xl overflow-hidden group">
+            {/* Background glowing particles */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-500/10 via-transparent to-transparent opacity-60" />
 
-          {/* Animated Gaming Character Visual */}
-          <div className="relative shrink-0 flex items-center justify-center">
-            <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl bg-gradient-to-br from-primary-500/20 via-ink-900 to-accent-500/20 border border-ink-700/50 p-2 flex items-center justify-center shadow-2xl overflow-hidden group">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-500/10 via-transparent to-transparent opacity-75 group-hover:scale-110 transition-transform duration-500" />
-              {/* Character Floating Animation Icon / Emoji / Image representation */}
-              <div className="relative z-10 text-center animate-bounce duration-1000">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-xl bg-gradient-to-tr from-primary-600 to-accent-500 flex items-center justify-center text-white shadow-lg shadow-primary-500/40">
-                  <Gamepad2 size={36} className="animate-pulse" />
+            {/* Left side cute elements */}
+            <div className="relative z-10 space-y-1.5">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent-500/20 border border-accent-500/30 text-accent-300 text-[10px] font-bold tracking-wider uppercase animate-bounce">
+                <Crown size={11} /> Pro Gamer Hub
+              </span>
+              <h2 className="font-display text-lg sm:text-2xl font-extrabold text-white tracking-tight">
+                GameHaatBD <span className="text-primary-400">Market</span>
+              </h2>
+              <p className="text-[11px] sm:text-xs text-ink-400">Fast, secure & trusted account trading.</p>
+            </div>
+
+            {/* Right side cute animated gaming character/avatar visual */}
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="relative animate-bounce duration-1000">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-primary-500 to-accent-500 p-0.5 shadow-xl shadow-primary-500/30">
+                  <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-primary-400">
+                    <Gamepad2 size={32} className="animate-pulse" />
+                  </div>
                 </div>
-                <span className="inline-block mt-2 text-[10px] font-bold text-primary-300 uppercase tracking-widest bg-ink-950/80 px-2 py-0.5 rounded-full border border-primary-500/30">
-                  Verified ID
-                </span>
+                <div className="absolute -bottom-1 -right-1 bg-success-500 text-ink-950 p-1 rounded-full shadow-md">
+                  <Trophy size={12} className="text-white" />
+                </div>
               </div>
             </div>
           </div>
