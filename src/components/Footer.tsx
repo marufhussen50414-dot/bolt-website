@@ -15,7 +15,6 @@ export default function Footer() {
             <h4 className="font-semibold text-white text-sm mb-3">Marketplace</h4>
             <ul className="space-y-2 text-sm text-ink-400">
               <li><Link to="/browse" className="hover:text-primary-400">Browse IDs</Link></li>
-              <li><Link to="/sell" className="hover:text-primary-400">Sell an ID</Link></li>
               <li><Link to="/how-it-works" className="hover:text-primary-400">How it Works</Link></li>
             </ul>
           </div>
