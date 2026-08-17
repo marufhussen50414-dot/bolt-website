@@ -94,7 +94,7 @@ export default function Home() {
               <h2 className="font-display text-2xl md:text-3xl font-extrabold text-white">Latest Listings</h2>
               <span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20 text-sm">{availableCount} available</span>
             </div>
-            <p className="text-sm text-ink-400 mt-1">Fresh accounts from verified sellers</p>
+
           </div>
           <Link to="/browse" className="text-sm font-semibold text-primary-400 hover:text-primary-300 flex items-center gap-1">View all <ArrowRight size={16} /></Link>
         </div>
