@@ -2,7 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Search, User, LogOut, PlusCircle, ShieldCheck,
-  Settings, Wallet, Star, LifeBuoy, ChevronRight, HelpCircle, Home as HomeIcon,
+  Settings, Wallet, Star, LifeBuoy, ChevronRight, Home as HomeIcon,
   Tag, MessageSquare, X, Store,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
