@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star, Trophy, Crown } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -48,40 +48,43 @@ export default function Home() {
 
   return (
     <div>
-      {/* CUTE ANIMATED HERO BANNER */}
-      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-6 px-4">
-        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-40 h-40 bg-primary-500/20 rounded-full blur-2xl animate-pulse" />
-        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-40 h-40 bg-accent-500/20 rounded-full blur-2xl animate-pulse delay-700" />
+      {/* PURE ANIMATED GAMING CHARACTER / AVATAR BANNER */}
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-4 px-4">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-950/40 via-ink-950 to-accent-950/40" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-32 bg-primary-500/15 rounded-full blur-2xl animate-pulse" />
         
         <div className="relative mx-auto max-w-7xl flex items-center justify-center">
-          <div className="relative w-full max-w-xl h-36 sm:h-44 rounded-2xl bg-gradient-to-r from-primary-950/80 via-ink-900 to-accent-950/80 border border-primary-500/30 p-4 flex items-center justify-between shadow-2xl overflow-hidden group">
-            {/* Background glowing particles */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-500/10 via-transparent to-transparent opacity-60" />
-
-            {/* Left side cute elements */}
-            <div className="relative z-10 space-y-1.5">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent-500/20 border border-accent-500/30 text-accent-300 text-[10px] font-bold tracking-wider uppercase animate-bounce">
-                <Crown size={11} /> Pro Gamer Hub
-              </span>
-              <h2 className="font-display text-lg sm:text-2xl font-extrabold text-white tracking-tight">
-                GameHaatBD <span className="text-primary-400">Market</span>
-              </h2>
-              <p className="text-[11px] sm:text-xs text-ink-400">Fast, secure & trusted account trading.</p>
-            </div>
-
-            {/* Right side cute animated gaming character/avatar visual */}
-            <div className="relative z-10 flex items-center gap-3">
-              <div className="relative animate-bounce duration-1000">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-primary-500 to-accent-500 p-0.5 shadow-xl shadow-primary-500/30">
-                  <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-primary-400">
-                    <Gamepad2 size={32} className="animate-pulse" />
-                  </div>
-                </div>
-                <div className="absolute -bottom-1 -right-1 bg-success-500 text-ink-950 p-1 rounded-full shadow-md">
-                  <Trophy size={12} className="text-white" />
+          <div className="w-full max-w-2xl h-32 sm:h-40 rounded-2xl bg-gradient-to-r from-ink-900/90 via-ink-900 to-ink-900/90 border border-primary-500/30 flex items-center justify-center gap-6 shadow-2xl overflow-hidden px-6">
+            
+            {/* Animated Floating Character Icon 1 */}
+            <div className="animate-bounce duration-1000">
+              <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-lg shadow-primary-500/40">
+                <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-primary-400">
+                  <Gamepad2 size={30} className="animate-pulse" />
                 </div>
               </div>
             </div>
+
+            {/* Central Neon Pulse Avatar */}
+            <div className="relative flex items-center justify-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-r from-primary-500 via-accent-500 to-primary-400 p-1 animate-spin duration-[3000ms]">
+                <div className="w-full h-full bg-ink-950 rounded-full flex items-center justify-center">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-ink-900 flex items-center justify-center text-white">
+                    <Sword size={28} className="text-primary-400 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Animated Floating Character Icon 2 */}
+            <div className="animate-bounce duration-1000 delay-500">
+              <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-accent-500 to-primary-600 p-0.5 shadow-lg shadow-accent-500/40">
+                <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-accent-400">
+                  <Crosshair size={30} className="animate-pulse" />
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
