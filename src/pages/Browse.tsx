@@ -67,7 +67,6 @@ export default function Browse() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 w-full overflow-x-hidden">
-      <div className="mb-6"><h1 className="font-display text-3xl font-extrabold text-white">Browse Game IDs</h1><p className="text-ink-400 mt-1">Find verified game accounts from trusted sellers</p></div>
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500" />
@@ -98,17 +97,6 @@ export default function Browse() {
       <div className="grid lg:grid-cols-[260px_1fr] gap-6">
         <aside className={classNames("space-y-5", showMobileFilters ? "block" : "hidden lg:block")}>
           <div className="card p-5">
-            <h3 className="font-semibold text-white mb-3">Category</h3>
-            <div className="space-y-1">
-              <button onClick={() => updateParam("category", "")} className={classNames("w-full text-left px-3 py-2 rounded-lg text-sm transition-colors", !category ? "bg-primary-500/15 text-primary-300 font-semibold" : "text-ink-400 hover:bg-ink-800 hover:text-white")}>All Categories</button>
-              {categories.map((cat) => { const Icon = iconMap[cat.icon ?? "gamepad"] ?? Gamepad2; return (
-                <button key={cat.id} onClick={() => updateParam("category", cat.slug)} className={classNames("w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2", category === cat.slug ? "bg-primary-500/15 text-primary-300 font-semibold" : "text-ink-400 hover:bg-ink-800 hover:text-white")}>
-                  <Icon size={16} /> {cat.name}
-                </button>
-              ); })}
-            </div>
-          </div>
-          <div className="card p-5">
             <h3 className="font-semibold text-white mb-3">Price Range (৳)</h3>
             <div className="flex items-center gap-2">
               <input type="number" value={minPrice} onChange={(e) => updateParam("min", e.target.value)} placeholder="Min" className="input py-2 text-sm" />
@@ -120,7 +108,18 @@ export default function Browse() {
                 <button key={p.label} onClick={() => { updateParam("min", p.min); updateParam("max", p.max); }} className="rounded-lg bg-ink-800 hover:bg-ink-700 px-2.5 py-1 text-xs font-medium text-ink-300 hover:text-white transition-colors">{p.label}</button>
               ))}
             </div>
-            {(activeServerFilters > 0 || quickFilter !== "all") && <button onClick={() => { ["category", "min", "max"].forEach((k) => updateParam(k, "")); setQuickFilter("all"); }} className="mt-3 text-sm text-error-400 hover:text-error-300 font-medium">Clear all filters</button>}
+          </div>
+          <div className="card p-5">
+            <h3 className="font-semibold text-white mb-3">Category</h3>
+            <div className="space-y-1">
+              <button onClick={() => updateParam("category", "")} className={classNames("w-full text-left px-3 py-2 rounded-lg text-sm transition-colors", !category ? "bg-primary-500/15 text-primary-300 font-semibold" : "text-ink-400 hover:bg-ink-800 hover:text-white")}>All Categories</button>
+              {categories.map((cat) => { const Icon = iconMap[cat.icon ?? "gamepad"] ?? Gamepad2; return (
+                <button key={cat.id} onClick={() => updateParam("category", cat.slug)} className={classNames("w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2", category === cat.slug ? "bg-primary-500/15 text-primary-300 font-semibold" : "text-ink-400 hover:bg-ink-800 hover:text-white")}>
+                  <Icon size={16} /> {cat.name}
+                </button>
+              ); })}
+            </div>
+            {(activeServerFilters > 0 || quickFilter !== "all") && <button onClick={() => { ["category", "min", "max"].forEach((k) => updateParam(k, "")); setQuickFilter("all"); }} className="mt-4 w-full text-center text-sm text-error-400 hover:text-error-300 font-medium">Clear all filters</button>}
           </div>
         </aside>
         <div>
