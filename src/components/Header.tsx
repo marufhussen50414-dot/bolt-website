@@ -31,7 +31,6 @@ export default function Header() {
     loadUnread();
     if (!user) return;
 
-    // যখনই মেসেজ রিড করা হবে, সাথে সাথে কাউন্ট রিলোড হবে
     const onRead = () => loadUnread();
     window.addEventListener("messages-read", onRead);
 
@@ -44,7 +43,6 @@ export default function Header() {
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => loadUnread())
       .subscribe();
 
-    // ৫ সেকেন্ডের একটি ফলব্যাক পুলিং রাখা হলো যাতে কোনো কারণে রিয়েলটাইম মিস হলে সাথে সাথে সিঙ্ক হয়ে যায়
     const interval = setInterval(() => {
       loadUnread();
     }, 5000);
@@ -80,9 +78,9 @@ export default function Header() {
   ];
 
   return (
-    <>
-      <header className="sticky top-0 z-40 glass border-b border-ink-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="w-full overflow-x-hidden">
+      <header className="sticky top-0 z-40 glass border-b border-ink-800 w-full">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
           <div className="flex h-16 items-center justify-between gap-4">
             <div className="flex items-center gap-6 min-w-0">
               <Link to="/" className="shrink-0"><Logo /></Link>
@@ -189,8 +187,8 @@ export default function Header() {
         )}
       </header>
 
-      {/* Mobile Fixed Bottom Navigation Bar (Visible only on small screens) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-ink-950/95 backdrop-blur-md border-t border-ink-800 px-2 py-2 flex items-center justify-around md:hidden shadow-2xl">
+      {/* Mobile Fixed Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-ink-950/95 backdrop-blur-md border-t border-ink-800 px-2 py-2 flex items-center justify-around md:hidden shadow-2xl w-full">
         <Link to="/" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px]">
           <HomeIcon size={20} />
           <span>Home</span>
@@ -217,6 +215,6 @@ export default function Header() {
           <span>Profile</span>
         </Link>
       </div>
-    </>
+    </div>
   );
 }
