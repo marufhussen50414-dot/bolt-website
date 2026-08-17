@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star, Sparkles } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -48,60 +48,55 @@ export default function Home() {
 
   return (
     <div>
-      {/* CUTE ANIMATED CARTOON GAMER CHARACTER BANNER */}
-      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-4 px-4">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-950/40 via-ink-950 to-accent-950/40" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-32 bg-primary-500/15 rounded-full blur-2xl animate-pulse" />
+      {/* ANIME / AI GAMING CHARACTER HERO BANNER */}
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-6 px-4">
+        {/* Background Glow Effects */}
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-48 h-48 bg-primary-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-48 h-48 bg-accent-500/20 rounded-full blur-3xl animate-pulse delay-700" />
         
         <div className="relative mx-auto max-w-7xl flex items-center justify-center">
-          <div className="w-full max-w-2xl h-32 sm:h-40 rounded-2xl bg-gradient-to-r from-ink-900/90 via-ink-900 to-ink-900/90 border border-primary-500/30 flex items-center justify-between shadow-2xl overflow-hidden px-6">
+          <div className="w-full max-w-3xl rounded-2xl bg-gradient-to-r from-primary-950/90 via-ink-900 to-accent-950/90 border border-primary-500/40 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between shadow-2xl overflow-hidden gap-6 relative">
             
-            {/* Left Side: Floating Cute Controller */}
-            <div className="animate-bounce duration-1000 hidden sm:block">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-lg shadow-primary-500/40 flex items-center justify-center text-white">
-                <Gamepad2 size={32} className="animate-pulse" />
-              </div>
+            {/* Background Decorative Grid */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20" />
+
+            {/* Left Info / Greeting */}
+            <div className="relative z-10 space-y-2 text-center sm:text-left">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/20 border border-primary-500/40 text-primary-300 text-xs font-bold tracking-wider uppercase animate-pulse">
+                <Sparkles size={13} /> Elite Gaming Hub
+              </span>
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Level Up Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-accent-400">Play</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-ink-300 max-w-sm">
+                Buy & sell verified gaming accounts instantly with 100% secure escrow protection.
+              </p>
             </div>
 
-            {/* Center: Cute Cartoon/Animated Gamer Character Avatar */}
-            <div className="flex items-center gap-4 mx-auto sm:mx-0">
-              <div className="relative animate-bounce duration-1000">
-                {/* Character Head/Helmet SVG Illustration */}
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-primary-500 via-accent-500 to-primary-400 p-1 shadow-xl shadow-primary-500/30">
-                  <div className="w-full h-full bg-ink-950 rounded-full flex flex-col items-center justify-center overflow-hidden relative group">
-                    {/* Glowing VR/Gaming Visor Eyes */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-primary-500/20 to-transparent" />
-                    <div className="flex items-center gap-2 z-10">
-                      <div className="w-4 h-2.5 bg-primary-400 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]" />
-                      <div className="w-4 h-2.5 bg-primary-400 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]" />
+            {/* Right Side: Anime / AI Gaming Character Visual Card */}
+            <div className="relative z-10 flex items-center justify-center">
+              <div className="relative group">
+                {/* Outer Glow Ring */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-accent-500 rounded-2xl blur-md opacity-70 group-hover:opacity-100 transition duration-500 animate-pulse" />
+                
+                {/* Character Box Container */}
+                <div className="relative w-40 sm:w-48 h-36 sm:h-40 rounded-2xl bg-ink-950 border border-primary-500/50 p-3 flex flex-col items-center justify-center text-center overflow-hidden shadow-2xl">
+                  
+                  {/* Floating Controller / Gaming Headset Icon representation */}
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-lg mb-2 animate-bounce duration-1000">
+                    <div className="w-full h-full bg-ink-950 rounded-[10px] flex items-center justify-center text-primary-400">
+                      <Gamepad2 size={32} className="animate-pulse text-primary-300" />
                     </div>
-                    {/* Cute Smile / Headphone band */}
-                    <div className="w-8 h-1 bg-accent-400 rounded-full mt-2 z-10 shadow-[0_0_6px_#f43f5e]" />
-                    <div className="absolute -top-1 w-12 h-4 bg-primary-600 rounded-full border border-primary-400/50" />
                   </div>
-                </div>
-                {/* Floating Online Badge */}
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-success-500 rounded-full border-2 border-ink-950 animate-ping" />
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-success-500 rounded-full border-2 border-ink-950" />
-              </div>
 
-              {/* Animated Gamer Tag / Status */}
-              <div className="space-y-1 text-left">
-                <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary-500/20 border border-primary-500/40 text-primary-300 text-[10px] font-bold tracking-widest uppercase animate-pulse">
-                  PRO GAMER
-                </span>
-                <div className="flex items-center gap-1.5 text-white font-display font-extrabold text-sm sm:text-lg tracking-wide">
-                  <span>GAMEHAAT</span>
-                  <span className="text-primary-400">BADSHAH</span>
-                </div>
-                <p className="text-[10px] sm:text-xs text-ink-400">Active & Ready to Trade</p>
-              </div>
-            </div>
+                  <span className="font-display text-xs sm:text-sm font-bold text-white tracking-wider">
+                    PRO GAMER
+                  </span>
+                  <span className="text-[10px] text-success-400 font-medium flex items-center gap-1 mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-success-500 animate-ping inline-block" /> Ready to Trade
+                  </span>
 
-            {/* Right Side: Floating Cute Shield */}
-            <div className="animate-bounce duration-1000 delay-500 hidden sm:block">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-accent-500 to-primary-600 p-0.5 shadow-lg shadow-accent-500/40 flex items-center justify-center text-white">
-                <ShieldCheck size={32} className="animate-pulse text-accent-400" />
+                </div>
               </div>
             </div>
 
