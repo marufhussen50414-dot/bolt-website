@@ -62,7 +62,7 @@ export default function Browse() {
   const activeServerFilters = [category, minPrice, maxPrice].filter(Boolean).length;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 w-full overflow-x-hidden">
       <div className="mb-6"><h1 className="font-display text-3xl font-extrabold text-white">Browse Game IDs</h1><p className="text-ink-400 mt-1">Find verified game accounts from trusted sellers</p></div>
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1">
@@ -75,18 +75,18 @@ export default function Browse() {
           {activeServerFilters > 0 && <span className="absolute -top-2 -right-2 grid place-items-center h-5 w-5 rounded-full bg-primary-500 text-white text-xs font-bold">{activeServerFilters}</span>}
         </button>
       </div>
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 max-w-full scrollbar-none">
         {quickFilters.map((q) => { const Icon = q.icon; return (
           <button key={q.value} onClick={() => setQuickFilter(q.value)} className={classNames("inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap border", quickFilter === q.value ? "bg-primary-500/15 text-primary-300 border-primary-500/30 shadow-glow" : "bg-ink-900 text-ink-400 border-ink-700 hover:text-white hover:border-ink-600")}>
             <Icon size={14} /> {q.label}
           </button>
         ); })}
       </div>
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-xs text-ink-500 mr-1">Sort:</span>
-        <div className="flex gap-1 bg-ink-900 rounded-xl p-1 border border-ink-800">
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto max-w-full pb-1 scrollbar-none">
+        <span className="text-xs text-ink-500 mr-1 shrink-0">Sort:</span>
+        <div className="flex gap-1 bg-ink-900 rounded-xl p-1 border border-ink-800 shrink-0">
           {sortOptions.map((o) => { const Icon = o.icon; return (
-            <button key={o.value} onClick={() => updateParam("sort", o.value)} className={classNames("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-all", sort === o.value ? "bg-primary-500 text-white shadow-glow" : "text-ink-400 hover:text-white")}>
+            <button key={o.value} onClick={() => updateParam("sort", o.value)} className={classNames("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-all whitespace-nowrap", sort === o.value ? "bg-primary-500 text-white shadow-glow" : "text-ink-400 hover:text-white")}>
               <Icon size={14} /> {o.label}
             </button>
           ); })}
