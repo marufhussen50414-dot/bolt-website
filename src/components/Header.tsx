@@ -87,6 +87,7 @@ export default function Header() {
               <nav className="hidden md:flex items-center gap-1 overflow-x-auto scrollbar-thin">
                 <NavLink to="/" end className={linkClass}><span className="flex items-center gap-1.5"><HomeIcon size={15} /> Home</span></NavLink>
                 <NavLink to="/sell" className={linkClass}><span className="flex items-center gap-1.5"><Tag size={15} /> Sell ID</span></NavLink>
+                <NavLink to="/browse" className={linkClass}><span className="flex items-center gap-1.5"><Search size={15} /> Search</span></NavLink>
                 <NavLink to="/messages" className={linkClass}>
                   <span className="relative flex items-center gap-1.5">
                     <MessageSquare size={15} /> Message
@@ -97,8 +98,6 @@ export default function Header() {
                     )}
                   </span>
                 </NavLink>
-                <NavLink to="/faq" className={linkClass}><span className="flex items-center gap-1.5"><HelpCircle size={15} /> FAQ</span></NavLink>
-                <NavLink to="/support" className={linkClass}><span className="flex items-center gap-1.5"><LifeBuoy size={15} /> Support</span></NavLink>
                 {user ? (
                   <NavLink to="/profile" className={linkClass}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></NavLink>
                 ) : (
@@ -108,7 +107,6 @@ export default function Header() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button onClick={() => navigate("/browse")} className="btn-ghost" aria-label="Search"><Search size={18} /></button>
               {user ? (
                 <div className="relative">
                   <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-2 rounded-xl border border-ink-700 bg-ink-900 px-3 py-2 hover:bg-ink-800 transition-colors">
