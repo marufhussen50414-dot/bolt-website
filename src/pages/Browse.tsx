@@ -7,11 +7,11 @@ import ListingCard, { ListingCardSkeleton, EmptyState } from "../components/List
 import { classNames, IconType } from "../lib/utils";
 
 const iconMap: Record<string, IconType> = { flame: Flame, crosshair: Crosshair, target: Target, shield: Shield, sword: Sword, zap: Zap, gamepad: Gamepad2 };
-type SortKey = "all_sort" | "newest" | "price_low" | "price_high" | "popular";
+type SortKey = "all" | "newest" | "price_low" | "price_high" | "popular";
 type QuickFilter = "all" | "verified" | "deals";
 
 const sortOptions: { value: SortKey; label: string; icon: IconType }[] = [
-  { value: "all_sort", label: "All", icon: Package },
+  { value: "all", label: "All", icon: Package },
   { value: "newest", label: "Newest", icon: Sparkles },
   { value: "price_low", label: "Price ↑", icon: DollarSign },
   { value: "price_high", label: "Price ↓", icon: TrendingUp },
@@ -21,7 +21,7 @@ const sortOptions: { value: SortKey; label: string; icon: IconType }[] = [
 const quickFilters: { value: QuickFilter; label: string; icon: IconType }[] = [
   { value: "all", label: "All", icon: Package },
   { value: "verified", label: "Verified Sellers", icon: ShieldCheck },
-  { value: "deals", label: "Under ৳500", icon: DollarSign },
+  { value: "deals", label: "Under ৳5000", icon: DollarSign },
 ];
 
 export default function Browse() {
@@ -32,7 +32,7 @@ export default function Browse() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
   const search = params.get("q") ?? ""; const category = params.get("category") ?? "";
-  const sort = (params.get("sort") as SortKey) ?? "all_sort";
+  const sort = (params.get("sort") as SortKey) ?? "all";
   const minPrice = params.get("min") ?? ""; const maxPrice = params.get("max") ?? "";
 
   useEffect(() => { supabase.from("categories").select("*").order("sort_order").then(({ data }) => setCategories((data as Category[]) ?? [])); }, []);
@@ -49,8 +49,7 @@ export default function Browse() {
       else if (sort === "price_high") query = query.order("price", { ascending: false });
       else if (sort === "popular") query = query.order("view_count", { ascending: false });
       else if (sort === "newest") query = query.order("created_at", { ascending: false });
-      else query = query.order("created_at", { ascending: false });
-
+      
       const { data } = await query.limit(60);
       setListings((data as GameListing[]) ?? []); setLoading(false);
     })();
@@ -59,7 +58,7 @@ export default function Browse() {
   const filtered = useMemo(() => {
     let r = listings;
     if (quickFilter === "verified") r = r.filter((l) => l.seller?.is_verified);
-    if (quickFilter === "deals") r = r.filter((l) => l.price < 500);
+    if (quickFilter === "deals") r = r.filter((l) => l.price < 5000);
     return r;
   }, [listings, quickFilter]);
 
@@ -90,7 +89,7 @@ export default function Browse() {
       <div className="flex items-center gap-2 mb-6 overflow-x-auto max-w-full pb-1 scrollbar-none">
         <div className="flex gap-1 bg-ink-900 rounded-xl p-1 border border-ink-800 shrink-0">
           {sortOptions.map((o) => { const Icon = o.icon; return (
-            <button key={o.value} onClick={() => updateParam("sort", o.value === "all_sort" ? "" : o.value)} className={classNames("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-all whitespace-nowrap", (!sort && o.value === "all_sort") || sort === o.value ? "bg-primary-500 text-white shadow-glow" : "text-ink-400 hover:text-white")}>
+            <button key={o.value} onClick={() => updateParam("sort", o.value === "all" ? "" : o.value)} className={classNames("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-all whitespace-nowrap", (sort === o.value || (o.value === "all" && !sort)) ? "bg-primary-500 text-white shadow-glow" : "text-ink-400 hover:text-white")}>
               <Icon size={14} /> {o.label}
             </button>
           ); })}
