@@ -5,8 +5,8 @@ import Logo from "./Logo";
 export default function Footer() {
   const location = useLocation();
 
-  // Sell an ID পেজে ফুটার দেখাবে না
-  if (location.pathname === "/sell") {
+  // Sell এবং Browse পেজে ফুটার দেখাবে না
+  if (location.pathname === "/sell" || location.pathname === "/browse") {
     return null;
   }
 
