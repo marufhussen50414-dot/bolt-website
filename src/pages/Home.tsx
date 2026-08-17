@@ -48,40 +48,60 @@ export default function Home() {
 
   return (
     <div>
-      {/* PURE ANIMATED GAMING CHARACTER / AVATAR BANNER */}
+      {/* CUTE ANIMATED CARTOON GAMER CHARACTER BANNER */}
       <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-4 px-4">
         <div className="absolute inset-0 bg-gradient-to-r from-primary-950/40 via-ink-950 to-accent-950/40" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-32 bg-primary-500/15 rounded-full blur-2xl animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-32 bg-primary-500/15 rounded-full blur-2xl animate-pulse" />
         
         <div className="relative mx-auto max-w-7xl flex items-center justify-center">
-          <div className="w-full max-w-2xl h-32 sm:h-40 rounded-2xl bg-gradient-to-r from-ink-900/90 via-ink-900 to-ink-900/90 border border-primary-500/30 flex items-center justify-center gap-6 shadow-2xl overflow-hidden px-6">
+          <div className="w-full max-w-2xl h-32 sm:h-40 rounded-2xl bg-gradient-to-r from-ink-900/90 via-ink-900 to-ink-900/90 border border-primary-500/30 flex items-center justify-between shadow-2xl overflow-hidden px-6">
             
-            {/* Animated Floating Character Icon 1 */}
-            <div className="animate-bounce duration-1000">
-              <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-lg shadow-primary-500/40">
-                <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-primary-400">
-                  <Gamepad2 size={30} className="animate-pulse" />
-                </div>
+            {/* Left Side: Floating Cute Controller */}
+            <div className="animate-bounce duration-1000 hidden sm:block">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-lg shadow-primary-500/40 flex items-center justify-center text-white">
+                <Gamepad2 size={32} className="animate-pulse" />
               </div>
             </div>
 
-            {/* Central Neon Pulse Avatar */}
-            <div className="relative flex items-center justify-center">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-r from-primary-500 via-accent-500 to-primary-400 p-1 animate-spin duration-[3000ms]">
-                <div className="w-full h-full bg-ink-950 rounded-full flex items-center justify-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-ink-900 flex items-center justify-center text-white">
-                    <Sword size={28} className="text-primary-400 animate-pulse" />
+            {/* Center: Cute Cartoon/Animated Gamer Character Avatar */}
+            <div className="flex items-center gap-4 mx-auto sm:mx-0">
+              <div className="relative animate-bounce duration-1000">
+                {/* Character Head/Helmet SVG Illustration */}
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-primary-500 via-accent-500 to-primary-400 p-1 shadow-xl shadow-primary-500/30">
+                  <div className="w-full h-full bg-ink-950 rounded-full flex flex-col items-center justify-center overflow-hidden relative group">
+                    {/* Glowing VR/Gaming Visor Eyes */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary-500/20 to-transparent" />
+                    <div className="flex items-center gap-2 z-10">
+                      <div className="w-4 h-2.5 bg-primary-400 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]" />
+                      <div className="w-4 h-2.5 bg-primary-400 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]" />
+                    </div>
+                    {/* Cute Smile / Headphone band */}
+                    <div className="w-8 h-1 bg-accent-400 rounded-full mt-2 z-10 shadow-[0_0_6px_#f43f5e]" />
+                    <div className="absolute -top-1 w-12 h-4 bg-primary-600 rounded-full border border-primary-400/50" />
                   </div>
                 </div>
+                {/* Floating Online Badge */}
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-success-500 rounded-full border-2 border-ink-950 animate-ping" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-success-500 rounded-full border-2 border-ink-950" />
+              </div>
+
+              {/* Animated Gamer Tag / Status */}
+              <div className="space-y-1 text-left">
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary-500/20 border border-primary-500/40 text-primary-300 text-[10px] font-bold tracking-widest uppercase animate-pulse">
+                  PRO GAMER
+                </span>
+                <div className="flex items-center gap-1.5 text-white font-display font-extrabold text-sm sm:text-lg tracking-wide">
+                  <span>GAMEHAAT</span>
+                  <span className="text-primary-400">BADSHAH</span>
+                </div>
+                <p className="text-[10px] sm:text-xs text-ink-400">Active & Ready to Trade</p>
               </div>
             </div>
 
-            {/* Animated Floating Character Icon 2 */}
-            <div className="animate-bounce duration-1000 delay-500">
-              <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-tr from-accent-500 to-primary-600 p-0.5 shadow-lg shadow-accent-500/40">
-                <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-accent-400">
-                  <Crosshair size={30} className="animate-pulse" />
-                </div>
+            {/* Right Side: Floating Cute Shield */}
+            <div className="animate-bounce duration-1000 delay-500 hidden sm:block">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-accent-500 to-primary-600 p-0.5 shadow-lg shadow-accent-500/40 flex items-center justify-center text-white">
+                <ShieldCheck size={32} className="animate-pulse text-accent-400" />
               </div>
             </div>
 
