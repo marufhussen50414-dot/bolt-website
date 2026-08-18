@@ -243,27 +243,21 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Your Listings Section - Clickable to open /my-listings */}
-      <div 
-        onClick={() => navigate('/my-listings')} 
-        className="card p-5 mb-6 cursor-pointer hover:border-primary-500/40 transition-all group"
-      >
+      {/* Your Listings Section - Fixed container click bug */}
+      <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-white flex items-center gap-2">
             <Package size={18} className="text-primary-400" /> Your Listings
           </h3>
-          <span className="text-xs font-semibold text-primary-400 group-hover:text-primary-300">View all →</span>
+          <Link to="/my-listings" className="text-xs font-semibold text-primary-400 hover:text-primary-300">View all →</Link>
         </div>
         {myListings.slice(0, 3).length > 0 ? (
           <div className="space-y-2">
             {myListings.slice(0, 3).map((l) => (
               <div 
                 key={l.id} 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate('/my-listings');
-                }}
-                className="flex items-center gap-3 p-3 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/50 transition-all"
+                onClick={() => navigate(`/listing/${l.id}`)}
+                className="flex items-center gap-3 p-3 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/50 transition-all cursor-pointer"
               >
                 <div className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0">
                   {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
@@ -278,7 +272,7 @@ export default function Profile() {
           </div>
         ) : (
           <p className="text-sm text-ink-400">
-            No listings yet. <Link to="/sell" onClick={(e) => e.stopPropagation()} className="text-primary-400">Create one →</Link>
+            No listings yet. <Link to="/sell" className="text-primary-400">Create one →</Link>
           </p>
         )}
       </div>
