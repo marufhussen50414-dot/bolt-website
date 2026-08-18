@@ -158,19 +158,23 @@ export default function Profile() {
             <button onClick={() => setEditOpen(true)} className="btn-secondary"><Edit3 size={16} /> Edit Profile</button>
           </div>
           {profile?.bio && <p className="mt-4 text-sm text-ink-300 leading-relaxed max-w-2xl">{profile.bio}</p>}
-
-          {/* Profile completion bar */}
-          <div className="mt-4 rounded-xl bg-ink-800 p-3">
-            <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="flex items-center gap-1.5 text-ink-300"><Sparkles size={13} className="text-primary-400" /> Profile Completion</span>
-              <span className="font-bold text-white">{completionPct}%</span>
-            </div>
-            <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all" style={{ width: `${completionPct}%` }} />
-            </div>
-            {completionPct < 100 && <p className="text-xs text-ink-500 mt-1.5">Complete your profile to earn buyers' trust. <button onClick={() => setEditOpen(true)} className="text-primary-400 font-semibold">Finish now →</button></p>}
-          </div>
         </div>
+      </div>
+
+      {/* Separate Profile Completion Box */}
+      <div className="card p-5 mb-6">
+        <div className="flex items-center justify-between text-xs mb-1.5">
+          <span className="flex items-center gap-1.5 text-ink-300 font-semibold"><Sparkles size={14} className="text-primary-400" /> Profile Completion</span>
+          <span className="font-bold text-white">{completionPct}%</span>
+        </div>
+        <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all" style={{ width: `${completionPct}%` }} />
+        </div>
+        {completionPct < 100 && (
+          <p className="text-xs text-ink-400 mt-2">
+            Complete your profile to earn buyers' trust. <button onClick={() => setEditOpen(true)} className="text-primary-400 font-semibold hover:underline">Finish now →</button>
+          </p>
+        )}
       </div>
 
       {/* Listings preview */}
@@ -492,5 +496,3 @@ function VerifyReq({ done, label }: { done: boolean; label: string }) {
     </div>
   );
 }
-
-
