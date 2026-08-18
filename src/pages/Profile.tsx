@@ -5,7 +5,7 @@ import {
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
   BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
-  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText,
+  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -153,6 +153,26 @@ export default function Profile() {
     else { setPaymentMsg("Payout numbers saved successfully!"); await refreshProfile(); setTimeout(() => setPaymentMsg(""), 3000); }
   }
 
+  // Handle listing status toggle (Active Radio / Toggle)
+  async function handleToggleStatus(listingId: string, currentStatus: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const { error } = await supabase.from("game_listings").update({ status: newStatus }).eq("id", listingId);
+    if (!error) {
+      setMyListings(myListings.map(l => l.id === listingId ? { ...l, status: newStatus } : l));
+    }
+  }
+
+  // Handle listing delete
+  async function handleDeleteListing(listingId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this listing?")) return;
+    const { error } = await supabase.from("game_listings").delete().eq("id", listingId);
+    if (!error) {
+      setMyListings(myListings.filter(l => l.id !== listingId));
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
       {/* Profile Header Banner */}
@@ -244,7 +264,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Your Listings Section */}
+      {/* Your Listings Section with Active Radio, Edit, and Delete options */}
       <div className="card p-5 mb-6 border border-ink-800 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white flex items-center gap-2">
@@ -253,23 +273,73 @@ export default function Profile() {
           <Link to="/my-listings" className="text-xs font-semibold text-primary-400 hover:text-primary-300 transition-colors">View all →</Link>
         </div>
         {myListings.slice(0, 3).length > 0 ? (
-          <div className="space-y-2.5">
-            {myListings.slice(0, 3).map((l) => (
-              <div 
-                key={l.id} 
-                onClick={() => navigate(`/listing/${l.id}`)}
-                className="flex items-center gap-3.5 p-3 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/60 transition-all cursor-pointer shadow-sm"
-              >
-                <div className="h-12 w-12 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">
-                  {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
+          <div className="space-y-3">
+            {myListings.slice(0, 3).map((l) => {
+              const isActive = l.status === "active" || l.status === "approved";
+              return (
+                <div 
+                  key={l.id} 
+                  onClick={() => navigate(`/listing/${l.id}`)}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/60 transition-all cursor-pointer shadow-sm bg-ink-900/50"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                    <div className="h-12 w-12 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">
+                      {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white hover:text-primary-400 line-clamp-1 text-sm">{l.title}</p>
+                      <p className="font-semibold text-primary-400 text-sm mt-0.5">{formatBDT(l.price)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-ink-800">
+                    {/* 1. Active Radio / Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleStatus(l.id, l.status, e)}
+                      title="Toggle Active Status"
+                      className={classNames(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                        isActive 
+                          ? "bg-success-500/15 text-success-400 border-success-500/30 hover:bg-success-500/25" 
+                          : "bg-ink-800 text-ink-400 border-ink-700 hover:bg-ink-700 hover:text-white"
+                      )}
+                    >
+                      <span className={classNames("h-2 w-2 rounded-full", isActive ? "bg-success-400 animate-pulse" : "bg-ink-500")} />
+                      <input 
+                        type="radio" 
+                        checked={isActive} 
+                        readOnly 
+                        className="accent-success-500 cursor-pointer h-3 w-3" 
+                      />
+                      <span>{isActive ? "Active" : "Inactive"}</span>
+                    </button>
+
+                    {/* 2. Edit Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/edit-listing/${l.id}`); }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-500/15 text-primary-400 border border-primary-500/30 hover:bg-primary-500/25 transition-all"
+                      title="Edit Listing"
+                    >
+                      <Edit3 size={13} />
+                      <span className="hidden sm:inline">Edit</span>
+                    </button>
+
+                    {/* 3. Delete Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteListing(l.id, e)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-error-500/15 text-error-400 border border-error-500/30 hover:bg-error-500/25 transition-all"
+                      title="Delete Listing"
+                    >
+                      <Trash2 size={13} />
+                      <span className="hidden sm:inline">Delete</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1 text-sm">
-                  {l.title}
-                </div>
-                <span className="font-semibold text-white text-sm">{formatBDT(l.price)}</span>
-                <StatusBadge status={l.status} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-sm text-ink-400">
