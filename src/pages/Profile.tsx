@@ -265,7 +265,7 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Action Buttons: Edit Profile and Log Out stacked vertically */}
+            {/* Action Buttons: Edit Profile on top, Log Out below */}
             <div className="flex flex-col gap-2.5 self-start sm:self-auto w-full sm:w-auto">
               <button 
                 onClick={() => setEditOpen(true)} 
@@ -285,6 +285,7 @@ export default function Profile() {
             </div>
           </div>
 
+          {/* Light divider line right below the buttons */}
           <div className="space-y-3 pt-3 border-t border-ink-800/80">
             <div className="flex items-center gap-4 text-xs sm:text-sm text-ink-300 flex-wrap">
               {profile?.location && (
