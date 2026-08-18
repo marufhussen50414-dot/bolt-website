@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   MapPin, Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2,
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
@@ -17,6 +17,7 @@ type Tab = "overview" | "payment" | "security" | "activity" | "reviews" | "wishl
 
 export default function Profile() {
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
   const [myListings, setMyListings] = useState<GameListing[]>([]);
   const [buyOrders, setBuyOrders] = useState<Order[]>([]);
@@ -242,23 +243,44 @@ export default function Profile() {
         </div>
       )}
 
-      <div className="card p-5 mb-6">
+      {/* Your Listings Section - Clickable to open /my-listings */}
+      <div 
+        onClick={() => navigate('/my-listings')} 
+        className="card p-5 mb-6 cursor-pointer hover:border-primary-500/40 transition-all group"
+      >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-white flex items-center gap-2"><Package size={18} className="text-primary-400" /> Your Listings</h3>
-          <Link to="/my-listings" className="text-xs font-semibold text-primary-400 hover:text-primary-300">View all →</Link>
+          <h3 className="font-semibold text-white flex items-center gap-2">
+            <Package size={18} className="text-primary-400" /> Your Listings
+          </h3>
+          <span className="text-xs font-semibold text-primary-400 group-hover:text-primary-300">View all →</span>
         </div>
         {myListings.slice(0, 3).length > 0 ? (
           <div className="space-y-2">
             {myListings.slice(0, 3).map((l) => (
-              <div key={l.id} className="flex items-center gap-3 p-3 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/50 transition-all">
-                <div className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0">{l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}</div>
-                <Link to={`/listing/${l.id}`} className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1">{l.title}</Link>
+              <div 
+                key={l.id} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/my-listings');
+                }}
+                className="flex items-center gap-3 p-3 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/50 transition-all"
+              >
+                <div className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0">
+                  {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
+                </div>
+                <div className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1">
+                  {l.title}
+                </div>
                 <span className="font-semibold text-white">{formatBDT(l.price)}</span>
                 <StatusBadge status={l.status} />
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-ink-400">No listings yet. <Link to="/sell" className="text-primary-400">Create one →</Link></p>}
+        ) : (
+          <p className="text-sm text-ink-400">
+            No listings yet. <Link to="/sell" onClick={(e) => e.stopPropagation()} className="text-primary-400">Create one →</Link>
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
