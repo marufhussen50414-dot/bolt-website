@@ -37,6 +37,9 @@ export default function Profile() {
   const [editOpen, setEditOpen] = useState(false);
   const [verifyRequested, setVerifyRequested] = useState(false);
 
+  // Logout Confirmation Modal State
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+
   // Confirmation Modal State for Listings actions (Active/Inactive and Delete only)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -168,7 +171,7 @@ export default function Profile() {
     else { setPaymentMsg("Payout numbers saved successfully!"); await refreshProfile(); setTimeout(() => setPaymentMsg(""), 3000); }
   }
 
-  // Open Confirmation Modal triggers (No modal for Edit, direct navigation)
+  // Open Confirmation Modal triggers
   function promptToggleStatus(listing: GameListing, e: React.MouseEvent) {
     e.stopPropagation();
     const isActive = listing.status === "active" || listing.status === "approved";
@@ -262,12 +265,24 @@ export default function Profile() {
               </div>
             </div>
 
-            <button 
-              onClick={() => setEditOpen(true)} 
-              className="btn-primary self-start sm:self-auto px-5 py-2.5 shadow-lg flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
-            >
-              <Edit3 size={16} /> Edit Profile
-            </button>
+            {/* Action Buttons under Edit Profile header area */}
+            <div className="flex items-center gap-2.5 self-start sm:self-auto">
+              <button 
+                onClick={() => setEditOpen(true)} 
+                className="btn-primary px-5 py-2.5 shadow-lg flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
+              >
+                <Edit3 size={16} /> Edit Profile
+              </button>
+
+              <button 
+                onClick={() => setLogoutModalOpen(true)}
+                className="btn-secondary bg-error-500/15 hover:bg-error-500/25 text-error-400 border border-error-500/30 px-4 py-2.5 shadow-lg flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
+                title="Log Out"
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline">Log Out</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3 pt-3 border-t border-ink-800/80">
@@ -341,7 +356,6 @@ export default function Profile() {
                   </div>
 
                   <div className="flex items-center gap-2.5 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-ink-800">
-                    {/* 1. Active / Inactive Button with Confirmation Modal */}
                     <button
                       type="button"
                       onClick={(e) => promptToggleStatus(l, e)}
@@ -363,7 +377,6 @@ export default function Profile() {
                       <span>{isActive ? "Active" : "Inactive"}</span>
                     </button>
 
-                    {/* 2. Edit Button (Direct Navigation, No Modal) */}
                     <button
                       type="button"
                       onClick={(e) => handleEditListing(l, e)}
@@ -374,7 +387,6 @@ export default function Profile() {
                       <span className="hidden sm:inline">Edit</span>
                     </button>
 
-                    {/* 3. Delete Button with Confirmation Modal */}
                     <button
                       type="button"
                       onClick={(e) => promptDeleteListing(l, e)}
@@ -588,7 +600,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* SECURITY & LOGOUT */}
+          {/* SECURITY */}
           {tab === "security" && (
             <div className="card p-6 max-w-2xl space-y-6 border border-ink-800 shadow-xl">
               <div className="flex items-center gap-2 text-white font-semibold text-lg"><Lock size={20} className="text-primary-400" /> Security & Privacy</div>
@@ -598,25 +610,6 @@ export default function Profile() {
                   <p className="text-xs text-ink-400 mt-0.5">{user.email}</p>
                 </div>
                 <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-3 py-1 font-semibold"><Mail size={13} /> Verified</span>
-              </div>
-
-              {/* Logout Option Section */}
-              <div className="pt-4 border-t border-ink-800">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-error-500/10 border border-error-500/25 p-4 rounded-xl">
-                  <div>
-                    <h4 className="font-semibold text-white text-sm">Log Out of Your Account</h4>
-                    <p className="text-xs text-ink-400 mt-0.5">End your current session safely on this device.</p>
-                  </div>
-                  <button 
-                    onClick={async () => {
-                      await signOut();
-                      navigate("/login");
-                    }} 
-                    className="btn-primary bg-error-600 hover:bg-error-700 text-white px-4 py-2 text-xs font-semibold flex items-center gap-2 shadow-md w-full sm:w-auto justify-center"
-                  >
-                    <LogOut size={15} /> Log Out
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -653,7 +646,40 @@ export default function Profile() {
         </>
       )}
 
-      {/* Confirmation Modal (No on left, Yes on right, fully English) */}
+      {/* Logout Confirmation Modal */}
+      {logoutModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setLogoutModalOpen(false)}>
+          <div className="card w-full max-w-md p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto w-12 h-12 rounded-full bg-error-500/15 border border-error-500/30 flex items-center justify-center text-error-400 mb-4">
+              <LogOut size={24} />
+            </div>
+            <h3 className="font-display text-lg font-bold text-white mb-2">Log Out</h3>
+            <p className="text-sm text-ink-300 mb-6">Are you sure you want to log out? Your data is completely safe, and you can see all your data again when you log back in.</p>
+            
+            <div className="flex gap-3">
+              <button 
+                type="button" 
+                onClick={() => setLogoutModalOpen(false)} 
+                className="btn-secondary flex-1 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200"
+              >
+                No
+              </button>
+              <button 
+                type="button" 
+                onClick={async () => {
+                  await signOut();
+                  navigate("/login");
+                }} 
+                className="btn-primary flex-1 py-2.5 font-semibold bg-error-600 hover:bg-error-700 text-white"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal (Listings actions) */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setConfirmModal({ isOpen: false, title: "", message: "", actionType: null, listing: null })}>
           <div className="card w-full max-w-md p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
