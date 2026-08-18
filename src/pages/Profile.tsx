@@ -265,7 +265,7 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Action Buttons: Edit Profile on top, Log Out below */}
+            {/* Top Right: Only Edit Profile button */}
             <div className="flex flex-col gap-2.5 self-start sm:self-auto w-full sm:w-auto">
               <button 
                 onClick={() => setEditOpen(true)} 
@@ -273,32 +273,35 @@ export default function Profile() {
               >
                 <Edit3 size={16} /> Edit Profile
               </button>
-
-              <button 
-                onClick={() => setLogoutModalOpen(true)}
-                className="btn-secondary bg-error-500/15 hover:bg-error-500/25 text-error-400 border border-error-500/30 px-5 py-2.5 shadow-lg flex items-center justify-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
-                title="Log Out"
-              >
-                <LogOut size={16} />
-                <span>Log Out</span>
-              </button>
             </div>
           </div>
 
-          {/* Light divider line right below the buttons */}
-          <div className="space-y-3 pt-3 border-t border-ink-800/80">
-            <div className="flex items-center gap-4 text-xs sm:text-sm text-ink-300 flex-wrap">
-              {profile?.location && (
+          {/* Light divider line & Log Out button below it */}
+          <div className="space-y-4 pt-3 border-t border-ink-800/80">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4 text-xs sm:text-sm text-ink-300 flex-wrap">
+                {profile?.location && (
+                  <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
+                    <MapPin size={14} className="text-primary-400" /> {profile.location}
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
-                  <MapPin size={14} className="text-primary-400" /> {profile.location}
+                  <Calendar size={14} className="text-accent-400" /> Joined {timeAgo(profile?.created_at ?? new Date())}
                 </span>
-              )}
-              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
-                <Calendar size={14} className="text-accent-400" /> Joined {timeAgo(profile?.created_at ?? new Date())}
-              </span>
-              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
-                <Star size={14} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} Rating
-              </span>
+                <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
+                  <Star size={14} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} Rating
+                </span>
+              </div>
+
+              {/* Log Out button placed right below the divider line */}
+              <button 
+                onClick={() => setLogoutModalOpen(true)}
+                className="btn-secondary bg-error-500/15 hover:bg-error-500/25 text-error-400 border border-error-500/30 px-4 py-2 shadow-md flex items-center gap-2 text-xs sm:text-sm font-semibold transition-transform hover:scale-[1.02]"
+                title="Log Out"
+              >
+                <LogOut size={15} />
+                <span>Log Out</span>
+              </button>
             </div>
 
             {profile?.bio ? (
