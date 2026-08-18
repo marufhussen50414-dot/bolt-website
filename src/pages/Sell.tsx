@@ -113,32 +113,23 @@ export default function Sell() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault(); setError("");
     if (!user) { setError("Please log in to create a listing."); return; }
-    if (!form.category_id) { setError("Please select a game category."); return; }
     const price = parseFloat(form.price); if (!price || price <= 0) { setError("Enter a valid price."); return; }
     if (images.length === 0) { setImageError(true); setError("Please upload at least one image."); return; }
     if (isOthers && !form.game_name.trim()) { setError("Enter the game name for your custom listing."); return; }
     if (isFreeFire && primeInvalid) { setError("Prime must be between 0 and 8."); return; }
-    
     setLoading(true);
     const uploaded = await uploadAll(user.id);
     if (!uploaded) { setLoading(false); return; }
     const imageUrls = uploaded.map((u) => u.url); // first = thumbnail
-    
     const { data, error: insErr } = await supabase.from("game_listings").insert({
-      seller_id: user.id, 
-      category_id: form.category_id,
+      seller_id: user.id, category_id: form.category_id || null,
       game_name: isOthers ? form.game_name.trim() : (categories.find((c) => c.id === form.category_id)?.name ?? "Others"),
-      title: form.title, 
-      description: form.description || null, 
-      price,
+      title: form.title, description: form.description || null, price,
       account_level: !isOthers && form.account_level ? parseInt(form.account_level) : null,
       prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
-      server_region: !isOthers ? (form.server_region || "Bangladesh") : null,
-      images: imageUrls.length ? imageUrls : null, 
-      tags: tags.length > 0 ? tags : null, 
-      status: "active",
+      server_region: !isOthers ? "Bangladesh" : null,
+      images: imageUrls.length ? imageUrls : null, tags: tags.length > 0 ? tags : null, status: "active",
     }).select().single();
-    
     setLoading(false);
     if (insErr) { setError(insErr.message); return; }
     setSuccess(true); setTimeout(() => navigate(`/listing/${data.id}`), 1200);
@@ -189,8 +180,6 @@ export default function Sell() {
                 <label className="label">Server / Region</label>
                 <select value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input">
                   <option value="Bangladesh">Bangladesh</option>
-                  <option value="Global">Global</option>
-                  <option value="Other">Other</option>
                 </select>
               </div>
             )}
