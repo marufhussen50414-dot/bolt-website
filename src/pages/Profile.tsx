@@ -161,21 +161,21 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Separate Profile Completion Box */}
-      <div className="card p-5 mb-6">
-        <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="flex items-center gap-1.5 text-ink-300 font-semibold"><Sparkles size={14} className="text-primary-400" /> Profile Completion</span>
-          <span className="font-bold text-white">{completionPct}%</span>
-        </div>
-        <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
-          <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all" style={{ width: `${completionPct}%` }} />
-        </div>
-        {completionPct < 100 && (
+      {/* Profile Completion Box (Hidden automatically when completionPct reaches 100) */}
+      {completionPct < 100 && (
+        <div className="card p-5 mb-6">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="flex items-center gap-1.5 text-ink-300 font-semibold"><Sparkles size={14} className="text-primary-400" /> Profile Completion</span>
+            <span className="font-bold text-white">{completionPct}%</span>
+          </div>
+          <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
+            <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all" style={{ width: `${completionPct}%` }} />
+          </div>
           <p className="text-xs text-ink-400 mt-2">
             Complete your profile to earn buyers' trust. <button onClick={() => setEditOpen(true)} className="text-primary-400 font-semibold hover:underline">Finish now →</button>
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Listings preview */}
       <div className="card p-5 mb-6">
