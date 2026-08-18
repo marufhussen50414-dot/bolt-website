@@ -24,6 +24,12 @@ export default function Profile() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [editForm, setEditForm] = useState({ full_name: "", bio: "", location: "", phone: "", avatar_url: "" });
+  
+  // Payment payout state
+  const [paymentForm, setPaymentForm] = useState({ bkash_number: "", nagad_number: "" });
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [paymentMsg, setPaymentMsg] = useState("");
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -48,7 +54,10 @@ export default function Profile() {
   }, [user]);
 
   useEffect(() => {
-    if (profile) setEditForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", location: profile.location ?? "", phone: profile.phone ?? "", avatar_url: profile.avatar_url ?? "" });
+    if (profile) {
+      setEditForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", location: profile.location ?? "", phone: profile.phone ?? "", avatar_url: profile.avatar_url ?? "" });
+      setPaymentForm({ bkash_number: profile.bkash_number ?? "", nagad_number: profile.nagad_number ?? "" });
+    }
   }, [profile]);
 
   if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
@@ -129,6 +138,17 @@ export default function Profile() {
     setSaving(false);
     if (error) setSaveMsg("Failed to save: " + error.message);
     else { setSaveMsg("Profile updated successfully!"); await refreshProfile(); setTimeout(() => { setSaveMsg(""); setEditOpen(false); }, 2500); }
+  }
+
+  async function handleSavePayment(e: FormEvent) {
+    e.preventDefault(); setSavingPayment(true); setPaymentMsg("");
+    const { error } = await supabase.from("profiles").update({
+      bkash_number: paymentForm.bkash_number.trim() || null,
+      nagad_number: paymentForm.nagad_number.trim() || null,
+    }).eq("id", user!.id);
+    setSavingPayment(false);
+    if (error) setPaymentMsg("Failed to save payout info: " + error.message);
+    else { setPaymentMsg("Payout numbers saved successfully!"); await refreshProfile(); setTimeout(() => setPaymentMsg(""), 3000); }
   }
 
   return (
@@ -394,11 +414,41 @@ export default function Profile() {
           {tab === "payment" && (
             <div className="card p-6 max-w-2xl space-y-5">
               <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Seller Payout Information</div>
-              <p className="text-sm text-ink-400">এই নম্বরগুলো শুধুমাত্র সেলারদের (Seller) জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।</p>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div><label className="label">bKash Number (Seller)</label><input defaultValue={profile?.bkash_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
-                <div><label className="label">Nagad Number (Seller)</label><input defaultValue={profile?.nagad_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
-              </div>
+              <p className="text-sm text-ink-400">
+                These numbers are strictly for sellers to receive payments after selling an ID.<br />
+                <span className="text-xs text-ink-500">(এই নম্বরগুলো শুধুমাত্র সেলারদের জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।)</span>
+              </p>
+              
+              <form onSubmit={handleSavePayment} className="space-y-4">
+                {paymentMsg && (
+                  <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", paymentMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
+                    {paymentMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {paymentMsg}
+                  </div>
+                )}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">BKash Number (Seller)</label>
+                    <input 
+                      value={paymentForm.bkash_number} 
+                      onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} 
+                      className="input" 
+                      placeholder="01XXXXXXXXX" 
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Nagad Number (Seller)</label>
+                    <input 
+                      value={paymentForm.nagad_number} 
+                      onChange={(e) => setPaymentForm((f) => ({ ...f, nagad_number: e.target.value }))} 
+                      className="input" 
+                      placeholder="01XXXXXXXXX" 
+                    />
+                  </div>
+                </div>
+                <button type="submit" disabled={savingPayment} className="btn-primary w-full sm:w-auto">
+                  {savingPayment ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Payout Info
+                </button>
+              </form>
             </div>
           )}
 
