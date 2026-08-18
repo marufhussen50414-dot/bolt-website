@@ -11,7 +11,6 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { GameListing, Order, Review } from "../lib/types";
 import { formatBDT, timeAgo, classNames, IconType } from "../lib/utils";
-import { StatusBadge } from "../components/ListingCard";
 
 type Tab = "overview" | "payment" | "security" | "activity" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
 
@@ -204,7 +203,7 @@ export default function Profile() {
       description: listing.description ?? "",
       price: listing.price ? String(listing.price) : "",
       game_name: listing.game_name ?? "",
-      category: listing.category ?? "",
+      category: typeof listing.category === "string" ? listing.category : "",
     });
     setListingUpdateMsg("");
     setEditListingModalOpen(true);
@@ -217,13 +216,15 @@ export default function Profile() {
     setUpdatingListing(true);
     setListingUpdateMsg("");
 
-    const { error } = await supabase.from("game_listings").update({
+    const updatePayload = {
       title: listingEditForm.title.trim(),
       description: listingEditForm.description.trim(),
       price: parseFloat(listingEditForm.price) || 0,
       game_name: listingEditForm.game_name.trim(),
-      category: listingEditForm.category.trim(),
-    }).eq("id", selectedListing.id);
+      category: listingEditForm.category.trim() as any,
+    };
+
+    const { error } = await supabase.from("game_listings").update(updatePayload).eq("id", selectedListing.id);
 
     setUpdatingListing(false);
 
@@ -231,14 +232,10 @@ export default function Profile() {
       setListingUpdateMsg("Failed to update listing: " + error.message);
     } else {
       setListingUpdateMsg("Listing updated successfully!");
-      // Refresh local listings state
+      // Refresh local listings state safely
       setMyListings(myListings.map(item => item.id === selectedListing.id ? {
         ...item,
-        title: listingEditForm.title.trim(),
-        description: listingEditForm.description.trim(),
-        price: parseFloat(listingEditForm.price) || 0,
-        game_name: listingEditForm.game_name.trim(),
-        category: listingEditForm.category.trim(),
+        ...updatePayload,
       } : item));
 
       setTimeout(() => {
