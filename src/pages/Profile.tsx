@@ -37,12 +37,12 @@ export default function Profile() {
   const [editOpen, setEditOpen] = useState(false);
   const [verifyRequested, setVerifyRequested] = useState(false);
 
-  // Confirmation Modal State for Listings actions
+  // Confirmation Modal State for Listings actions (Active/Inactive and Delete only)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
-    actionType: "status" | "edit" | "delete" | null;
+    actionType: "status" | "delete" | null;
     listing: GameListing | null;
   }>({
     isOpen: false,
@@ -168,30 +168,24 @@ export default function Profile() {
     else { setPaymentMsg("Payout numbers saved successfully!"); await refreshProfile(); setTimeout(() => setPaymentMsg(""), 3000); }
   }
 
-  // Open Confirmation Modal triggers
+  // Open Confirmation Modal triggers (No modal for Edit, direct navigation)
   function promptToggleStatus(listing: GameListing, e: React.MouseEvent) {
     e.stopPropagation();
     const isActive = listing.status === "active" || listing.status === "approved";
     setConfirmModal({
       isOpen: true,
-      title: isActive ? "Make Inactive?" : "Make Active?",
+      title: isActive ? "Deactivate Listing?" : "Activate Listing?",
       message: isActive 
-        ? `আপনি কি সত্যিই "${listing.title}" লিস্টিংটি Inactive করতে চান?` 
-        : `আপনি কি সত্যিই "${listing.title}" লিস্টিংটি Active করতে চান?`,
+        ? `Are you sure you want to deactivate "${listing.title}"?` 
+        : `Are you sure you want to activate "${listing.title}"?`,
       actionType: "status",
       listing,
     });
   }
 
-  function promptEditListing(listing: GameListing, e: React.MouseEvent) {
+  function handleEditListing(listing: GameListing, e: React.MouseEvent) {
     e.stopPropagation();
-    setConfirmModal({
-      isOpen: true,
-      title: "Edit Listing?",
-      message: `আপনি কি "${listing.title}" লিস্টিংটি এডিট করতে চান?`,
-      actionType: "edit",
-      listing,
-    });
+    navigate(`/edit-listing/${listing.id}`);
   }
 
   function promptDeleteListing(listing: GameListing, e: React.MouseEvent) {
@@ -199,7 +193,7 @@ export default function Profile() {
     setConfirmModal({
       isOpen: true,
       title: "Delete Listing?",
-      message: `আপনি কি নিশ্চিতভাবে "${listing.title}" লিস্টিংটি ডিলিট করতে চান?`,
+      message: `Are you sure you want to permanently delete "${listing.title}"?`,
       actionType: "delete",
       listing,
     });
@@ -217,8 +211,6 @@ export default function Profile() {
       if (!error) {
         setMyListings(myListings.map(item => item.id === l.id ? { ...item, status: newStatus } : item));
       }
-    } else if (confirmModal.actionType === "edit") {
-      navigate(`/edit-listing/${l.id}`);
     } else if (confirmModal.actionType === "delete") {
       const { error } = await supabase.from("game_listings").delete().eq("id", l.id);
       if (!error) {
@@ -371,10 +363,10 @@ export default function Profile() {
                       <span>{isActive ? "Active" : "Inactive"}</span>
                     </button>
 
-                    {/* 2. Edit Button with Confirmation Modal */}
+                    {/* 2. Edit Button (Direct Navigation, No Modal) */}
                     <button
                       type="button"
-                      onClick={(e) => promptEditListing(l, e)}
+                      onClick={(e) => handleEditListing(l, e)}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-500/15 text-primary-400 border border-primary-500/30 hover:bg-primary-500/25 transition-all"
                       title="Edit Listing"
                     >
@@ -642,7 +634,7 @@ export default function Profile() {
         </>
       )}
 
-      {/* Confirmation Modal (Yes/No Popup for Active, Edit, Delete) */}
+      {/* Confirmation Modal (No on left, Yes on right, fully English) */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setConfirmModal({ isOpen: false, title: "", message: "", actionType: null, listing: null })}>
           <div className="card w-full max-w-md p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
@@ -655,17 +647,17 @@ export default function Profile() {
             <div className="flex gap-3">
               <button 
                 type="button" 
-                onClick={executeConfirmedAction} 
-                className="btn-primary flex-1 py-2.5 font-semibold bg-success-600 hover:bg-success-700"
-              >
-                Yes (হ্যাঁ)
-              </button>
-              <button 
-                type="button" 
                 onClick={() => setConfirmModal({ isOpen: false, title: "", message: "", actionType: null, listing: null })} 
                 className="btn-secondary flex-1 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200"
               >
-                No (না)
+                No
+              </button>
+              <button 
+                type="button" 
+                onClick={executeConfirmedAction} 
+                className="btn-primary flex-1 py-2.5 font-semibold bg-success-600 hover:bg-success-700"
+              >
+                Yes
               </button>
             </div>
           </div>
@@ -741,7 +733,6 @@ function StatCard({ icon: Icon, value, label, color }: { icon: IconType; value: 
 }
 
 function Row({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
-  // Fixed size5 typo to size={16}
   return <div className="flex items-center justify-between py-1 border-b border-ink-800/60 last:border-0"><span className="flex items-center gap-2 text-ink-400"><Icon size={16} className="text-primary-400" /> {label}</span><span className="font-semibold text-white">{value}</span></div>;
 }
 
