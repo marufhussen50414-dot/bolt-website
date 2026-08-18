@@ -272,7 +272,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Your Listings & Management Section */}
+      {/* Your Listings & Management Section with View All */}
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white flex items-center gap-2">
@@ -282,20 +282,18 @@ export default function Profile() {
             <Link to="/sell" className="text-xs font-semibold bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 px-3 py-1.5 rounded-lg transition border border-primary-500/20">
               + Add New Listing
             </Link>
-            {myListings.length > 3 && (
-              <button 
-                onClick={() => setTab("activity")} 
-                className="text-xs font-semibold text-ink-400 hover:text-white transition"
-              >
-                View All ({myListings.length})
-              </button>
-            )}
+            <button 
+              onClick={() => setTab("activity")} 
+              className="text-xs font-semibold text-primary-400 hover:text-primary-300 transition"
+            >
+              View All ({myListings.length}) →
+            </button>
           </div>
         </div>
 
         {myListings.length > 0 ? (
           <div className="space-y-3">
-            {myListings.map((l) => {
+            {myListings.slice(0, 3).map((l) => {
               const isActive = l.status === "active" || l.status === "approved";
               return (
                 <div 
@@ -577,6 +575,51 @@ export default function Profile() {
           {/* ACTIVITY */}
           {tab === "activity" && (
             <div className="space-y-5">
+              <div>
+                <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+                  <Package size={18} className="text-primary-400" /> All My Listings ({myListings.length})
+                </h3>
+                {myListings.length > 0 ? (
+                  <div className="space-y-3 mb-6">
+                    {myListings.map((l) => {
+                      const isActive = l.status === "active" || l.status === "approved";
+                      return (
+                        <div key={l.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-ink-700/60 bg-ink-800/30">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div onClick={() => navigate(`/listing/${l.id}`)} className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0 cursor-pointer">
+                              {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div onClick={() => navigate(`/listing/${l.id}`)} className="font-medium text-white hover:text-primary-400 line-clamp-1 cursor-pointer text-sm">
+                                {l.title}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="font-semibold text-white text-xs">{formatBDT(l.price)}</span>
+                                <StatusBadge status={l.status} />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 self-end sm:self-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-ink-700/60 w-full sm:w-auto justify-between sm:justify-end">
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" checked={isActive} onChange={() => handleToggleStatus(l.id, l.status)} className="sr-only peer" />
+                              <div className="w-9 h-5 bg-ink-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-success-500"></div>
+                              <span className="ml-2 text-xs font-medium text-ink-300">{isActive ? "Active" : "Inactive"}</span>
+                            </label>
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => navigate(`/edit-listing/${l.id}`)} className="px-2.5 py-1.5 bg-ink-800 hover:bg-ink-700 text-ink-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-ink-700">
+                                <Edit3 size={13} /> Edit
+                              </button>
+                              <button onClick={() => handleDeleteListing(l.id)} className="px-2.5 py-1.5 bg-error-500/10 hover:bg-error-500/25 text-error-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-error-500/20">
+                                <Trash2 size={13} /> Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : <p className="text-sm text-ink-400 mb-6">No listings yet.</p>}
+              </div>
               <div><h3 className="font-semibold text-white mb-3">Recent Sales</h3>{sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-400">No sales yet.</p>}</div>
               <div><h3 className="font-semibold text-white mb-3">Recent Purchases</h3>{buyOrders.slice(0, 5).length > 0 ? <div className="space-y-2">{buyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-400">No purchases yet.</p>}</div>
             </div>
