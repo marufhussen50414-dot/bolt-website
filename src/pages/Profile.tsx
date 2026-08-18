@@ -272,13 +272,25 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Your Listings Section - Added Active/Inactive Toggle, Edit & Delete options */}
+      {/* Your Listings & Management Section */}
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white flex items-center gap-2">
             <Package size={18} className="text-primary-400" /> Your Listings & Management
           </h3>
-          <Link to="/sell" className="text-xs font-semibold text-primary-400 hover:text-primary-300">+ Add New Listing</Link>
+          <div className="flex items-center gap-3">
+            <Link to="/sell" className="text-xs font-semibold bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 px-3 py-1.5 rounded-lg transition border border-primary-500/20">
+              + Add New Listing
+            </Link>
+            {myListings.length > 3 && (
+              <button 
+                onClick={() => setTab("activity")} 
+                className="text-xs font-semibold text-ink-400 hover:text-white transition"
+              >
+                View All ({myListings.length})
+              </button>
+            )}
+          </div>
         </div>
 
         {myListings.length > 0 ? (
