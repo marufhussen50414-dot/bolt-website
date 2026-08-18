@@ -176,8 +176,8 @@ export default function Profile() {
       isOpen: true,
       title: isActive ? "Make Inactive?" : "Make Active?",
       message: isActive 
-        ? `আপনি কি সত্যিই "${listing.title}" লিস্টਿੰਗটি Inactive করতে চান?` 
-        : `আপনি কি সত্যিই "${listing.title}" লিস্টਿੰਗটি Active করতে চান?`,
+        ? `আপনি কি সত্যিই "${listing.title}" লিস্টিংটি Inactive করতে চান?` 
+        : `আপনি কি সত্যিই "${listing.title}" লিস্টিংটি Active করতে চান?`,
       actionType: "status",
       listing,
     });
@@ -188,7 +188,7 @@ export default function Profile() {
     setConfirmModal({
       isOpen: true,
       title: "Edit Listing?",
-      message: `আপনি কি "${listing.title}" লিস্টਿੰਗটি এডিট করতে চান?`,
+      message: `আপনি কি "${listing.title}" লিস্টিংটি এডিট করতে চান?`,
       actionType: "edit",
       listing,
     });
@@ -199,7 +199,7 @@ export default function Profile() {
     setConfirmModal({
       isOpen: true,
       title: "Delete Listing?",
-      message: `আপনি কি নিশ্চিতভাবে "${listing.title}" লিস্টਿੰਗটি ডিলিট করতে চান?`,
+      message: `আপনি কি নিশ্চিতভাবে "${listing.title}" লিস্টিংটি ডিলিট করতে চান?`,
       actionType: "delete",
       listing,
     });
@@ -741,7 +741,8 @@ function StatCard({ icon: Icon, value, label, color }: { icon: IconType; value: 
 }
 
 function Row({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
-  return <div className="flex items-center justify-between py-1 border-b border-ink-800/60 last:border-0"><span className="flex items-center gap-2 text-ink-400"><Icon size5={16} className="text-primary-400" /> {label}</span><span className="font-semibold text-white">{value}</span></div>;
+  // Fixed size5 typo to size={16}
+  return <div className="flex items-center justify-between py-1 border-b border-ink-800/60 last:border-0"><span className="flex items-center gap-2 text-ink-400"><Icon size={16} className="text-primary-400" /> {label}</span><span className="font-semibold text-white">{value}</span></div>;
 }
 
 function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" }) {
