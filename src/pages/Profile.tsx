@@ -5,7 +5,7 @@ import {
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
   BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
-  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2,
+  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -61,35 +61,6 @@ export default function Profile() {
     }
   }, [profile]);
 
-  // Handler to toggle active/inactive status of a listing
-  async function handleToggleStatus(listingId: string, currentStatus: string) {
-    const newStatus = (currentStatus === "active" ? "inactive" : "active") as any;
-    const { error } = await supabase
-      .from("game_listings")
-      .update({ status: newStatus })
-      .eq("id", listingId);
-
-    if (!error) {
-      setMyListings((prev) =>
-        prev.map((l) => (l.id === listingId ? { ...l, status: newStatus } : l))
-      );
-    } else {
-      alert("Failed to update status: " + error.message);
-    }
-  }
-
-  // Handler to delete a listing
-  async function handleDeleteListing(listingId: string) {
-    if (!window.confirm("Are you sure you want to delete this listing?")) return;
-    const { error } = await supabase.from("game_listings").delete().eq("id", listingId);
-
-    if (!error) {
-      setMyListings((prev) => prev.filter((l) => l.id !== listingId));
-    } else {
-      alert("Failed to delete listing: " + error.message);
-    }
-  }
-
   if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
   if (!user) return <div className="mx-auto max-w-md py-16 text-center"><div className="card p-8"><h2 className="font-display text-xl font-bold text-white">Log in to view your profile</h2><Link to="/login?redirect=/profile" className="btn-primary mt-5 inline-flex">Log In</Link></div></div>;
 
@@ -132,7 +103,7 @@ export default function Profile() {
   });
   const maxWeekly = Math.max(...weeklyData, 1);
 
-  // Payment tab placed right after overview
+  // Tabs configuration
   const tabs: { id: Tab; label: string; icon: IconType }[] = [
     { id: "overview", label: "Overview", icon: Activity },
     { id: "payment", label: "Payment", icon: CreditCard },
@@ -183,12 +154,12 @@ export default function Profile() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Redesigned Professional Banner & Profile Card */}
-      <div className="card overflow-hidden mb-6 border border-ink-800 shadow-xl bg-ink-900">
-        <div className="h-28 sm:h-36 bg-gradient-to-r from-primary-900/60 via-ink-800 to-accent-950/60 relative">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+      {/* Profile Header Banner */}
+      <div className="card overflow-hidden mb-6 border border-ink-800 shadow-2xl bg-ink-900">
+        <div className="h-32 sm:h-40 bg-gradient-to-r from-primary-900/70 via-ink-800 to-accent-950/70 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-transparent to-transparent" />
         </div>
 
         <div className="px-6 pb-6 relative">
@@ -209,12 +180,12 @@ export default function Profile() {
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{displayName}</h1>
                   {profile?.is_verified && (
-                    <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-2.5 py-1 text-xs flex items-center gap-1 font-semibold">
+                    <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-2.5 py-1 text-xs flex items-center gap-1 font-semibold shadow-sm">
                       <ShieldCheck size={14} /> Verified
                     </span>
                   )}
                   {unlockedCount >= 3 && (
-                    <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20 px-2.5 py-1 text-xs flex items-center gap-1 font-semibold">
+                    <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20 px-2.5 py-1 text-xs flex items-center gap-1 font-semibold shadow-sm">
                       <Trophy size={14} /> {unlockedCount} Badges
                     </span>
                   )}
@@ -231,23 +202,23 @@ export default function Profile() {
             </button>
           </div>
 
-          <div className="space-y-3 pt-2 border-t border-ink-800/80">
+          <div className="space-y-3 pt-3 border-t border-ink-800/80">
             <div className="flex items-center gap-4 text-xs sm:text-sm text-ink-300 flex-wrap">
               {profile?.location && (
-                <span className="flex items-center gap-1.5 bg-ink-800/60 px-3 py-1 rounded-lg border border-ink-700/50">
+                <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
                   <MapPin size={14} className="text-primary-400" /> {profile.location}
                 </span>
               )}
-              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3 py-1 rounded-lg border border-ink-700/50">
+              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
                 <Calendar size={14} className="text-accent-400" /> Joined {timeAgo(profile?.created_at ?? new Date())}
               </span>
-              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3 py-1 rounded-lg border border-ink-700/50">
+              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3.5 py-1.5 rounded-xl border border-ink-700/50 shadow-inner">
                 <Star size={14} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} Rating
               </span>
             </div>
 
             {profile?.bio ? (
-              <p className="text-sm text-ink-300 leading-relaxed max-w-3xl bg-ink-950/30 p-3.5 rounded-xl border border-ink-800/50">
+              <p className="text-sm text-ink-300 leading-relaxed max-w-3xl bg-ink-950/40 p-4 rounded-xl border border-ink-800/60">
                 {profile.bio}
               </p>
             ) : (
@@ -257,130 +228,68 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Profile Completion Bar */}
       {completionPct < 100 && (
-        <div className="card p-5 mb-6">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="flex items-center gap-1.5 text-ink-300 font-semibold"><Sparkles size={14} className="text-primary-400" /> Profile Completion</span>
-            <span className="font-bold text-white">{completionPct}%</span>
+        <div className="card p-5 mb-6 border-primary-500/20 bg-gradient-to-r from-ink-900 to-primary-950/30">
+          <div className="flex items-center justify-between text-xs mb-2">
+            <span className="flex items-center gap-1.5 text-ink-200 font-semibold"><Sparkles size={14} className="text-primary-400" /> Profile Completion</span>
+            <span className="font-bold text-primary-300">{completionPct}%</span>
           </div>
-          <div className="h-2 rounded-full bg-ink-700 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all" style={{ width: `${completionPct}%` }} />
+          <div className="h-2.5 rounded-full bg-ink-800 overflow-hidden shadow-inner">
+            <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all duration-500" style={{ width: `${completionPct}%` }} />
           </div>
-          <p className="text-xs text-ink-400 mt-2">
-            Complete your profile to earn buyers' trust. <button onClick={() => setEditOpen(true)} className="text-primary-400 font-semibold hover:underline">Finish now →</button>
+          <p className="text-xs text-ink-400 mt-2.5">
+            Complete your profile details to maximize buyer trust and visibility. <button onClick={() => setEditOpen(true)} className="text-primary-400 font-semibold hover:underline">Complete now →</button>
           </p>
         </div>
       )}
 
-      {/* Your Listings & Management Section with View All */}
-      <div className="card p-5 mb-6">
+      {/* Your Listings Section */}
+      <div className="card p-5 mb-6 border border-ink-800 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white flex items-center gap-2">
-            <Package size={18} className="text-primary-400" /> Your Listings & Management
+            <Package size={18} className="text-primary-400" /> Your Listings
           </h3>
-          <div className="flex items-center gap-3">
-            <Link to="/sell" className="text-xs font-semibold bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 px-3 py-1.5 rounded-lg transition border border-primary-500/20">
-              + Add New Listing
-            </Link>
-            <button 
-              onClick={() => setTab("activity")} 
-              className="text-xs font-semibold text-primary-400 hover:text-primary-300 transition"
-            >
-              View All ({myListings.length}) →
-            </button>
-          </div>
+          <Link to="/my-listings" className="text-xs font-semibold text-primary-400 hover:text-primary-300 transition-colors">View all →</Link>
         </div>
-
-        {myListings.length > 0 ? (
-          <div className="space-y-3">
-            {myListings.slice(0, 3).map((l) => {
-              const isActive = l.status === "active" || l.status === "approved";
-              return (
-                <div 
-                  key={l.id} 
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-ink-700/60 bg-ink-800/30 hover:border-primary-500/40 transition-all"
-                >
-                  {/* Listing Info */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div 
-                      onClick={() => navigate(`/listing/${l.id}`)}
-                      className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0 cursor-pointer"
-                    >
-                      {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
-                    </div>
-                    <div className="min-w-0">
-                      <div 
-                        onClick={() => navigate(`/listing/${l.id}`)}
-                        className="font-medium text-white hover:text-primary-400 line-clamp-1 cursor-pointer text-sm"
-                      >
-                        {l.title}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-semibold text-white text-xs">{formatBDT(l.price)}</span>
-                        <StatusBadge status={l.status} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions: Toggle Status, Edit, Delete */}
-                  <div className="flex items-center gap-3 self-end sm:self-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-ink-700/60 w-full sm:w-auto justify-between sm:justify-end">
-                    
-                    {/* 1. Active / Inactive Toggle (Radio/Switch) */}
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={isActive} 
-                        onChange={() => handleToggleStatus(l.id, l.status)}
-                        className="sr-only peer" 
-                      />
-                      <div className="w-9 h-5 bg-ink-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-success-500"></div>
-                      <span className="ml-2 text-xs font-medium text-ink-300">
-                        {isActive ? "Active" : "Inactive"}
-                      </span>
-                    </label>
-
-                    <div className="flex items-center gap-1.5">
-                      {/* 2. Edit Listing Button */}
-                      <button 
-                        onClick={() => navigate(`/edit-listing/${l.id}`)}
-                        className="px-2.5 py-1.5 bg-ink-800 hover:bg-ink-700 text-ink-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-ink-700"
-                        title="Edit Listing"
-                      >
-                        <Edit3 size={13} /> Edit
-                      </button>
-
-                      {/* 3. Delete Listing Button */}
-                      <button 
-                        onClick={() => handleDeleteListing(l.id)}
-                        className="px-2.5 py-1.5 bg-error-500/10 hover:bg-error-500/25 text-error-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-error-500/20"
-                        title="Delete Listing"
-                      >
-                        <Trash2 size={13} /> Delete
-                      </button>
-                    </div>
-
-                  </div>
+        {myListings.slice(0, 3).length > 0 ? (
+          <div className="space-y-2.5">
+            {myListings.slice(0, 3).map((l) => (
+              <div 
+                key={l.id} 
+                onClick={() => navigate(`/listing/${l.id}`)}
+                className="flex items-center gap-3.5 p-3 rounded-xl border border-ink-700/60 hover:border-primary-500/40 hover:bg-ink-800/60 transition-all cursor-pointer shadow-sm"
+              >
+                <div className="h-12 w-12 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">
+                  {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
                 </div>
-              );
-            })}
+                <div className="flex-1 min-w-0 font-medium text-white hover:text-primary-400 line-clamp-1 text-sm">
+                  {l.title}
+                </div>
+                <span className="font-semibold text-white text-sm">{formatBDT(l.price)}</span>
+                <StatusBadge status={l.status} />
+              </div>
+            ))}
           </div>
         ) : (
           <p className="text-sm text-ink-400">
-            No listings yet. <Link to="/sell" className="text-primary-400">Create one →</Link>
+            No listings yet. <Link to="/sell" className="text-primary-400 font-medium hover:underline">Create one →</Link>
           </p>
         )}
       </div>
 
+      {/* Stat Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Tag} value={String(activeListings.length)} label="Active Listings" color="text-accent-400 bg-accent-500/15" />
-        <StatCard icon={Award} value={Number(profile?.trust_score ?? 0).toFixed(1)} label="Trust Score" color="text-warning-400 bg-warning-500/15" />
-        <StatCard icon={Package} value={String(profile?.total_sales ?? completedSales.length)} label="Total IDs Sold" color="text-success-400 bg-success-500/15" />
-        <StatCard icon={ShoppingBag} value={String(profile?.total_purchases ?? buyOrders.length)} label="Total IDs Bought" color="text-primary-400 bg-primary-500/15" />
+        <StatCard icon={Tag} value={String(activeListings.length)} label="Active Listings" color="text-accent-400 bg-accent-500/15 border border-accent-500/20" />
+        <StatCard icon={Award} value={Number(profile?.trust_score ?? 0).toFixed(1)} label="Trust Score" color="text-warning-400 bg-warning-500/15 border border-warning-500/20" />
+        <StatCard icon={Package} value={String(profile?.total_sales ?? completedSales.length)} label="Total IDs Sold" color="text-success-400 bg-success-500/15 border border-success-500/20" />
+        <StatCard icon={ShoppingBag} value={String(profile?.total_purchases ?? buyOrders.length)} label="Total IDs Bought" color="text-primary-400 bg-primary-500/15 border border-primary-500/20" />
       </div>
 
+      {/* Tabs Navigation */}
       <div className="flex gap-1 border-b border-ink-800 mb-6 overflow-x-auto scrollbar-thin">
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={classNames("flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap", tab === t.id ? "border-primary-500 text-primary-400" : "border-transparent text-ink-400 hover:text-white")}>
+          <button key={t.id} onClick={() => setTab(t.id)} className={classNames("flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap", tab === t.id ? "border-primary-500 text-primary-400 bg-primary-500/5" : "border-transparent text-ink-400 hover:text-white")}>
             <t.icon size={16} /> {t.label}
           </button>
         ))}
@@ -390,9 +299,9 @@ export default function Profile() {
         <>
           {/* OVERVIEW */}
           {tab === "overview" && (
-            <div className="card p-6">
-              <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Activity size={18} className="text-primary-400" /> Account Summary</h3>
-              <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div className="card p-6 border border-ink-800 shadow-xl">
+              <h3 className="font-semibold text-white mb-5 flex items-center gap-2"><Activity size={18} className="text-primary-400" /> Account Summary</h3>
+              <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                 <Row icon={Tag} label="Total Listings" value={String(myListings.length)} />
                 <Row icon={Package} label="Items Sold" value={String(profile?.total_sales ?? completedSales.length)} />
                 <Row icon={ShoppingBag} label="Purchases" value={String(profile?.total_purchases ?? buyOrders.length)} />
@@ -405,44 +314,44 @@ export default function Profile() {
 
           {/* PAYMENT */}
           {tab === "payment" && (
-            <div className="card p-6 max-w-2xl space-y-5">
-              <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Seller Payout Information</div>
-              <div className="space-y-1.5">
-                <p className="text-sm text-ink-300 font-medium">
+            <div className="card p-6 max-w-2xl space-y-5 border border-ink-800 shadow-xl">
+              <div className="flex items-center gap-2 text-white font-semibold text-lg"><Wallet size={20} className="text-success-400" /> Seller Payout Information</div>
+              <div className="space-y-1.5 bg-ink-950/40 p-4 rounded-xl border border-ink-800/60">
+                <p className="text-sm text-ink-200 font-medium">
                   These numbers are strictly for sellers to receive payments after selling an ID.
                 </p>
-                <p className="text-sm text-ink-400 font-normal">
+                <p className="text-xs text-ink-400 font-normal">
                   (এই নম্বরগুলো শুধুমাত্র সেলারদের জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।)
                 </p>
               </div>
               
               <form onSubmit={handleSavePayment} className="space-y-4">
                 {paymentMsg && (
-                  <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", paymentMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
-                    {paymentMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {paymentMsg}
+                  <div className={classNames("flex items-center gap-2 rounded-xl p-3.5 text-sm font-medium shadow-md animate-fade-in", paymentMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
+                    {paymentMsg.includes("success") ? <CheckCircle2 size={18} /> : <X size={18} />} {paymentMsg}
                   </div>
                 )}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="label">BKash Number (Seller)</label>
+                    <label className="label font-medium text-xs text-ink-300">BKash Number (Seller)</label>
                     <input 
                       value={paymentForm.bkash_number} 
                       onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} 
-                      className="input" 
+                      className="input mt-1.5" 
                       placeholder="01XXXXXXXXX" 
                     />
                   </div>
                   <div>
-                    <label className="label">Nagad Number (Seller)</label>
+                    <label className="label font-medium text-xs text-ink-300">Nagad Number (Seller)</label>
                     <input 
                       value={paymentForm.nagad_number} 
                       onChange={(e) => setPaymentForm((f) => ({ ...f, nagad_number: e.target.value }))} 
-                      className="input" 
+                      className="input mt-1.5" 
                       placeholder="01XXXXXXXXX" 
                     />
                   </div>
                 </div>
-                <button type="submit" disabled={savingPayment} className="btn-primary w-full sm:w-auto">
+                <button type="submit" disabled={savingPayment} className="btn-primary w-full sm:w-auto px-6 py-2.5">
                   {savingPayment ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Payout Info
                 </button>
               </form>
@@ -454,15 +363,15 @@ export default function Profile() {
             <div>
               <div className="flex items-center gap-3 mb-5">
                 <h2 className="font-display text-xl font-bold text-white">Achievements</h2>
-                <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20"><Trophy size={12} /> {unlockedCount} unlocked</span>
+                <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20 px-3 py-1 font-semibold"><Trophy size={14} /> {unlockedCount} unlocked</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {achievements.map((a) => (
-                  <div key={a.id} className={classNames("card p-5 text-center transition-all", a.unlocked ? "border-primary-500/20" : "opacity-50 grayscale")}>
-                    <div className={classNames("inline-grid place-items-center h-14 w-14 rounded-2xl mx-auto", a.color)}><a.icon size={26} /></div>
+                  <div key={a.id} className={classNames("card p-5 text-center transition-all border border-ink-800 shadow-lg", a.unlocked ? "border-primary-500/30 bg-ink-900/90" : "opacity-50 grayscale")}>
+                    <div className={classNames("inline-grid place-items-center h-14 w-14 rounded-2xl mx-auto shadow-inner", a.color)}><a.icon size={26} /></div>
                     <p className="font-semibold text-white text-sm mt-3">{a.title}</p>
                     <p className="text-xs text-ink-400 mt-1">{a.desc}</p>
-                    {a.unlocked ? <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 mt-2"><CheckCircle2 size={11} /> Earned</span> : <span className="badge bg-ink-700 text-ink-500 border border-ink-600 mt-2"><Lock size={11} /> Locked</span>}
+                    {a.unlocked ? <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 mt-3 px-2.5 py-0.5"><CheckCircle2 size={11} /> Earned</span> : <span className="badge bg-ink-800 text-ink-500 border border-ink-700 mt-3 px-2.5 py-0.5"><Lock size={11} /> Locked</span>}
                   </div>
                 ))}
               </div>
@@ -472,48 +381,48 @@ export default function Profile() {
           {/* WISHLIST */}
           {tab === "wishlist" && (
             <div>
-              <div className="flex items-center gap-3 mb-5"><h2 className="font-display text-xl font-bold text-white">Wishlist</h2><span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20"><Heart size={12} /> {wishlist.length} saved</span></div>
+              <div className="flex items-center gap-3 mb-5"><h2 className="font-display text-xl font-bold text-white">Wishlist</h2><span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20 px-3 py-1 font-semibold"><Heart size={14} /> {wishlist.length} saved</span></div>
               {wishlist.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {wishlist.map((l) => (
-                    <Link key={l.id} to={`/listing/${l.id}`} className="card-hover overflow-hidden block group">
-                      <div className="h-32 overflow-hidden"><img src={l.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=400"} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform" /></div>
-                      <div className="p-3"><p className="text-sm font-semibold text-white line-clamp-1">{l.title}</p><p className="font-display font-bold text-primary-400 mt-1">{formatBDT(l.price)}</p></div>
+                    <Link key={l.id} to={`/listing/${l.id}`} className="card-hover overflow-hidden block group border border-ink-800 shadow-lg">
+                      <div className="h-36 overflow-hidden"><img src={l.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=400"} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300" /></div>
+                      <div className="p-3.5"><p className="text-sm font-semibold text-white line-clamp-1 group-hover:text-primary-400 transition-colors">{l.title}</p><p className="font-display font-extrabold text-primary-400 mt-1 text-base">{formatBDT(l.price)}</p></div>
                     </Link>
                   ))}
                 </div>
-              ) : <div className="card p-10 text-center"><Heart size={36} className="mx-auto text-ink-600" /><p className="text-ink-400 mt-3">No saved items yet.</p><Link to="/browse" className="btn-primary mt-4 inline-flex">Browse to save</Link></div>}
+              ) : <div className="card p-12 text-center border border-ink-800 shadow-xl"><Heart size={40} className="mx-auto text-ink-600 mb-2" /><p className="text-ink-400 font-medium">No saved items yet.</p><Link to="/browse" className="btn-primary mt-4 inline-flex px-5 py-2">Browse to save</Link></div>}
             </div>
           )}
 
           {/* SELLER INSIGHTS */}
           {tab === "insights" && (
-            <div className="space-y-5">
+            <div className="space-y-6">
               <h2 className="font-display text-xl font-bold text-white">Seller Insights</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard icon={Wallet} value={formatBDT(monthlyEarnings)} label="This Month" color="text-success-400 bg-success-500/15" />
-                <StatCard icon={TrendingUp} value={formatBDT(avgOrderValue)} label="Avg Order" color="text-primary-400 bg-primary-500/15" />
-                <StatCard icon={Target} value={String(completedSales.length)} label="Total Sales" color="text-accent-400 bg-accent-500/15" />
-                <StatCard icon={Clock} value={`${responseRate}%`} label="Response Rate" color="text-warning-400 bg-warning-500/15" />
+                <StatCard icon={Wallet} value={formatBDT(monthlyEarnings)} label="This Month" color="text-success-400 bg-success-500/15 border border-success-500/20" />
+                <StatCard icon={TrendingUp} value={formatBDT(avgOrderValue)} label="Avg Order" color="text-primary-400 bg-primary-500/15 border border-primary-500/20" />
+                <StatCard icon={Target} value={String(completedSales.length)} label="Total Sales" color="text-accent-400 bg-accent-500/15 border border-accent-500/20" />
+                <StatCard icon={Clock} value={`${responseRate}%`} label="Response Rate" color="text-warning-400 bg-warning-500/15 border border-warning-500/20" />
               </div>
-              <div className="card p-6">
-                <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-primary-400" /> Sales — Last 7 Days</h3>
-                <div className="flex items-end gap-2 h-40">
+              <div className="card p-6 border border-ink-800 shadow-xl">
+                <h3 className="font-semibold text-white mb-5 flex items-center gap-2"><BarChart3 size={18} className="text-primary-400" /> Sales — Last 7 Days</h3>
+                <div className="flex items-end gap-3 h-44 pt-2">
                   {weeklyData.map((v, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                      <div className="w-full rounded-t-lg bg-gradient-to-t from-primary-600 to-primary-400 transition-all hover:from-primary-500 hover:to-primary-300" style={{ height: `${(v / maxWeekly) * 100}%`, minHeight: "4px" }} title={`${v} sales`} />
-                      <span className="text-xs text-ink-500">{new Date(Date.now() - (maxBars - 1 - i) * 86400000).toLocaleDateString("en", { weekday: "short" }).charAt(0)}</span>
+                    <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                      <div className="w-full rounded-t-xl bg-gradient-to-t from-primary-600 to-primary-400 transition-all hover:from-primary-500 hover:to-primary-300 shadow-md" style={{ height: `${(v / maxWeekly) * 100}%`, minHeight: "8px" }} title={`${v} sales`} />
+                      <span className="text-xs font-semibold text-ink-400">{new Date(Date.now() - (maxBars - 1 - i) * 86400000).toLocaleDateString("en", { weekday: "short" }).charAt(0)}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="card p-6">
-                <h3 className="font-semibold text-white mb-4">Performance Breakdown</h3>
-                <div className="space-y-3">
+              <div className="card p-6 border border-ink-800 shadow-xl">
+                <h3 className="font-semibold text-white mb-5">Performance Breakdown</h3>
+                <div className="space-y-4">
                   {[{ label: "Delivery Speed", value: 85, color: "from-success-500 to-success-400" }, { label: "Communication", value: 72, color: "from-primary-500 to-primary-400" }, { label: "Account Quality", value: 90, color: "from-accent-500 to-accent-400" }, { label: "Dispute Rate", value: 95, color: "from-warning-500 to-warning-400" }].map((m) => (
                     <div key={m.label}>
-                      <div className="flex justify-between text-sm mb-1"><span className="text-ink-300">{m.label}</span><span className="font-semibold text-white">{m.value}%</span></div>
-                      <div className="h-2 rounded-full bg-ink-700 overflow-hidden"><div className={`h-full rounded-full bg-gradient-to-r ${m.color}`} style={{ width: `${m.value}%` }} /></div>
+                      <div className="flex justify-between text-sm mb-1.5"><span className="text-ink-300 font-medium">{m.label}</span><span className="font-bold text-white">{m.value}%</span></div>
+                      <div className="h-2.5 rounded-full bg-ink-800 overflow-hidden shadow-inner"><div className={`h-full rounded-full bg-gradient-to-r ${m.color} transition-all duration-500`} style={{ width: `${m.value}%` }} /></div>
                     </div>
                   ))}
                 </div>
@@ -524,35 +433,38 @@ export default function Profile() {
           {/* VERIFICATION */}
           {tab === "verify" && (
             <div className="max-w-2xl space-y-5">
-              <h2 className="font-display text-xl font-bold text-white flex items-center gap-2"><BadgeCheck size={20} className="text-success-400" /> Seller Verification</h2>
+              <h2 className="font-display text-xl font-bold text-white flex items-center gap-2"><BadgeCheck size={22} className="text-success-400" /> Seller Verification</h2>
               {profile?.is_verified ? (
-                <div className="card p-6 text-center bg-success-500/10 border-success-500/20">
-                  <ShieldCheck size={48} className="mx-auto text-success-400" />
-                  <h3 className="font-display text-lg font-bold text-white mt-3">You're Verified!</h3>
-                  <p className="text-sm text-ink-400 mt-1">Your account carries the verified badge. Buyers trust you more.</p>
+                <div className="card p-8 text-center bg-success-500/10 border-success-500/30 shadow-xl">
+                  <ShieldCheck size={52} className="mx-auto text-success-400 mb-2 animate-bounce" />
+                  <h3 className="font-display text-xl font-bold text-white mt-2">You're Verified!</h3>
+                  <p className="text-sm text-ink-300 mt-1 max-w-md mx-auto">Your account carries the verified badge. Buyers trust you more and your listings rank higher.</p>
                 </div>
               ) : verifyRequested ? (
-                <div className="card p-6 text-center bg-primary-500/10 border-primary-500/20">
-                  <Clock size={48} className="mx-auto text-primary-400" />
-                  <h3 className="font-display text-lg font-bold text-white mt-3">Request Submitted</h3>
-                  <p className="text-sm text-ink-400 mt-1">Our team is reviewing your request. You'll be notified within 48 hours.</p>
+                <div className="card p-8 text-center bg-primary-500/10 border-primary-500/30 shadow-xl">
+                  <Clock size={52} className="mx-auto text-primary-400 mb-2 animate-pulse" />
+                  <h3 className="font-display text-xl font-bold text-white mt-2">Request Submitted</h3>
+                  <p className="text-sm text-ink-300 mt-1 max-w-md mx-auto">Our administration team is reviewing your verification request. You'll be notified within 48 hours.</p>
                 </div>
               ) : (
-                <div className="card p-6 space-y-4">
-                  <div className="flex items-start gap-2 rounded-xl bg-primary-500/10 border border-primary-500/20 p-3 text-xs text-primary-300"><AlertCircle size={16} className="shrink-0 mt-0.5" /><span>Verification gives you a green checkmark badge, boosts buyer trust, and improves your search ranking. Requires at least 3 completed sales and a 4.0+ trust score.</span></div>
+                <div className="card p-6 space-y-5 border border-ink-800 shadow-xl">
+                  <div className="flex items-start gap-3 rounded-xl bg-primary-500/10 border border-primary-500/25 p-4 text-xs sm:text-sm text-primary-200">
+                    <AlertCircle size={20} className="shrink-0 mt-0.5 text-primary-400" />
+                    <span>Verification gives you a green checkmark badge, builds high buyer confidence, and optimizes your account positioning. Requires at least 3 completed sales and a 4.0+ trust score.</span>
+                  </div>
                   <div>
-                    <h3 className="font-semibold text-white mb-3">Requirements Checklist</h3>
-                    <div className="space-y-2">
+                    <h3 className="font-semibold text-white mb-3 text-sm">Requirements Checklist</h3>
+                    <div className="space-y-2.5 bg-ink-950/40 p-4 rounded-xl border border-ink-800/60">
                       <VerifyReq done={completedSales.length >= 3} label={`3 completed sales (you have ${completedSales.length})`} />
                       <VerifyReq done={Number(profile?.trust_score ?? 0) >= 4} label={`Trust score 4.0+ (yours: ${Number(profile?.trust_score ?? 0).toFixed(1)})`} />
                       <VerifyReq done={!!profile?.phone} label="Phone number added" />
                       <VerifyReq done={!!profile?.full_name} label="Full name set" />
                     </div>
                   </div>
-                  <button onClick={() => setVerifyRequested(true)} className="btn-primary w-full" disabled={completedSales.length < 3 || Number(profile?.trust_score ?? 0) < 4}>
+                  <button onClick={() => setVerifyRequested(true)} className="btn-primary w-full py-3 font-semibold shadow-lg" disabled={completedSales.length < 3 || Number(profile?.trust_score ?? 0) < 4}>
                     <BadgeCheck size={18} /> Request Verification
                   </button>
-                  {completedSales.length < 3 && <p className="text-xs text-ink-500 text-center">Complete more sales to unlock verification.</p>}
+                  {completedSales.length < 3 && <p className="text-xs text-ink-500 text-center">Complete more sales to unlock verification eligibility.</p>}
                 </div>
               )}
             </div>
@@ -560,134 +472,90 @@ export default function Profile() {
 
           {/* SECURITY */}
           {tab === "security" && (
-            <div className="card p-6 max-w-2xl space-y-4">
-              <div className="flex items-center gap-2 text-white font-semibold"><Lock size={18} className="text-primary-400" /> Security & Privacy</div>
-              <div className="rounded-xl bg-ink-800 p-4 flex items-center justify-between">
+            <div className="card p-6 max-w-2xl space-y-4 border border-ink-800 shadow-xl">
+              <div className="flex items-center gap-2 text-white font-semibold text-lg"><Lock size={20} className="text-primary-400" /> Security & Privacy</div>
+              <div className="rounded-xl bg-ink-950/40 p-4 border border-ink-800/60 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-white">Email verified</p>
                   <p className="text-xs text-ink-400 mt-0.5">{user.email}</p>
                 </div>
-                <span className="badge bg-success-500/15 text-success-400 border border-success-500/20"><Mail size={11} /> Verified</span>
+                <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-3 py-1 font-semibold"><Mail size={13} /> Verified</span>
               </div>
             </div>
           )}
 
           {/* ACTIVITY */}
           {tab === "activity" && (
-            <div className="space-y-5">
-              <div>
-                <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-                  <Package size={18} className="text-primary-400" /> All My Listings ({myListings.length})
-                </h3>
-                {myListings.length > 0 ? (
-                  <div className="space-y-3 mb-6">
-                    {myListings.map((l) => {
-                      const isActive = l.status === "active" || l.status === "approved";
-                      return (
-                        <div key={l.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-ink-700/60 bg-ink-800/30">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div onClick={() => navigate(`/listing/${l.id}`)} className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0 cursor-pointer">
-                              {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
-                            </div>
-                            <div className="min-w-0">
-                              <div onClick={() => navigate(`/listing/${l.id}`)} className="font-medium text-white hover:text-primary-400 line-clamp-1 cursor-pointer text-sm">
-                                {l.title}
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="font-semibold text-white text-xs">{formatBDT(l.price)}</span>
-                                <StatusBadge status={l.status} />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 self-end sm:self-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-ink-700/60 w-full sm:w-auto justify-between sm:justify-end">
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" checked={isActive} onChange={() => handleToggleStatus(l.id, l.status)} className="sr-only peer" />
-                              <div className="w-9 h-5 bg-ink-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-ink-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-success-500"></div>
-                              <span className="ml-2 text-xs font-medium text-ink-300">{isActive ? "Active" : "Inactive"}</span>
-                            </label>
-                            <div className="flex items-center gap-1.5">
-                              <button onClick={() => navigate(`/edit-listing/${l.id}`)} className="px-2.5 py-1.5 bg-ink-800 hover:bg-ink-700 text-ink-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-ink-700">
-                                <Edit3 size={13} /> Edit
-                              </button>
-                              <button onClick={() => handleDeleteListing(l.id)} className="px-2.5 py-1.5 bg-error-500/10 hover:bg-error-500/25 text-error-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-error-500/20">
-                                <Trash2 size={13} /> Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : <p className="text-sm text-ink-400 mb-6">No listings yet.</p>}
-              </div>
-              <div><h3 className="font-semibold text-white mb-3">Recent Sales</h3>{sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-400">No sales yet.</p>}</div>
-              <div><h3 className="font-semibold text-white mb-3">Recent Purchases</h3>{buyOrders.slice(0, 5).length > 0 ? <div className="space-y-2">{buyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-400">No purchases yet.</p>}</div>
+            <div className="space-y-6">
+              <div className="card p-5 border border-ink-800 shadow-xl"><h3 className="font-semibold text-white mb-3 text-base">Recent Sales</h3>{sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-400 py-2">No sales recorded yet.</p>}</div>
+              <div className="card p-5 border border-ink-800 shadow-xl"><h3 className="font-semibold text-white mb-3 text-base">Recent Purchases</h3>{buyOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{buyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-400 py-2">No purchases recorded yet.</p>}</div>
             </div>
           )}
 
           {/* REVIEWS */}
           {tab === "reviews" && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="font-semibold text-white">Reviews About You</h3>
-                <span className="badge bg-warning-500/15 text-warning-400 border border-warning-500/20"><Star size={12} className="fill-warning-400" /> {avgRating.toFixed(1)} ({reviews.length})</span>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-3">
+                <h3 className="font-semibold text-white text-base">Reviews About You</h3>
+                <span className="badge bg-warning-500/15 text-warning-400 border border-warning-500/20 px-3 py-1 font-semibold"><Star size={13} className="fill-warning-400" /> {avgRating.toFixed(1)} ({reviews.length})</span>
               </div>
               {reviews.length > 0 ? reviews.map((r) => (
-                <div key={r.id} className="card p-4">
+                <div key={r.id} className="card p-4 border border-ink-800 shadow-md">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-ink-800 text-ink-300 text-sm font-bold">{(r.reviewer?.full_name ?? r.reviewer?.username)?.[0]?.toUpperCase() ?? "?"}</div>
+                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-ink-800 border border-ink-700/50 text-ink-200 text-sm font-bold">{(r.reviewer?.full_name ?? r.reviewer?.username)?.[0]?.toUpperCase() ?? "?"}</div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-white">{r.reviewer?.full_name ?? r.reviewer?.username ?? "Anonymous"}</p>
-                      <div className="flex items-center gap-2"><div className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} className={i < r.rating ? "text-warning-400 fill-warning-400" : "text-ink-700"} />)}</div><span className="text-xs text-ink-500">{timeAgo(r.created_at)}</span></div>
+                      <div className="flex items-center gap-2 mt-0.5"><div className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} className={i < r.rating ? "text-warning-400 fill-warning-400" : "text-ink-700"} />)}</div><span className="text-xs text-ink-500">• {timeAgo(r.created_at)}</span></div>
                     </div>
                   </div>
-                  {r.comment && <p className="text-sm text-ink-300 mt-2">{r.comment}</p>}
+                  {r.comment && <p className="text-sm text-ink-300 mt-3 bg-ink-950/30 p-3 rounded-xl border border-ink-800/40">{r.comment}</p>}
                 </div>
-              )) : <p className="text-sm text-ink-400">No reviews yet. Complete some sales to get reviewed!</p>}
+              )) : <div className="card p-10 text-center border border-ink-800 shadow-xl"><Star size={36} className="mx-auto text-ink-600 mb-2" /><p className="text-sm text-ink-400">No reviews yet. Complete some sales to build your rating profile!</p></div>}
             </div>
           )}
         </>
       )}
 
+      {/* Edit Profile Modal */}
       {editOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/80 backdrop-blur-sm" onClick={() => setEditOpen(false)}>
-          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/80 backdrop-blur-sm animate-fade-in" onClick={() => setEditOpen(false)}>
+          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-display text-lg font-bold text-white flex items-center gap-2"><Edit3 size={18} className="text-primary-400" /> Edit Your Profile</h2>
               <button onClick={() => setEditOpen(false)} className="text-ink-400 hover:text-white transition-colors"><X size={20} /></button>
             </div>
-            <form onSubmit={handleSave} className="space-y-5">
-              {saveMsg && <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", saveMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>{saveMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {saveMsg}</div>}
-              <div className="flex items-center gap-4">
-                {editForm.avatar_url ? <img src={editForm.avatar_url} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-xl font-bold">{initials}</div>}
+            <form onSubmit={handleSave} className="space-y-4">
+              {saveMsg && <div className={classNames("flex items-center gap-2 rounded-xl p-3.5 text-sm font-medium shadow-md", saveMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>{saveMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {saveMsg}</div>}
+              <div className="flex items-center gap-4 bg-ink-950/40 p-4 rounded-xl border border-ink-800/60">
+                {editForm.avatar_url ? <img src={editForm.avatar_url} alt="" className="h-16 w-16 rounded-xl object-cover border border-ink-700" /> : <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-xl font-bold">{initials}</div>}
                 <div className="flex-1">
-                  <label className="label">Profile Picture</label>
-                  <input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} className="block w-full text-sm text-ink-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-500 file:text-white file:font-semibold hover:file:bg-primary-600 file:cursor-pointer cursor-pointer" />
-                  {uploading && <p className="text-xs text-ink-400 mt-1.5 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Uploading...</p>}
+                  <label className="label text-xs font-semibold text-ink-300">Profile Picture</label>
+                  <input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarUpload(f); }} className="block w-full text-xs text-ink-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-primary-500 file:text-white file:font-semibold hover:file:bg-primary-600 file:cursor-pointer cursor-pointer mt-1" />
+                  {uploading && <p className="text-xs text-primary-400 mt-1.5 flex items-center gap-1"><Loader2 size={12} className="animate-spin" /> Uploading image...</p>}
                 </div>
               </div>
-              <div><label className="label">Full Name</label><input value={editForm.full_name} onChange={(e) => updateEdit("full_name", e.target.value)} className="input" required /></div>
-              <div><label className="label">Bio</label><textarea value={editForm.bio} onChange={(e) => updateEdit("bio", e.target.value)} rows={3} className="input" placeholder="Tell buyers about yourself..." /></div>
+              <div><label className="label font-medium text-xs text-ink-300">Full Name</label><input value={editForm.full_name} onChange={(e) => updateEdit("full_name", e.target.value)} className="input mt-1" required /></div>
+              <div><label className="label font-medium text-xs text-ink-300">Bio</label><textarea value={editForm.bio} onChange={(e) => updateEdit("bio", e.target.value)} rows={3} className="input mt-1" placeholder="Tell buyers about yourself..." /></div>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div><label className="label">Location</label><input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} className="input" placeholder="Dhaka, Bangladesh" /></div>
-                <div><label className="label">Phone</label><input value={editForm.phone} onChange={(e) => updateEdit("phone", e.target.value)} className="input" placeholder="01XXXXXXXXX" /></div>
+                <div><label className="label font-medium text-xs text-ink-300">Location</label><input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} className="input mt-1" placeholder="Dhaka, Bangladesh" /></div>
+                <div><label className="label font-medium text-xs text-ink-300">Phone</label><input value={editForm.phone} onChange={(e) => updateEdit("phone", e.target.value)} className="input mt-1" placeholder="01XXXXXXXXX" /></div>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="submit" disabled={saving} className="btn-primary flex-1">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Changes</button>
-                <button type="button" onClick={() => setEditOpen(false)} className="btn-secondary">Cancel</button>
+              <div className="flex gap-3 pt-3">
+                <button type="submit" disabled={saving} className="btn-primary flex-1 py-2.5 font-semibold">{saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Changes</button>
+                <button type="button" onClick={() => setEditOpen(false)} className="btn-secondary px-5 py-2.5">Cancel</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Helpful Links */}
-      <div className="mt-8">
+      {/* Helpful Links Section */}
+      <div className="mt-10">
         <h2 className="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
           <Sparkles size={18} className="text-primary-400" />
           Helpful Links
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
           {[
             { to: "/faq", icon: HelpCircle, label: "FAQ", desc: "Common questions" },
             { to: "/support", icon: LifeBuoy, label: "Support", desc: "Get help fast" },
@@ -697,12 +565,12 @@ export default function Profile() {
             <Link
               key={l.to}
               to={l.to}
-              className="card p-4 group transition-all hover:border-primary-500/40 hover:-translate-y-0.5 hover:shadow-glow"
+              className="card p-4 group transition-all border border-ink-800 hover:border-primary-500/40 hover:-translate-y-0.5 hover:shadow-glow bg-ink-900"
             >
-              <div className="inline-grid place-items-center h-10 w-10 rounded-xl bg-ink-800 text-ink-400 transition-colors group-hover:bg-primary-500/15 group-hover:text-primary-400">
+              <div className="inline-grid place-items-center h-10 w-10 rounded-xl bg-ink-800 text-ink-400 transition-colors group-hover:bg-primary-500/15 group-hover:text-primary-400 border border-ink-700/50">
                 <l.icon size={20} />
               </div>
-              <p className="font-semibold text-white text-sm mt-2.5 group-hover:text-primary-300 transition-colors">{l.label}</p>
+              <p className="font-semibold text-white text-sm mt-3 group-hover:text-primary-300 transition-colors">{l.label}</p>
               <p className="text-xs text-ink-500 mt-0.5">{l.desc}</p>
             </Link>
           ))}
@@ -713,17 +581,17 @@ export default function Profile() {
 }
 
 function StatCard({ icon: Icon, value, label, color }: { icon: IconType; value: string; label: string; color: string }) {
-  return <div className="card p-4"><div className={`inline-grid place-items-center h-10 w-10 rounded-xl ${color}`}><Icon size={20} /></div><p className="font-display text-xl font-extrabold text-white mt-2">{value}</p><p className="text-xs text-ink-400">{label}</p></div>;
+  return <div className="card p-4 border border-ink-800 shadow-md"><div className={`inline-grid place-items-center h-10 w-10 rounded-xl ${color}`}><Icon size={20} /></div><p className="font-display text-xl font-extrabold text-white mt-2.5">{value}</p><p className="text-xs text-ink-400 mt-0.5">{label}</p></div>;
 }
 
 function Row({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
-  return <div className="flex items-center justify-between"><span className="flex items-center gap-2 text-ink-400"><Icon size={16} /> {label}</span><span className="font-semibold text-white">{value}</span></div>;
+  return <div className="flex items-center justify-between py-1 border-b border-ink-800/60 last:border-0"><span className="flex items-center gap-2 text-ink-400"><Icon size={16} className="text-primary-400" /> {label}</span><span className="font-semibold text-white">{value}</span></div>;
 }
 
 function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" }) {
   return (
-    <div className="card p-3 flex items-center gap-3">
-      <div className="h-10 w-10 rounded-lg bg-ink-800 overflow-hidden shrink-0">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
+    <div className="card p-3.5 flex items-center gap-3.5 border border-ink-800 shadow-sm hover:border-primary-500/30 transition-colors">
+      <div className="h-10 w-10 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
       <Link to={`/listing/${order.listing_id}`} className="flex-1 min-w-0 text-sm font-medium text-white hover:text-primary-400 line-clamp-1">{order.listing?.title ?? "Account"}</Link>
       <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
       <StatusBadge status={order.status} />
@@ -733,9 +601,9 @@ function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" 
 
 function VerifyReq({ done, label }: { done: boolean; label: string }) {
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex items-center gap-2.5 text-sm">
       {done ? <CheckCircle2 size={16} className="text-success-400" /> : <X size={16} className="text-ink-500" />}
-      <span className={done ? "text-ink-200" : "text-ink-500"}>{label}</span>
+      <span className={done ? "text-ink-200 font-medium" : "text-ink-500"}>{label}</span>
     </div>
   );
 }
