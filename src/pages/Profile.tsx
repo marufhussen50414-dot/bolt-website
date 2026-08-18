@@ -265,22 +265,22 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Action Buttons under Edit Profile header area */}
-            <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            {/* Action Buttons: Edit Profile and Log Out stacked vertically */}
+            <div className="flex flex-col gap-2.5 self-start sm:self-auto w-full sm:w-auto">
               <button 
                 onClick={() => setEditOpen(true)} 
-                className="btn-primary px-5 py-2.5 shadow-lg flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
+                className="btn-primary px-5 py-2.5 shadow-lg flex items-center justify-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
               >
                 <Edit3 size={16} /> Edit Profile
               </button>
 
               <button 
                 onClick={() => setLogoutModalOpen(true)}
-                className="btn-secondary bg-error-500/15 hover:bg-error-500/25 text-error-400 border border-error-500/30 px-4 py-2.5 shadow-lg flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
+                className="btn-secondary bg-error-500/15 hover:bg-error-500/25 text-error-400 border border-error-500/30 px-5 py-2.5 shadow-lg flex items-center justify-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
                 title="Log Out"
               >
                 <LogOut size={16} />
-                <span className="hidden sm:inline">Log Out</span>
+                <span>Log Out</span>
               </button>
             </div>
           </div>
