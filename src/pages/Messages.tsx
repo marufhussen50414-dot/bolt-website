@@ -782,8 +782,8 @@ export default function Messages() {
                 )}
               </div>
 
-              {/* Input Area */}
-              <form onSubmit={handleSend} className="p-3 bg-ink-900 border-t border-ink-800 flex flex-col gap-2">
+              {/* Input Area (Fixed responsive overflow for small screens/keyboards) */}
+              <form onSubmit={handleSend} className="p-3 bg-ink-900 border-t border-ink-800 flex flex-col gap-2 w-full overflow-hidden">
                 {pendingImage && (
                   <div className="flex items-center gap-2 rounded-lg bg-ink-950 border border-ink-800 p-2">
                     <img src={pendingImage} alt="Preview" className="h-12 w-12 rounded object-cover shrink-0" />
@@ -791,43 +791,52 @@ export default function Messages() {
                     <button type="button" onClick={clearPendingImage} className="text-ink-400 hover:text-white"><X size={16} /></button>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
+                
+                <div className="flex items-center gap-2 w-full min-w-0">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChosen} className="hidden" />
 
-                  {iAmSeller && (
+                  {/* Left Action Buttons (Give Offer & Image Attach) - shrink-0 to prevent squishing */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {iAmSeller && (
+                      <button
+                        type="button"
+                        onClick={openOfferModal}
+                        className="flex items-center gap-1 px-2.5 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-semibold transition-colors border border-cyan-500/30"
+                        title="Give Offer"
+                      >
+                        <HandCoins size={15} />
+                        <span className="hidden sm:inline">Offer</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      onClick={openOfferModal}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-semibold transition-colors shrink-0 border border-cyan-500/30"
-                      title="Give Offer"
+                      onClick={onPickImage}
+                      disabled={uploadingImage || sending}
+                      className="p-2 text-ink-400 hover:text-white hover:bg-ink-800 rounded-full transition-colors"
+                      title="Attach Image"
                     >
-                      <HandCoins size={16} />
-                      <span>Give Offer</span>
+                      {uploadingImage ? <Loader2 size={18} className="animate-spin text-cyan-400" /> : <ImagePlus size={18} />}
                     </button>
-                  )}
+                  </div>
 
-                  <button
-                    type="button"
-                    onClick={onPickImage}
-                    disabled={uploadingImage || sending}
-                    className="p-2 text-ink-400 hover:text-white hover:bg-ink-800 rounded-full transition-colors"
-                    title="Attach Image"
-                  >
-                    {uploadingImage ? <Loader2 size={20} className="animate-spin text-cyan-400" /> : <ImagePlus size={20} />}
-                  </button>
+                  {/* Input Field with min-w-0 to safely resize when keyboard is open */}
+                  <div className="relative flex-1 min-w-0">
+                    <input
+                      ref={draftRef}
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder="Type a message..."
+                      className="w-full bg-ink-950 text-gray-100 placeholder-ink-400 text-sm rounded-lg px-3 py-2 outline-none border border-ink-800 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500"
+                    />
+                  </div>
 
-                  <input
-                    ref={draftRef}
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 bg-ink-950 text-gray-100 placeholder-ink-400 text-sm rounded-lg px-4 py-2.5 outline-none border border-ink-800 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500"
-                  />
-
+                  {/* Send Button - shrink-0 so it stays fully visible */}
                   <button
                     type="submit"
                     disabled={sending || uploadingImage || (!draft.trim() && !pendingFile)}
-                    className="p-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg transition-all disabled:opacity-40 shadow-md"
+                    className="p-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-lg transition-all disabled:opacity-40 shadow-md shrink-0"
+                    title="Send"
                   >
                     {sending ? <Loader2 size={18} className="animate-spin text-white" /> : <Send size={18} className="text-white" />}
                   </button>
