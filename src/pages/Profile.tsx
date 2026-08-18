@@ -133,31 +133,81 @@ export default function Profile() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Banner */}
-      <div className="relative card overflow-hidden mb-6">
-        <div className="h-28 bg-gradient-to-r from-primary-600/30 via-accent-500/20 to-primary-600/30 relative"><div className="absolute inset-0 bg-grid-pattern bg-[size:24px_24px] opacity-30" /></div>
-        <div className="px-6 pb-6 -mt-12">
-          <div className="flex items-end gap-4 flex-wrap">
-            <div className="relative">
-              {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-24 w-24 rounded-2xl object-cover border-4 border-ink-900" /> : <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-3xl font-bold border-4 border-ink-900">{initials}</div>}
-              <span className={classNames("absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-ink-900", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="font-display text-2xl font-extrabold text-white">{displayName}</h1>
-                {profile?.is_verified && <span className="badge bg-success-500/15 text-success-400 border border-success-500/20"><ShieldCheck size={12} /> Verified</span>}
-                {unlockedCount >= 3 && <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20"><Trophy size={12} /> {unlockedCount} badges</span>}
+      {/* Redesigned Professional Banner & Profile Card */}
+      <div className="card overflow-hidden mb-6 border border-ink-800 shadow-xl bg-ink-900">
+        {/* Cover Banner with smooth gradient and grid pattern */}
+        <div className="h-40 sm:h-48 bg-gradient-to-r from-primary-900/60 via-ink-800 to-accent-950/60 relative">
+          <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-transparent to-transparent" />
+        </div>
+
+        {/* Profile Content Section */}
+        <div className="px-6 pb-6 relative">
+          {/* Top row with Avatar overlapping the banner */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-4">
+            <div className="flex items-end gap-4">
+              <div className="relative group">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl object-cover border-4 border-ink-900 shadow-2xl bg-ink-800" />
+                ) : (
+                  <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-4xl font-extrabold border-4 border-ink-900 shadow-2xl">
+                    {initials}
+                  </div>
+                )}
+                <span className={classNames("absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-ink-900 shadow-md", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
               </div>
-              <p className="text-sm text-ink-400 truncate">{user.email}</p>
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-ink-400 flex-wrap">
-                {profile?.location && <span className="flex items-center gap-1"><MapPin size={12} /> {profile.location}</span>}
-                <span className="flex items-center gap-1"><Calendar size={12} /> Joined {timeAgo(profile?.created_at ?? new Date())}</span>
-                <span className="flex items-center gap-1"><Star size={12} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} rating</span>
+
+              <div className="pt-2 sm:pt-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{displayName}</h1>
+                  {profile?.is_verified && (
+                    <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-2.5 py-1 text-xs flex items-center gap-1 font-semibold">
+                      <ShieldCheck size={14} /> Verified
+                    </span>
+                  )}
+                  {unlockedCount >= 3 && (
+                    <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20 px-2.5 py-1 text-xs flex items-center gap-1 font-semibold">
+                      <Trophy size={14} /> {unlockedCount} Badges
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-ink-400 mt-0.5 font-medium">{user.email}</p>
               </div>
             </div>
-            <button onClick={() => setEditOpen(true)} className="btn-secondary"><Edit3 size={16} /> Edit Profile</button>
+
+            {/* Edit Profile Button */}
+            <button 
+              onClick={() => setEditOpen(true)} 
+              className="btn-primary self-start sm:self-auto px-5 py-2.5 shadow-lg flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
+            >
+              <Edit3 size={16} /> Edit Profile
+            </button>
           </div>
-          {profile?.bio && <p className="mt-4 text-sm text-ink-300 leading-relaxed max-w-2xl">{profile.bio}</p>}
+
+          {/* Sub-details & Bio */}
+          <div className="space-y-3 pt-2 border-t border-ink-800/80">
+            <div className="flex items-center gap-4 text-xs sm:text-sm text-ink-300 flex-wrap">
+              {profile?.location && (
+                <span className="flex items-center gap-1.5 bg-ink-800/60 px-3 py-1 rounded-lg border border-ink-700/50">
+                  <MapPin size={14} className="text-primary-400" /> {profile.location}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3 py-1 rounded-lg border border-ink-700/50">
+                <Calendar size={14} className="text-accent-400" /> Joined {timeAgo(profile?.created_at ?? new Date())}
+              </span>
+              <span className="flex items-center gap-1.5 bg-ink-800/60 px-3 py-1 rounded-lg border border-ink-700/50">
+                <Star size={14} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} Rating
+              </span>
+            </div>
+
+            {profile?.bio ? (
+              <p className="text-sm text-ink-300 leading-relaxed max-w-3xl bg-ink-950/30 p-3.5 rounded-xl border border-ink-800/50">
+                {profile.bio}
+              </p>
+            ) : (
+              <p className="text-sm text-ink-500 italic">No bio added yet. Click 'Edit Profile' to add one.</p>
+            )}
+          </div>
         </div>
       </div>
 
