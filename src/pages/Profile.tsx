@@ -5,7 +5,7 @@ import {
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
   BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
-  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2, AlertTriangle
+  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2, AlertTriangle, LogOut
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -16,7 +16,7 @@ import { StatusBadge } from "../components/ListingCard";
 type Tab = "overview" | "payment" | "security" | "activity" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
 
 export default function Profile() {
-  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
   const [myListings, setMyListings] = useState<GameListing[]>([]);
@@ -588,9 +588,9 @@ export default function Profile() {
             </div>
           )}
 
-          {/* SECURITY */}
+          {/* SECURITY & LOGOUT */}
           {tab === "security" && (
-            <div className="card p-6 max-w-2xl space-y-4 border border-ink-800 shadow-xl">
+            <div className="card p-6 max-w-2xl space-y-6 border border-ink-800 shadow-xl">
               <div className="flex items-center gap-2 text-white font-semibold text-lg"><Lock size={20} className="text-primary-400" /> Security & Privacy</div>
               <div className="rounded-xl bg-ink-950/40 p-4 border border-ink-800/60 flex items-center justify-between">
                 <div>
@@ -598,6 +598,25 @@ export default function Profile() {
                   <p className="text-xs text-ink-400 mt-0.5">{user.email}</p>
                 </div>
                 <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-3 py-1 font-semibold"><Mail size={13} /> Verified</span>
+              </div>
+
+              {/* Logout Option Section */}
+              <div className="pt-4 border-t border-ink-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-error-500/10 border border-error-500/25 p-4 rounded-xl">
+                  <div>
+                    <h4 className="font-semibold text-white text-sm">Log Out of Your Account</h4>
+                    <p className="text-xs text-ink-400 mt-0.5">End your current session safely on this device.</p>
+                  </div>
+                  <button 
+                    onClick={async () => {
+                      await signOut();
+                      navigate("/login");
+                    }} 
+                    className="btn-primary bg-error-600 hover:bg-error-700 text-white px-4 py-2 text-xs font-semibold flex items-center gap-2 shadow-md w-full sm:w-auto justify-center"
+                  >
+                    <LogOut size={15} /> Log Out
+                  </button>
+                </div>
               </div>
             </div>
           )}
