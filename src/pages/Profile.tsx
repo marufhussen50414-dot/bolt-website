@@ -5,8 +5,7 @@ import {
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
   BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
-  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2, AlertTriangle, LogOut,
-  Flame as FireIcon, Shield, Globe, Upload
+  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2, AlertTriangle, LogOut, Upload
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -195,7 +194,6 @@ export default function Profile() {
     });
   }
 
-  // Handle opening the Edit Listing Modal with full fields like /sell page
   function handleEditListing(listing: GameListing, e: React.MouseEvent) {
     e.stopPropagation();
     setSelectedListing(listing);
@@ -215,7 +213,6 @@ export default function Profile() {
     setEditListingModalOpen(true);
   }
 
-  // Handle image upload inside the edit listing modal
   async function handleListingImageUpload(files: FileList) {
     if (!user) return;
     setImageUploading(true);
@@ -235,7 +232,6 @@ export default function Profile() {
     setListingEditForm(f => ({ ...f, images: uploadedUrls }));
   }
 
-  // Handle saving the updated listing data to Supabase
   async function handleUpdateListingSubmit(e: FormEvent) {
     e.preventDefault();
     if (!selectedListing) return;
@@ -308,7 +304,6 @@ export default function Profile() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-      {/* Profile Header Banner */}
       <div className="card overflow-hidden mb-6 border border-ink-800 shadow-2xl bg-ink-900">
         <div className="h-32 sm:h-40 bg-gradient-to-r from-primary-900/70 via-ink-800 to-accent-950/70 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
@@ -394,7 +389,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Profile Completion Bar */}
       {completionPct < 100 && (
         <div className="card p-5 mb-6 border-primary-500/20 bg-gradient-to-r from-ink-900 to-primary-950/30">
           <div className="flex items-center justify-between text-xs mb-2">
@@ -410,7 +404,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Your Listings Section */}
       <div className="card p-5 mb-6 border border-ink-800 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white flex items-center gap-2">
@@ -483,7 +476,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Stat Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard icon={Tag} value={String(activeListings.length)} label="Active Listings" color="text-accent-400 bg-accent-500/15 border border-accent-500/20" />
         <StatCard icon={Award} value={Number(profile?.trust_score ?? 0).toFixed(1)} label="Trust Score" color="text-warning-400 bg-warning-500/15 border border-warning-500/20" />
@@ -491,7 +483,6 @@ export default function Profile() {
         <StatCard icon={ShoppingBag} value={String(profile?.total_purchases ?? buyOrders.length)} label="Total IDs Bought" color="text-primary-400 bg-primary-500/15 border border-primary-500/20" />
       </div>
 
-      {/* Tabs Navigation */}
       <div className="flex gap-1 border-b border-ink-800 mb-6 overflow-x-auto scrollbar-thin">
         {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} className={classNames("flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap", tab === t.id ? "border-primary-500 text-primary-400 bg-primary-500/5" : "border-transparent text-ink-400 hover:text-white")}>
@@ -685,7 +676,6 @@ export default function Profile() {
         </>
       )}
 
-      {/* Edit Listing Modal (Expanded like Sell Page) */}
       {editListingModalOpen && selectedListing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setEditListingModalOpen(false)}>
           <div className="card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in" onClick={(e) => e.stopPropagation()}>
@@ -705,7 +695,6 @@ export default function Profile() {
                 </div>
               )}
 
-              {/* Game Selector Cards */}
               <div>
                 <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-2 block">Game</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -728,7 +717,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Listing Title */}
               <div>
                 <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Listing Title</label>
                 <input 
@@ -740,7 +728,6 @@ export default function Profile() {
                 />
               </div>
 
-              {/* Description */}
               <div>
                 <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Description</label>
                 <textarea 
@@ -752,7 +739,6 @@ export default function Profile() {
                 />
               </div>
 
-              {/* Price & Account Level */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Price (৳)</label>
@@ -777,7 +763,6 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Server / Region */}
               <div>
                 <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Server / Region</label>
                 <select 
@@ -794,7 +779,6 @@ export default function Profile() {
                 </select>
               </div>
 
-              {/* Tags */}
               <div>
                 <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Tags</label>
                 <div className="flex gap-2 mb-2">
@@ -838,7 +822,6 @@ export default function Profile() {
                 )}
               </div>
 
-              {/* Listing Images Upload Box */}
               <div>
                 <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Listing Images</label>
                 <div className="border-2 border-dashed border-ink-700 rounded-2xl p-6 text-center bg-ink-950/40 hover:border-primary-500/50 transition-colors relative cursor-pointer">
@@ -898,7 +881,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Logout Confirmation Modal */}
       {logoutModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setLogoutModalOpen(false)}>
           <div className="card w-full max-w-md p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
@@ -915,7 +897,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Confirmation Modal (Listings actions) */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setConfirmModal({ isOpen: false, title: "", message: "", actionType: null, listing: null })}>
           <div className="card w-full max-w-md p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
@@ -932,7 +913,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Edit Profile Modal */}
       {editOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/80 backdrop-blur-sm animate-fade-in" onClick={() => setEditOpen(false)}>
           <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in" onClick={(e) => e.stopPropagation()}>
@@ -965,7 +945,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Helpful Links Section */}
       <div className="mt-10">
         <h2 className="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
           <Sparkles size={18} className="text-primary-400" />
