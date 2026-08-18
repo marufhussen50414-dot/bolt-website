@@ -63,7 +63,7 @@ export default function Profile() {
 
   // Handler to toggle active/inactive status of a listing
   async function handleToggleStatus(listingId: string, currentStatus: string) {
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const newStatus = (currentStatus === "active" ? "inactive" : "active") as any;
     const { error } = await supabase
       .from("game_listings")
       .update({ status: newStatus })
