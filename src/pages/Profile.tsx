@@ -156,7 +156,7 @@ export default function Profile() {
   // Handle listing status toggle (Active Radio / Toggle)
   async function handleToggleStatus(listingId: string, currentStatus: string, e: React.MouseEvent) {
     e.stopPropagation();
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const newStatus = (currentStatus === "active" ? "pending" : "active") as any;
     const { error } = await supabase.from("game_listings").update({ status: newStatus }).eq("id", listingId);
     if (!error) {
       setMyListings(myListings.map(l => l.id === listingId ? { ...l, status: newStatus } : l));
