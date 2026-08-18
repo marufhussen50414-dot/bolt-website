@@ -866,6 +866,20 @@ function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" 
   );
 }
 
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    completed: "bg-success-500/15 text-success-400 border-success-500/30",
+    pending: "bg-warning-500/15 text-warning-400 border-warning-500/30",
+    cancelled: "bg-error-500/15 text-error-400 border-error-500/30",
+    processing: "bg-primary-500/15 text-primary-400 border-primary-500/30",
+  };
+  return (
+    <span className={classNames("badge border px-2.5 py-0.5 text-xs font-semibold capitalize", styles[status] || "bg-ink-800 text-ink-300 border-ink-700")}>
+      {status}
+    </span>
+  );
+}
+
 function VerifyReq({ done, label }: { done: boolean; label: string }) {
   return (
     <div className="flex items-center gap-2.5 text-sm">
