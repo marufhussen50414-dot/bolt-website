@@ -40,6 +40,19 @@ export default function Profile() {
   // Logout Confirmation Modal State
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
+  // Edit Listing Modal State
+  const [editListingModalOpen, setEditListingModalOpen] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<GameListing | null>(null);
+  const [listingEditForm, setListingEditForm] = useState({
+    title: "",
+    description: "",
+    price: "",
+    game_name: "",
+    category: "",
+  });
+  const [updatingListing, setUpdatingListing] = useState(false);
+  const [listingUpdateMsg, setListingUpdateMsg] = useState("");
+
   // Confirmation Modal State for Listings actions (Active/Inactive and Delete only)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -107,10 +120,8 @@ export default function Profile() {
   ];
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  // Wishlist (mocked — saved listings for this user)
   const wishlist = myListings.filter((l) => l.is_featured).slice(0, 4);
 
-  // Seller insights
   const monthlyEarnings = completedSales.filter((o) => new Date(o.created_at).getMonth() === new Date().getMonth()).reduce((s, o) => s + o.seller_amount, 0);
   const avgOrderValue = completedSales.length ? totalEarnings / completedSales.length : 0;
   const responseRate = profile?.response_rate ?? 0;
@@ -121,7 +132,6 @@ export default function Profile() {
   });
   const maxWeekly = Math.max(...weeklyData, 1);
 
-  // Tabs configuration
   const tabs: { id: Tab; label: string; icon: IconType }[] = [
     { id: "overview", label: "Overview", icon: Activity },
     { id: "payment", label: "Payment", icon: CreditCard },
@@ -171,7 +181,6 @@ export default function Profile() {
     else { setPaymentMsg("Payout numbers saved successfully!"); await refreshProfile(); setTimeout(() => setPaymentMsg(""), 3000); }
   }
 
-  // Open Confirmation Modal triggers
   function promptToggleStatus(listing: GameListing, e: React.MouseEvent) {
     e.stopPropagation();
     const isActive = listing.status === "active" || listing.status === "approved";
@@ -186,9 +195,57 @@ export default function Profile() {
     });
   }
 
+  // Handle opening the Edit Listing Modal with existing data pre-filled
   function handleEditListing(listing: GameListing, e: React.MouseEvent) {
     e.stopPropagation();
-    navigate(`/edit-listing/${listing.id}`);
+    setSelectedListing(listing);
+    setListingEditForm({
+      title: listing.title ?? "",
+      description: listing.description ?? "",
+      price: listing.price ? String(listing.price) : "",
+      game_name: listing.game_name ?? "",
+      category: listing.category ?? "",
+    });
+    setListingUpdateMsg("");
+    setEditListingModalOpen(true);
+  }
+
+  // Handle saving the updated listing data to Supabase
+  async function handleUpdateListingSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!selectedListing) return;
+    setUpdatingListing(true);
+    setListingUpdateMsg("");
+
+    const { error } = await supabase.from("game_listings").update({
+      title: listingEditForm.title.trim(),
+      description: listingEditForm.description.trim(),
+      price: parseFloat(listingEditForm.price) || 0,
+      game_name: listingEditForm.game_name.trim(),
+      category: listingEditForm.category.trim(),
+    }).eq("id", selectedListing.id);
+
+    setUpdatingListing(false);
+
+    if (error) {
+      setListingUpdateMsg("Failed to update listing: " + error.message);
+    } else {
+      setListingUpdateMsg("Listing updated successfully!");
+      // Refresh local listings state
+      setMyListings(myListings.map(item => item.id === selectedListing.id ? {
+        ...item,
+        title: listingEditForm.title.trim(),
+        description: listingEditForm.description.trim(),
+        price: parseFloat(listingEditForm.price) || 0,
+        game_name: listingEditForm.game_name.trim(),
+        category: listingEditForm.category.trim(),
+      } : item));
+
+      setTimeout(() => {
+        setEditListingModalOpen(false);
+        setListingUpdateMsg("");
+      }, 1500);
+    }
   }
 
   function promptDeleteListing(listing: GameListing, e: React.MouseEvent) {
@@ -202,7 +259,6 @@ export default function Profile() {
     });
   }
 
-  // Execute confirmed action
   async function executeConfirmedAction() {
     if (!confirmModal.listing || !confirmModal.actionType) return;
     const l = confirmModal.listing;
@@ -293,7 +349,7 @@ export default function Profile() {
                 </span>
               </div>
 
-              {/* Log Out button placed right below the divider line */}
+              {/* Log Out button */}
               <button 
                 onClick={() => setLogoutModalOpen(true)}
                 className="btn-secondary bg-error-500/15 hover:bg-error-500/25 text-error-400 border border-error-500/30 px-4 py-2 shadow-md flex items-center gap-2 text-xs sm:text-sm font-semibold transition-transform hover:scale-[1.02]"
@@ -331,7 +387,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Your Listings Section with Modal Confirmation */}
+      {/* Your Listings Section */}
       <div className="card p-5 mb-6 border border-ink-800 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white flex items-center gap-2">
@@ -431,7 +487,6 @@ export default function Profile() {
 
       {loading ? <div className="grid place-items-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div> : (
         <>
-          {/* OVERVIEW */}
           {tab === "overview" && (
             <div className="card p-6 border border-ink-800 shadow-xl">
               <h3 className="font-semibold text-white mb-5 flex items-center gap-2"><Activity size={18} className="text-primary-400" /> Account Summary</h3>
@@ -446,19 +501,13 @@ export default function Profile() {
             </div>
           )}
 
-          {/* PAYMENT */}
           {tab === "payment" && (
             <div className="card p-6 max-w-2xl space-y-5 border border-ink-800 shadow-xl">
               <div className="flex items-center gap-2 text-white font-semibold text-lg"><Wallet size={20} className="text-success-400" /> Seller Payout Information</div>
               <div className="space-y-1.5 bg-ink-950/40 p-4 rounded-xl border border-ink-800/60">
-                <p className="text-sm text-ink-200 font-medium">
-                  These numbers are strictly for sellers to receive payments after selling an ID.
-                </p>
-                <p className="text-xs text-ink-400 font-normal">
-                  (এই নম্বরগুলো শুধুমাত্র সেলারদের জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।)
-                </p>
+                <p className="text-sm text-ink-200 font-medium">These numbers are strictly for sellers to receive payments after selling an ID.</p>
+                <p className="text-xs text-ink-400 font-normal">(এই নম্বরগুলো শুধুমাত্র সেলারদের জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।)</p>
               </div>
-              
               <form onSubmit={handleSavePayment} className="space-y-4">
                 {paymentMsg && (
                   <div className={classNames("flex items-center gap-2 rounded-xl p-3.5 text-sm font-medium shadow-md animate-fade-in", paymentMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
@@ -468,21 +517,11 @@ export default function Profile() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="label font-medium text-xs text-ink-300">BKash Number (Seller)</label>
-                    <input 
-                      value={paymentForm.bkash_number} 
-                      onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} 
-                      className="input mt-1.5" 
-                      placeholder="01XXXXXXXXX" 
-                    />
+                    <input value={paymentForm.bkash_number} onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} className="input mt-1.5" placeholder="01XXXXXXXXX" />
                   </div>
                   <div>
                     <label className="label font-medium text-xs text-ink-300">Nagad Number (Seller)</label>
-                    <input 
-                      value={paymentForm.nagad_number} 
-                      onChange={(e) => setPaymentForm((f) => ({ ...f, nagad_number: e.target.value }))} 
-                      className="input mt-1.5" 
-                      placeholder="01XXXXXXXXX" 
-                    />
+                    <input value={paymentForm.nagad_number} onChange={(e) => setPaymentForm((f) => ({ ...f, nagad_number: e.target.value }))} className="input mt-1.5" placeholder="01XXXXXXXXX" />
                   </div>
                 </div>
                 <button type="submit" disabled={savingPayment} className="btn-primary w-full sm:w-auto px-6 py-2.5">
@@ -492,7 +531,6 @@ export default function Profile() {
             </div>
           )}
 
-          {/* ACHIEVEMENTS / BADGES */}
           {tab === "achievements" && (
             <div>
               <div className="flex items-center gap-3 mb-5">
@@ -512,7 +550,6 @@ export default function Profile() {
             </div>
           )}
 
-          {/* WISHLIST */}
           {tab === "wishlist" && (
             <div>
               <div className="flex items-center gap-3 mb-5"><h2 className="font-display text-xl font-bold text-white">Wishlist</h2><span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20 px-3 py-1 font-semibold"><Heart size={14} /> {wishlist.length} saved</span></div>
@@ -529,7 +566,6 @@ export default function Profile() {
             </div>
           )}
 
-          {/* SELLER INSIGHTS */}
           {tab === "insights" && (
             <div className="space-y-6">
               <h2 className="font-display text-xl font-bold text-white">Seller Insights</h2>
@@ -550,21 +586,9 @@ export default function Profile() {
                   ))}
                 </div>
               </div>
-              <div className="card p-6 border border-ink-800 shadow-xl">
-                <h3 className="font-semibold text-white mb-5">Performance Breakdown</h3>
-                <div className="space-y-4">
-                  {[{ label: "Delivery Speed", value: 85, color: "from-success-500 to-success-400" }, { label: "Communication", value: 72, color: "from-primary-500 to-primary-400" }, { label: "Account Quality", value: 90, color: "from-accent-500 to-accent-400" }, { label: "Dispute Rate", value: 95, color: "from-warning-500 to-warning-400" }].map((m) => (
-                    <div key={m.label}>
-                      <div className="flex justify-between text-sm mb-1.5"><span className="text-ink-300 font-medium">{m.label}</span><span className="font-bold text-white">{m.value}%</span></div>
-                      <div className="h-2.5 rounded-full bg-ink-800 overflow-hidden shadow-inner"><div className={`h-full rounded-full bg-gradient-to-r ${m.color} transition-all duration-500`} style={{ width: `${m.value}%` }} /></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
-          {/* VERIFICATION */}
           {tab === "verify" && (
             <div className="max-w-2xl space-y-5">
               <h2 className="font-display text-xl font-bold text-white flex items-center gap-2"><BadgeCheck size={22} className="text-success-400" /> Seller Verification</h2>
@@ -598,13 +622,11 @@ export default function Profile() {
                   <button onClick={() => setVerifyRequested(true)} className="btn-primary w-full py-3 font-semibold shadow-lg" disabled={completedSales.length < 3 || Number(profile?.trust_score ?? 0) < 4}>
                     <BadgeCheck size={18} /> Request Verification
                   </button>
-                  {completedSales.length < 3 && <p className="text-xs text-ink-500 text-center">Complete more sales to unlock verification eligibility.</p>}
                 </div>
               )}
             </div>
           )}
 
-          {/* SECURITY */}
           {tab === "security" && (
             <div className="card p-6 max-w-2xl space-y-6 border border-ink-800 shadow-xl">
               <div className="flex items-center gap-2 text-white font-semibold text-lg"><Lock size={20} className="text-primary-400" /> Security & Privacy</div>
@@ -618,7 +640,6 @@ export default function Profile() {
             </div>
           )}
 
-          {/* ACTIVITY */}
           {tab === "activity" && (
             <div className="space-y-6">
               <div className="card p-5 border border-ink-800 shadow-xl"><h3 className="font-semibold text-white mb-3 text-base">Recent Sales</h3>{sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-400 py-2">No sales recorded yet.</p>}</div>
@@ -626,7 +647,6 @@ export default function Profile() {
             </div>
           )}
 
-          {/* REVIEWS */}
           {tab === "reviews" && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 mb-3">
@@ -650,6 +670,92 @@ export default function Profile() {
         </>
       )}
 
+      {/* Edit Listing Modal */}
+      {editListingModalOpen && selectedListing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setEditListingModalOpen(false)}>
+          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
+                <Edit3 size={18} className="text-primary-400" /> Edit Listing
+              </h2>
+              <button onClick={() => setEditListingModalOpen(false)} className="text-ink-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateListingSubmit} className="space-y-4">
+              {listingUpdateMsg && (
+                <div className={classNames("flex items-center gap-2 rounded-xl p-3.5 text-sm font-medium shadow-md", listingUpdateMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
+                  {listingUpdateMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {listingUpdateMsg}
+                </div>
+              )}
+
+              <div>
+                <label className="label font-medium text-xs text-ink-300">Listing Title</label>
+                <input 
+                  value={listingEditForm.title} 
+                  onChange={(e) => setListingEditForm((f) => ({ ...f, title: e.target.value }))} 
+                  className="input mt-1" 
+                  required 
+                />
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="label font-medium text-xs text-ink-300">Price (BDT)</label>
+                  <input 
+                    type="number" 
+                    value={listingEditForm.price} 
+                    onChange={(e) => setListingEditForm((f) => ({ ...f, price: e.target.value }))} 
+                    className="input mt-1" 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label className="label font-medium text-xs text-ink-300">Game Name</label>
+                  <input 
+                    value={listingEditForm.game_name} 
+                    onChange={(e) => setListingEditForm((f) => ({ ...f, game_name: e.target.value }))} 
+                    className="input mt-1" 
+                    placeholder="e.g. Free Fire, PUBG" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label font-medium text-xs text-ink-300">Category</label>
+                <input 
+                  value={listingEditForm.category} 
+                  onChange={(e) => setListingEditForm((f) => ({ ...f, category: e.target.value }))} 
+                  className="input mt-1" 
+                  placeholder="e.g. Game Account" 
+                />
+              </div>
+
+              <div>
+                <label className="label font-medium text-xs text-ink-300">Description</label>
+                <textarea 
+                  value={listingEditForm.description} 
+                  onChange={(e) => setListingEditForm((f) => ({ ...f, description: e.target.value }))} 
+                  rows={4} 
+                  className="input mt-1" 
+                  placeholder="Write account details..." 
+                />
+              </div>
+
+              <div className="flex gap-3 pt-3">
+                <button type="submit" disabled={updatingListing} className="btn-primary flex-1 py-2.5 font-semibold">
+                  {updatingListing ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Update Listing
+                </button>
+                <button type="button" onClick={() => setEditListingModalOpen(false)} className="btn-secondary px-5 py-2.5">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Logout Confirmation Modal */}
       {logoutModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setLogoutModalOpen(false)}>
@@ -659,25 +765,9 @@ export default function Profile() {
             </div>
             <h3 className="font-display text-lg font-bold text-white mb-2">Log Out</h3>
             <p className="text-sm text-ink-300 mb-6">Are you sure you want to log out? Your data is completely safe, and you can see all your data again when you log back in.</p>
-            
             <div className="flex gap-3">
-              <button 
-                type="button" 
-                onClick={() => setLogoutModalOpen(false)} 
-                className="btn-secondary flex-1 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200"
-              >
-                No
-              </button>
-              <button 
-                type="button" 
-                onClick={async () => {
-                  await signOut();
-                  navigate("/login");
-                }} 
-                className="btn-primary flex-1 py-2.5 font-semibold bg-error-600 hover:bg-error-700 text-white"
-              >
-                Yes
-              </button>
+              <button type="button" onClick={() => setLogoutModalOpen(false)} className="btn-secondary flex-1 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200">No</button>
+              <button type="button" onClick={async () => { await signOut(); navigate("/login"); }} className="btn-primary flex-1 py-2.5 font-semibold bg-error-600 hover:bg-error-700 text-white">Yes</button>
             </div>
           </div>
         </div>
@@ -692,22 +782,9 @@ export default function Profile() {
             </div>
             <h3 className="font-display text-lg font-bold text-white mb-2">{confirmModal.title}</h3>
             <p className="text-sm text-ink-300 mb-6">{confirmModal.message}</p>
-            
             <div className="flex gap-3">
-              <button 
-                type="button" 
-                onClick={() => setConfirmModal({ isOpen: false, title: "", message: "", actionType: null, listing: null })} 
-                className="btn-secondary flex-1 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200"
-              >
-                No
-              </button>
-              <button 
-                type="button" 
-                onClick={executeConfirmedAction} 
-                className="btn-primary flex-1 py-2.5 font-semibold bg-success-600 hover:bg-success-700"
-              >
-                Yes
-              </button>
+              <button type="button" onClick={() => setConfirmModal({ isOpen: false, title: "", message: "", actionType: null, listing: null })} className="btn-secondary flex-1 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200">No</button>
+              <button type="button" onClick={executeConfirmedAction} className="btn-primary flex-1 py-2.5 font-semibold bg-success-600 hover:bg-success-700">Yes</button>
             </div>
           </div>
         </div>
@@ -759,11 +836,7 @@ export default function Profile() {
             { to: "/terms", icon: FileText, label: "Terms & Conditions", desc: "Platform rules" },
             { to: "/privacy", icon: ScrollText, label: "Privacy Policy", desc: "Your data, safe" },
           ].map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className="card p-4 group transition-all border border-ink-800 hover:border-primary-500/40 hover:-translate-y-0.5 hover:shadow-glow bg-ink-900"
-            >
+            <Link key={l.to} to={l.to} className="card p-4 group transition-all border border-ink-800 hover:border-primary-500/40 hover:-translate-y-0.5 hover:shadow-glow bg-ink-900">
               <div className="inline-grid place-items-center h-10 w-10 rounded-xl bg-ink-800 text-ink-400 transition-colors group-hover:bg-primary-500/15 group-hover:text-primary-400 border border-ink-700/50">
                 <l.icon size={20} />
               </div>
