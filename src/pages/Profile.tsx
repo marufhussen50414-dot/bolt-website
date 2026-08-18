@@ -4,7 +4,7 @@ import {
   MapPin, Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2,
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
-  Gift, BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
+  BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
   AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -135,7 +135,7 @@ export default function Profile() {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Redesigned Professional Banner & Profile Card */}
       <div className="card overflow-hidden mb-6 border border-ink-800 shadow-xl bg-ink-900">
-        {/* Cover Banner with smooth gradient and grid pattern (HIGHT REDUCED HERE) */}
+        {/* Cover Banner with smooth gradient and grid pattern */}
         <div className="h-28 sm:h-36 bg-gradient-to-r from-primary-900/60 via-ink-800 to-accent-950/60 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-transparent to-transparent" />
@@ -211,7 +211,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Profile Completion Box (Hidden automatically when completionPct reaches 100) */}
+      {/* Profile Completion Box */}
       {completionPct < 100 && (
         <div className="card p-5 mb-6">
           <div className="flex items-center justify-between text-xs mb-1.5">
@@ -393,19 +393,11 @@ export default function Profile() {
           {/* PAYMENT */}
           {tab === "payment" && (
             <div className="card p-6 max-w-2xl space-y-5">
-              <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Payment & Payout Information</div>
-              <p className="text-sm text-ink-400">These numbers are used for buyers to send payments and for your payouts.</p>
+              <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Seller Payout Information</div>
+              <p className="text-sm text-ink-400">এই নম্বরগুলো শুধুমাত্র সেলারদের (Seller) জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।</p>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div><label className="label">bKash Number</label><input defaultValue={profile?.bkash_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
-                <div><label className="label">Nagad Number</label><input defaultValue={profile?.nagad_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
-              </div>
-              <div className="rounded-xl bg-success-500/10 border border-success-500/20 p-4">
-                <div className="flex items-center justify-between"><div><p className="text-xs text-ink-400">Available Balance</p><p className="font-display text-2xl font-extrabold text-success-400">{formatBDT(totalEarnings)}</p></div><Wallet size={32} className="text-success-400/50" /></div>
-              </div>
-              <div className="rounded-xl bg-ink-800 p-4">
-                <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2"><Gift size={15} className="text-accent-400" /> Referral Program</h4>
-                <p className="text-xs text-ink-400 mb-2">Invite friends and earn ৳50 when they complete their first sale.</p>
-                <div className="flex items-center gap-2"><input readOnly value={`gamehaatbd.com/?ref=${user.id.slice(0, 8)}`} className="input text-xs py-2" /><button className="btn-secondary text-xs py-2">Copy</button></div>
+                <div><label className="label">bKash Number (Seller)</label><input defaultValue={profile?.bkash_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
+                <div><label className="label">Nagad Number (Seller)</label><input defaultValue={profile?.nagad_number ?? ""} className="input" placeholder="01XXXXXXXXX" /></div>
               </div>
             </div>
           )}
@@ -488,7 +480,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Essential Links */}
+      {/* Helpful Links */}
       <div className="mt-8">
         <h2 className="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
           <Sparkles size={18} className="text-primary-400" />
