@@ -135,8 +135,8 @@ export default function Profile() {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Redesigned Professional Banner & Profile Card */}
       <div className="card overflow-hidden mb-6 border border-ink-800 shadow-xl bg-ink-900">
-        {/* Cover Banner with smooth gradient and grid pattern */}
-        <div className="h-40 sm:h-48 bg-gradient-to-r from-primary-900/60 via-ink-800 to-accent-950/60 relative">
+        {/* Cover Banner with smooth gradient and grid pattern (HIGHT REDUCED HERE) */}
+        <div className="h-28 sm:h-36 bg-gradient-to-r from-primary-900/60 via-ink-800 to-accent-950/60 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-transparent to-transparent" />
         </div>
