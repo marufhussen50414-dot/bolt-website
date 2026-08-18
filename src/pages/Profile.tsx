@@ -61,14 +61,6 @@ export default function Profile() {
     }
   }, [profile]);
 
-  // Helper to get the correct listing image
-  function getListingImage(l: GameListing) {
-    if (Array.isArray(l.images) && l.images.length > 0) {
-      return l.images[0];
-    }
-    return (l as any).image_url || (l as any).image || "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=400";
-  }
-
   // Handler to toggle active/inactive status of a listing
   async function handleToggleStatus(listingId: string, currentStatus: string) {
     const newStatus = (currentStatus === "active" ? "inactive" : "active") as any;
@@ -126,7 +118,7 @@ export default function Profile() {
   ];
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  // Wishlist
+  // Wishlist (mocked — saved listings for this user)
   const wishlist = myListings.filter((l) => l.is_featured).slice(0, 4);
 
   // Seller insights
@@ -140,6 +132,7 @@ export default function Profile() {
   });
   const maxWeekly = Math.max(...weeklyData, 1);
 
+  // Payment tab placed right after overview
   const tabs: { id: Tab; label: string; icon: IconType }[] = [
     { id: "overview", label: "Overview", icon: Activity },
     { id: "payment", label: "Payment", icon: CreditCard },
@@ -191,7 +184,7 @@ export default function Profile() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Banner & Profile Card */}
+      {/* Redesigned Professional Banner & Profile Card */}
       <div className="card overflow-hidden mb-6 border border-ink-800 shadow-xl bg-ink-900">
         <div className="h-28 sm:h-36 bg-gradient-to-r from-primary-900/60 via-ink-800 to-accent-950/60 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
@@ -279,7 +272,7 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Your Listings Section */}
+      {/* Your Listings Section - Added Active/Inactive Toggle, Edit & Delete options */}
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-white flex items-center gap-2">
@@ -292,18 +285,18 @@ export default function Profile() {
           <div className="space-y-3">
             {myListings.map((l) => {
               const isActive = l.status === "active" || l.status === "approved";
-              const listingImg = getListingImage(l);
               return (
                 <div 
                   key={l.id} 
                   className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-ink-700/60 bg-ink-800/30 hover:border-primary-500/40 transition-all"
                 >
+                  {/* Listing Info */}
                   <div className="flex items-center gap-3 min-w-0">
                     <div 
                       onClick={() => navigate(`/listing/${l.id}`)}
                       className="h-12 w-12 rounded-lg bg-ink-800 overflow-hidden shrink-0 cursor-pointer"
                     >
-                      <img src={listingImg} alt="" className="h-full w-full object-cover" />
+                      {l.images?.[0] && <img src={l.images[0]} alt="" className="h-full w-full object-cover" />}
                     </div>
                     <div className="min-w-0">
                       <div 
@@ -319,7 +312,10 @@ export default function Profile() {
                     </div>
                   </div>
 
+                  {/* Actions: Toggle Status, Edit, Delete */}
                   <div className="flex items-center gap-3 self-end sm:self-auto border-t sm:border-t-0 pt-2 sm:pt-0 border-ink-700/60 w-full sm:w-auto justify-between sm:justify-end">
+                    
+                    {/* 1. Active / Inactive Toggle (Radio/Switch) */}
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input 
                         type="checkbox" 
@@ -334,6 +330,7 @@ export default function Profile() {
                     </label>
 
                     <div className="flex items-center gap-1.5">
+                      {/* 2. Edit Listing Button */}
                       <button 
                         onClick={() => navigate(`/edit-listing/${l.id}`)}
                         className="px-2.5 py-1.5 bg-ink-800 hover:bg-ink-700 text-ink-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-ink-700"
@@ -342,6 +339,7 @@ export default function Profile() {
                         <Edit3 size={13} /> Edit
                       </button>
 
+                      {/* 3. Delete Listing Button */}
                       <button 
                         onClick={() => handleDeleteListing(l.id)}
                         className="px-2.5 py-1.5 bg-error-500/10 hover:bg-error-500/25 text-error-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition border border-error-500/20"
@@ -380,6 +378,7 @@ export default function Profile() {
 
       {loading ? <div className="grid place-items-center py-16"><Loader2 className="animate-spin text-primary-500" size={28} /></div> : (
         <>
+          {/* OVERVIEW */}
           {tab === "overview" && (
             <div className="card p-6">
               <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Activity size={18} className="text-primary-400" /> Account Summary</h3>
@@ -394,6 +393,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* PAYMENT */}
           {tab === "payment" && (
             <div className="card p-6 max-w-2xl space-y-5">
               <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Seller Payout Information</div>
@@ -439,6 +439,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* ACHIEVEMENTS / BADGES */}
           {tab === "achievements" && (
             <div>
               <div className="flex items-center gap-3 mb-5">
@@ -458,6 +459,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* WISHLIST */}
           {tab === "wishlist" && (
             <div>
               <div className="flex items-center gap-3 mb-5"><h2 className="font-display text-xl font-bold text-white">Wishlist</h2><span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20"><Heart size={12} /> {wishlist.length} saved</span></div>
@@ -465,7 +467,7 @@ export default function Profile() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {wishlist.map((l) => (
                     <Link key={l.id} to={`/listing/${l.id}`} className="card-hover overflow-hidden block group">
-                      <div className="h-32 overflow-hidden"><img src={getListingImage(l)} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform" /></div>
+                      <div className="h-32 overflow-hidden"><img src={l.images?.[0] ?? "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=400"} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform" /></div>
                       <div className="p-3"><p className="text-sm font-semibold text-white line-clamp-1">{l.title}</p><p className="font-display font-bold text-primary-400 mt-1">{formatBDT(l.price)}</p></div>
                     </Link>
                   ))}
@@ -474,6 +476,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* SELLER INSIGHTS */}
           {tab === "insights" && (
             <div className="space-y-5">
               <h2 className="font-display text-xl font-bold text-white">Seller Insights</h2>
@@ -508,6 +511,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* VERIFICATION */}
           {tab === "verify" && (
             <div className="max-w-2xl space-y-5">
               <h2 className="font-display text-xl font-bold text-white flex items-center gap-2"><BadgeCheck size={20} className="text-success-400" /> Seller Verification</h2>
@@ -544,6 +548,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* SECURITY */}
           {tab === "security" && (
             <div className="card p-6 max-w-2xl space-y-4">
               <div className="flex items-center gap-2 text-white font-semibold"><Lock size={18} className="text-primary-400" /> Security & Privacy</div>
@@ -557,6 +562,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* ACTIVITY */}
           {tab === "activity" && (
             <div className="space-y-5">
               <div><h3 className="font-semibold text-white mb-3">Recent Sales</h3>{sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-400">No sales yet.</p>}</div>
@@ -564,6 +570,7 @@ export default function Profile() {
             </div>
           )}
 
+          {/* REVIEWS */}
           {tab === "reviews" && (
             <div className="space-y-3">
               <div className="flex items-center gap-3 mb-2">
@@ -659,10 +666,9 @@ function Row({ icon: Icon, label, value }: { icon: IconType; label: string; valu
 }
 
 function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" }) {
-  const listingImg = order.listing?.images?.[0] || (order.listing as any)?.image_url || "https://images.pexels.com/photos/19012050/pexels-photo-19012050.jpeg?auto=compress&cs=tinysrgb&w=400";
   return (
     <div className="card p-3 flex items-center gap-3">
-      <div className="h-10 w-10 rounded-lg bg-ink-800 overflow-hidden shrink-0"><img src={listingImg} alt="" className="h-full w-full object-cover" /></div>
+      <div className="h-10 w-10 rounded-lg bg-ink-800 overflow-hidden shrink-0">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
       <Link to={`/listing/${order.listing_id}`} className="flex-1 min-w-0 text-sm font-medium text-white hover:text-primary-400 line-clamp-1">{order.listing?.title ?? "Account"}</Link>
       <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
       <StatusBadge status={order.status} />
