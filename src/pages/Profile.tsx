@@ -102,13 +102,14 @@ export default function Profile() {
   });
   const maxWeekly = Math.max(...weeklyData, 1);
 
+  // Payment tab placed right after overview
   const tabs: { id: Tab; label: string; icon: IconType }[] = [
     { id: "overview", label: "Overview", icon: Activity },
+    { id: "payment", label: "Payment", icon: CreditCard },
     { id: "achievements", label: "Badges", icon: Trophy },
     { id: "wishlist", label: "Wishlist", icon: Heart },
     { id: "insights", label: "Insights", icon: BarChart3 },
     { id: "verify", label: "Verification", icon: BadgeCheck },
-    { id: "payment", label: "Payment", icon: CreditCard },
     { id: "activity", label: "Activity", icon: TrendingUp },
     { id: "reviews", label: "Reviews", icon: Star },
     { id: "security", label: "Security", icon: Lock },
@@ -155,15 +156,12 @@ export default function Profile() {
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Redesigned Professional Banner & Profile Card */}
       <div className="card overflow-hidden mb-6 border border-ink-800 shadow-xl bg-ink-900">
-        {/* Cover Banner with smooth gradient and grid pattern */}
         <div className="h-28 sm:h-36 bg-gradient-to-r from-primary-900/60 via-ink-800 to-accent-950/60 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-transparent to-transparent" />
         </div>
 
-        {/* Profile Content Section */}
         <div className="px-6 pb-6 relative">
-          {/* Top row with Avatar overlapping the banner */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-4">
             <div className="flex items-end gap-4">
               <div className="relative group">
@@ -195,7 +193,6 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Edit Profile Button */}
             <button 
               onClick={() => setEditOpen(true)} 
               className="btn-primary self-start sm:self-auto px-5 py-2.5 shadow-lg flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
@@ -204,7 +201,6 @@ export default function Profile() {
             </button>
           </div>
 
-          {/* Sub-details & Bio */}
           <div className="space-y-3 pt-2 border-t border-ink-800/80">
             <div className="flex items-center gap-4 text-xs sm:text-sm text-ink-300 flex-wrap">
               {profile?.location && (
@@ -231,7 +227,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Profile Completion Box */}
       {completionPct < 100 && (
         <div className="card p-5 mb-6">
           <div className="flex items-center justify-between text-xs mb-1.5">
@@ -247,7 +242,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Listings preview */}
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-white flex items-center gap-2"><Package size={18} className="text-primary-400" /> Your Listings</h3>
@@ -267,7 +261,6 @@ export default function Profile() {
         ) : <p className="text-sm text-ink-400">No listings yet. <Link to="/sell" className="text-primary-400">Create one →</Link></p>}
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard icon={Tag} value={String(activeListings.length)} label="Active Listings" color="text-accent-400 bg-accent-500/15" />
         <StatCard icon={Award} value={Number(profile?.trust_score ?? 0).toFixed(1)} label="Trust Score" color="text-warning-400 bg-warning-500/15" />
@@ -275,7 +268,6 @@ export default function Profile() {
         <StatCard icon={ShoppingBag} value={String(profile?.total_purchases ?? buyOrders.length)} label="Total IDs Bought" color="text-primary-400 bg-primary-500/15" />
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 border-b border-ink-800 mb-6 overflow-x-auto scrollbar-thin">
         {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)} className={classNames("flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors whitespace-nowrap", tab === t.id ? "border-primary-500 text-primary-400" : "border-transparent text-ink-400 hover:text-white")}>
@@ -298,6 +290,52 @@ export default function Profile() {
                 <Row icon={TrendingUp} label="Response Rate" value={`${responseRate}%`} />
                 <Row icon={Trophy} label="Badges Earned" value={`${unlockedCount}/${achievements.length}`} />
               </dl>
+            </div>
+          )}
+
+          {/* PAYMENT */}
+          {tab === "payment" && (
+            <div className="card p-6 max-w-2xl space-y-5">
+              <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Seller Payout Information</div>
+              <div className="space-y-1.5">
+                <p className="text-sm text-ink-300 font-medium">
+                  These numbers are strictly for sellers to receive payments after selling an ID.
+                </p>
+                <p className="text-sm text-ink-400 font-normal">
+                  (এই নম্বরগুলো শুধুমাত্র সেলারদের জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।)
+                </p>
+              </div>
+              
+              <form onSubmit={handleSavePayment} className="space-y-4">
+                {paymentMsg && (
+                  <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", paymentMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
+                    {paymentMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {paymentMsg}
+                  </div>
+                )}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">BKash Number (Seller)</label>
+                    <input 
+                      value={paymentForm.bkash_number} 
+                      onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} 
+                      className="input" 
+                      placeholder="01XXXXXXXXX" 
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Nagad Number (Seller)</label>
+                    <input 
+                      value={paymentForm.nagad_number} 
+                      onChange={(e) => setPaymentForm((f) => ({ ...f, nagad_number: e.target.value }))} 
+                      className="input" 
+                      placeholder="01XXXXXXXXX" 
+                    />
+                  </div>
+                </div>
+                <button type="submit" disabled={savingPayment} className="btn-primary w-full sm:w-auto">
+                  {savingPayment ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Payout Info
+                </button>
+              </form>
             </div>
           )}
 
@@ -407,48 +445,6 @@ export default function Profile() {
                   {completedSales.length < 3 && <p className="text-xs text-ink-500 text-center">Complete more sales to unlock verification.</p>}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* PAYMENT */}
-          {tab === "payment" && (
-            <div className="card p-6 max-w-2xl space-y-5">
-              <div className="flex items-center gap-2 text-white font-semibold"><Wallet size={18} className="text-success-400" /> Seller Payout Information</div>
-              <p className="text-sm text-ink-400">
-                These numbers are strictly for sellers to receive payments after selling an ID.<br />
-                <span className="text-xs text-ink-500">(এই নম্বরগুলো শুধুমাত্র সেলারদের জন্য। আইডি বিক্রির পর আপনি কোন নম্বরে টাকা নিতে চান, তা এখানে সেট করুন।)</span>
-              </p>
-              
-              <form onSubmit={handleSavePayment} className="space-y-4">
-                {paymentMsg && (
-                  <div className={classNames("flex items-center gap-2 rounded-xl p-3 text-sm", paymentMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
-                    {paymentMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {paymentMsg}
-                  </div>
-                )}
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">BKash Number (Seller)</label>
-                    <input 
-                      value={paymentForm.bkash_number} 
-                      onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} 
-                      className="input" 
-                      placeholder="01XXXXXXXXX" 
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Nagad Number (Seller)</label>
-                    <input 
-                      value={paymentForm.nagad_number} 
-                      onChange={(e) => setPaymentForm((f) => ({ ...f, nagad_number: e.target.value }))} 
-                      className="input" 
-                      placeholder="01XXXXXXXXX" 
-                    />
-                  </div>
-                </div>
-                <button type="submit" disabled={savingPayment} className="btn-primary w-full sm:w-auto">
-                  {savingPayment ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Payout Info
-                </button>
-              </form>
             </div>
           )}
 
