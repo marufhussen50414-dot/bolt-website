@@ -1006,7 +1006,6 @@ function StatusBadge({ status }: { status: string }) {
 
 function VerifyReq({ done, label }: { done: boolean; label: string }) {
   return (
-    /span>
     <div className="flex items-center gap-2.5 text-sm">
       {done ? <CheckCircle2 size={16} className="text-success-400" /> : <X size={16} className="text-ink-500" />}
       <span className={done ? "text-ink-200 font-medium" : "text-ink-500"}>{label}</span>
