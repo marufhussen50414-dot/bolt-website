@@ -13,7 +13,6 @@ import { classNames } from "../lib/utils";
 export default function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -63,20 +62,6 @@ export default function Header() {
   const displayName = profile?.full_name ?? profile?.username ?? (user?.user_metadata?.full_name as string | undefined) ?? "User";
   const initials = displayName.trim()[0]?.toUpperCase() ?? "U";
 
-  async function handleSignOut() {
-    await signOut();
-    setMenuOpen(false);
-    navigate("/");
-  }
-
-  const menuItems = [
-    { to: "/profile", icon: User, label: "My Profile" },
-    { to: "/sell", icon: PlusCircle, label: "Sell an ID" },
-    { to: "/my-listings", icon: Settings, label: "My Listings" },
-    { to: "/profile", icon: Wallet, label: "Earnings & Wallet" },
-    { to: "/profile", icon: Star, label: "My Purchases" },
-  ];
-
   return (
     <div className="w-full overflow-x-hidden">
       <header className="sticky top-0 z-40 glass border-b border-ink-800 w-full">
@@ -108,59 +93,20 @@ export default function Header() {
 
             <div className="flex items-center gap-2 shrink-0">
               {user ? (
-                <div className="relative">
-                  <button 
-                    type="button"
-                    onClick={() => setMenuOpen((v) => !v)} 
-                    className="flex items-center gap-2 rounded-xl border border-ink-700 bg-ink-900 px-3 py-2 hover:bg-ink-800 transition-colors cursor-pointer"
-                  >
-                    <div className="relative">
-                      {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover" />
-                      ) : (
-                        <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-sm font-bold">{initials}</div>
-                      )}
-                      <span className={classNames("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
-                    </div>
-                    <span className="hidden sm:block text-sm font-semibold text-white max-w-[100px] truncate">{displayName}</span>
-                  </button>
-                  {menuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-64 z-20 card p-2 animate-scale-in shadow-2xl">
-                        <div className="px-3 py-3 border-b border-ink-800 mb-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-bold text-white truncate">{displayName}</p>
-                            {profile?.is_verified && <ShieldCheck size={15} className="text-success-400 shrink-0" />}
-                          </div>
-                          <p className="text-xs text-ink-400 truncate">{user.email}</p>
-                          {profile && (
-                            <div className="flex items-center gap-2 mt-1.5 text-xs">
-                              <span className="flex items-center gap-0.5 text-warning-400"><Star size={11} className="fill-warning-400" /> {Number(profile.trust_score).toFixed(1)}</span>
-                              <span className="text-ink-500">•</span>
-                              <span className="text-ink-400">{profile.total_sales} sales</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="py-1">
-                          {menuItems.map((m) => (
-                            <Link key={m.label} to={m.to} onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-ink-200 hover:bg-ink-800 hover:text-white transition-colors group">
-                              <m.icon size={16} className="text-ink-400 group-hover:text-primary-400" /><span>{m.label}</span><ChevronRight size={14} className="ml-auto text-ink-600" />
-                            </Link>
-                          ))}
-                        </div>
-                        <div className="border-t border-ink-800 mt-1 pt-1">
-                          <Link to="/support" onClick={() => setMenuOpen(false)} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-ink-200 hover:bg-ink-800 hover:text-white transition-colors group">
-                            <LifeBuoy size={16} className="text-ink-400 group-hover:text-primary-400" /><span>Help & Support</span>
-                          </Link>
-                          <button onClick={handleSignOut} className="flex w-full items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-error-400 hover:bg-error-500/10 transition-colors">
-                            <LogOut size={16} /> Sign Out
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                <Link 
+                  to="/profile" 
+                  className="flex items-center gap-2 rounded-xl border border-ink-700 bg-ink-900 px-3 py-2 hover:bg-ink-800 transition-colors"
+                >
+                  <div className="relative">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover" />
+                    ) : (
+                      <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-sm font-bold">{initials}</div>
+                    )}
+                    <span className={classNames("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
+                  </div>
+                  <span className="hidden sm:block text-sm font-semibold text-white max-w-[100px] truncate">{displayName}</span>
+                </Link>
               ) : (
                 <>
                   <Link to="/login" className="btn-secondary hidden sm:inline-flex">Log In</Link>
