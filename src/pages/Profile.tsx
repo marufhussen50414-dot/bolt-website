@@ -55,7 +55,10 @@ export default function Profile() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       const [listRes, buyRes, sellRes, revRes] = await Promise.all([
         supabase.from("game_listings").select("*").eq("seller_id", user.id).order("created_at", { ascending: false }),
@@ -78,8 +81,31 @@ export default function Profile() {
     }
   }, [profile]);
 
-  if (authLoading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
-  if (!user) return <div className="mx-auto max-w-md py-16 text-center"><div className="card p-8"><h2 className="font-display text-xl font-bold text-white">Log in to view your profile</h2><Link to="/login?redirect=/profile" className="btn-primary mt-5 inline-flex">Log In</Link></div></div>;
+  if (authLoading) {
+    return (
+      <div className="grid place-items-center py-20 min-h-[60vh]">
+        <Loader2 className="animate-spin text-primary-500" size={32} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-24 text-center animate-fade-in">
+        <div className="card p-8 border border-ink-800 bg-ink-900 shadow-2xl rounded-2xl">
+          <div className="w-14 h-14 mx-auto rounded-full bg-primary-500/15 border border-primary-500/30 flex items-center justify-center text-primary-400 mb-4">
+            <Lock size={26} />
+          </div>
+          <h2 className="font-display text-xl font-bold text-white mb-2">Log in to view your profile</h2>
+          <p className="text-sm text-ink-400 mb-6">Please log in or sign up to access your profile, listings, and dashboard settings.</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to="/login?redirect=/profile" className="btn-primary px-6 py-2.5 font-semibold shadow-lg">Log In</Link>
+            <Link to="/signup" className="btn-secondary px-6 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200">Sign Up</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const displayName = profile?.full_name ?? profile?.username ?? "Player";
   const initials = displayName.trim()[0]?.toUpperCase() ?? "U";
