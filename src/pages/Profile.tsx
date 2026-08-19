@@ -313,16 +313,17 @@ export default function Profile() {
         <div className="px-6 pb-6 relative">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-4">
             <div className="flex items-end gap-4">
-              <div className="relative group">
+              {/* ওপরের ডানপাশের প্রফাইল আইকনে ক্লিক করলে প্রোফাইল পেজে রিডিক্ট বা লিংক করার জন্য এখানে Link ট্যাগ যুক্ত করা হলো */}
+              <Link to="/profile" className="relative group block cursor-pointer" onClick={() => navigate("/profile")}>
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl object-cover border-4 border-ink-900 shadow-2xl bg-ink-800" />
+                  <img src={profile.avatar_url} alt="" className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl object-cover border-4 border-ink-900 shadow-2xl bg-ink-800 hover:opacity-95 transition-opacity" />
                 ) : (
-                  <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-4xl font-extrabold border-4 border-ink-900 shadow-2xl">
+                  <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-4xl font-extrabold border-4 border-ink-900 shadow-2xl hover:opacity-95 transition-opacity">
                     {initials}
                   </div>
                 )}
                 <span className={classNames("absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-ink-900 shadow-md", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
-              </div>
+              </Link>
 
               <div className="pt-2 sm:pt-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
