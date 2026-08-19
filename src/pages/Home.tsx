@@ -4,7 +4,6 @@ import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, Shi
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
-import Footer from "../components/Footer";
 import { IconType } from "../lib/utils";
 
 const iconMap: Record<string, IconType> = {
@@ -165,9 +164,6 @@ export default function Home() {
           <div className="text-center"><Star size={28} className="mx-auto text-accent-400" /><p className="font-display text-lg font-bold text-white mt-2">2% Only</p><p className="text-xs text-ink-400">Lowest Fees</p></div>
         </div>
       </section>
-
-      {/* Footer - Only visible on Home page */}
-      <Footer />
     </div>
   );
 }
