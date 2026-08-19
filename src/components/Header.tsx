@@ -109,8 +109,15 @@ export default function Header() {
             <div className="flex items-center gap-2 shrink-0">
               {user ? (
                 <div className="relative">
-                  <button onClick={() => setMenuOpen((v) => !v)} className="flex items-center gap-2 rounded-xl border border-ink-700 bg-ink-900 px-3 py-2 hover:bg-ink-800 transition-colors">
-                    <div className="relative">
+                  <button 
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen((v) => !v);
+                    }} 
+                    className="flex items-center gap-2 rounded-xl border border-ink-700 bg-ink-900 px-3 py-2 hover:bg-ink-800 transition-colors cursor-pointer"
+                  >
+                    <div className="relative pointer-events-none">
                       {profile?.avatar_url ? (
                         <img src={profile.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover" />
                       ) : (
@@ -118,7 +125,7 @@ export default function Header() {
                       )}
                       <span className={classNames("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
                     </div>
-                    <span className="hidden sm:block text-sm font-semibold text-white max-w-[100px] truncate">{displayName}</span>
+                    <span className="hidden sm:block text-sm font-semibold text-white max-w-[100px] truncate pointer-events-none">{displayName}</span>
                   </button>
                   {menuOpen && (
                     <>
