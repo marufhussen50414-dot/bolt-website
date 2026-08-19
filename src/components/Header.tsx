@@ -1,8 +1,7 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  Search, User, LogOut, PlusCircle, ShieldCheck,
-  Settings, Wallet, Star, LifeBuoy, ChevronRight, Home as HomeIcon,
+  Search, User, Home as HomeIcon,
   Tag, MessageSquare, X, Store,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -11,8 +10,7 @@ import Logo from "./Logo";
 import { classNames } from "../lib/utils";
 
 export default function Header() {
-  const { user, profile, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
