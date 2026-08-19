@@ -367,15 +367,6 @@ export default function Profile() {
                   <Star size={14} className="text-warning-400 fill-warning-400" /> {avgRating.toFixed(1)} Rating
                 </span>
               </div>
-
-              <button 
-                onClick={() => setLogoutModalOpen(true)}
-                className="btn-secondary bg-error-500/15 hover:bg-error-500/25 text-error-400 border border-error-500/30 px-4 py-2 shadow-md flex items-center gap-2 text-xs sm:text-sm font-semibold transition-transform hover:scale-[1.02]"
-                title="Log Out"
-              >
-                <LogOut size={15} />
-                <span>Log Out</span>
-              </button>
             </div>
 
             {profile?.bio ? (
@@ -966,6 +957,18 @@ export default function Profile() {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Helpful Links এর ঠিক নিচে একদম লম্বা এবং সুন্দর ফুল-উইথ লগআউট বাটন */}
+      <div className="mt-6">
+        <button
+          type="button"
+          onClick={() => setLogoutModalOpen(true)}
+          className="w-full py-3.5 px-6 rounded-xl bg-error-500/10 hover:bg-error-500/20 text-error-400 border border-error-500/25 transition-all flex items-center justify-center gap-2.5 font-semibold shadow-lg group"
+        >
+          <LogOut size={18} className="transition-transform group-hover:-translate-x-1" />
+          <span>Log Out of Your Account</span>
+        </button>
       </div>
     </div>
   );
