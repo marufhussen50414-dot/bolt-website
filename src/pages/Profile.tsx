@@ -5,7 +5,7 @@ import {
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
   BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
-  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2, AlertTriangle, LogOut, Upload
+  AlertCircle, HelpCircle, LifeBuoy, FileText, ScrollText, Trash2, AlertTriangle, LogOut
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -38,25 +38,6 @@ export default function Profile() {
 
   // Logout Confirmation Modal State
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-
-  // Edit Listing Modal State (Expanded like Sell Page)
-  const [editListingModalOpen, setEditListingModalOpen] = useState(false);
-  const [selectedListing, setSelectedListing] = useState<GameListing | null>(null);
-  const [listingEditForm, setListingEditForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    game_name: "Free Fire",
-    category: "Account",
-    account_level: "",
-    server_region: "Bangladesh",
-    tags: [] as string[],
-    tagInput: "",
-    images: [] as string[],
-  });
-  const [updatingListing, setUpdatingListing] = useState(false);
-  const [listingUpdateMsg, setListingUpdateMsg] = useState("");
-  const [imageUploading, setImageUploading] = useState(false);
 
   // Confirmation Modal State for Listings actions
   const [confirmModal, setConfirmModal] = useState<{
@@ -192,82 +173,6 @@ export default function Profile() {
       actionType: "status",
       listing,
     });
-  }
-
-  function handleEditListing(listing: GameListing, e: React.MouseEvent) {
-    e.stopPropagation();
-    setSelectedListing(listing);
-    setListingEditForm({
-      title: listing.title ?? "",
-      description: listing.description ?? "",
-      price: listing.price ? String(listing.price) : "",
-      game_name: listing.game_name ?? "Free Fire",
-      category: typeof listing.category === "string" ? listing.category : "Account",
-      account_level: (listing as any).account_level ? String((listing as any).account_level) : "",
-      server_region: (listing as any).server_region ?? "Bangladesh",
-      tags: listing.tags ?? [],
-      tagInput: "",
-      images: listing.images ?? [],
-    });
-    setListingUpdateMsg("");
-    setEditListingModalOpen(true);
-  }
-
-  async function handleListingImageUpload(files: FileList) {
-    if (!user) return;
-    setImageUploading(true);
-    const uploadedUrls: string[] = [...listingEditForm.images];
-    
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-      const path = `${user.id}/listings/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("listings").upload(path, file, { cacheControl: "3600", upsert: false });
-      if (!error) {
-        const { data: pub } = supabase.storage.from("listings").getPublicUrl(path);
-        if (pub?.publicUrl) uploadedUrls.push(pub.publicUrl);
-      }
-    }
-    setImageUploading(false);
-    setListingEditForm(f => ({ ...f, images: uploadedUrls }));
-  }
-
-  async function handleUpdateListingSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!selectedListing) return;
-    setUpdatingListing(true);
-    setListingUpdateMsg("");
-
-    const updatePayload = {
-      title: listingEditForm.title.trim(),
-      description: listingEditForm.description.trim(),
-      price: parseFloat(listingEditForm.price) || 0,
-      game_name: listingEditForm.game_name.trim(),
-      category: listingEditForm.category.trim() as any,
-      account_level: listingEditForm.account_level ? parseInt(listingEditForm.account_level) : null,
-      server_region: listingEditForm.server_region,
-      tags: listingEditForm.tags,
-      images: listingEditForm.images,
-    };
-
-    const { error } = await supabase.from("game_listings").update(updatePayload).eq("id", selectedListing.id);
-
-    setUpdatingListing(false);
-
-    if (error) {
-      setListingUpdateMsg("Failed to update listing: " + error.message);
-    } else {
-      setListingUpdateMsg("Listing updated successfully!");
-      setMyListings(myListings.map(item => item.id === selectedListing.id ? {
-        ...item,
-        ...updatePayload,
-      } : item));
-
-      setTimeout(() => {
-        setEditListingModalOpen(false);
-        setListingUpdateMsg("");
-      }, 1500);
-    }
   }
 
   function promptDeleteListing(listing: GameListing, e: React.MouseEvent) {
@@ -434,16 +339,6 @@ export default function Profile() {
                     >
                       <span className={classNames("h-2 w-2 rounded-full", isActive ? "bg-success-400 animate-pulse" : "bg-ink-500")} />
                       <span>{isActive ? "Active" : "Inactive"}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => handleEditListing(l, e)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-500/15 text-primary-400 border border-primary-500/30 hover:bg-primary-500/25 transition-all"
-                      title="Edit Listing"
-                    >
-                      <Edit3 size={13} />
-                      <span className="hidden sm:inline">Edit</span>
                     </button>
 
                     <button
@@ -667,211 +562,6 @@ export default function Profile() {
         </>
       )}
 
-      {editListingModalOpen && selectedListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setEditListingModalOpen(false)}>
-          <div className="card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5 border-b border-ink-800 pb-3">
-              <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
-                <Edit3 size={18} className="text-primary-400" /> Edit Listing (Sell Style)
-              </h2>
-              <button onClick={() => setEditListingModalOpen(false)} className="text-ink-400 hover:text-white transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateListingSubmit} className="space-y-5">
-              {listingUpdateMsg && (
-                <div className={classNames("flex items-center gap-2 rounded-xl p-3.5 text-sm font-medium shadow-md", listingUpdateMsg.includes("success") ? "bg-success-500/10 text-success-400 border border-success-500/20" : "bg-error-500/10 text-error-400 border border-error-500/20")}>
-                  {listingUpdateMsg.includes("success") ? <CheckCircle2 size={16} /> : <X size={16} />} {listingUpdateMsg}
-                </div>
-              )}
-
-              <div>
-                <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-2 block">Game</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {["Free Fire", "PUBG Mobile", "Call of Duty Mobile", "Clash of Clans", "Mobile Legends", "Valorant", "Others"].map((g) => {
-                    const selected = listingEditForm.game_name === g;
-                    return (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => setListingEditForm(f => ({ ...f, game_name: g }))}
-                        className={classNames(
-                          "flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-semibold transition-all",
-                          selected ? "bg-primary-500/20 border-primary-500 text-white shadow-md shadow-primary-500/10" : "bg-ink-950/40 border-ink-800 text-ink-400 hover:border-ink-700 hover:text-white"
-                        )}
-                      >
-                        <span className="line-clamp-1">{g}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Listing Title</label>
-                <input 
-                  value={listingEditForm.title} 
-                  onChange={(e) => setListingEditForm((f) => ({ ...f, title: e.target.value }))} 
-                  className="input" 
-                  placeholder="e.g. Rare Skins Max Level Account"
-                  required 
-                />
-              </div>
-
-              <div>
-                <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Description</label>
-                <textarea 
-                  value={listingEditForm.description} 
-                  onChange={(e) => setListingEditForm((f) => ({ ...f, description: e.target.value }))} 
-                  rows={4} 
-                  className="input" 
-                  placeholder="Describe the account — skins, characters, diamonds, binds, etc." 
-                />
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Price (৳)</label>
-                  <input 
-                    type="number" 
-                    value={listingEditForm.price} 
-                    onChange={(e) => setListingEditForm((f) => ({ ...f, price: e.target.value }))} 
-                    className="input" 
-                    placeholder="0.00"
-                    required 
-                  />
-                </div>
-                <div>
-                  <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Account Level</label>
-                  <input 
-                    type="number" 
-                    value={listingEditForm.account_level} 
-                    onChange={(e) => setListingEditForm((f) => ({ ...f, account_level: e.target.value }))} 
-                    className="input" 
-                    placeholder="e.g. 75" 
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Server / Region</label>
-                <select 
-                  value={listingEditForm.server_region}
-                  onChange={(e) => setListingEditForm(f => ({ ...f, server_region: e.target.value }))}
-                  className="input"
-                >
-                  <option value="Bangladesh">Bangladesh</option>
-                  <option value="India">India</option>
-                  <option value="Global">Global</option>
-                  <option value="Europe">Europe</option>
-                  <option value="Asia">Asia</option>
-                  <option value="NA">North America</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Tags</label>
-                <div className="flex gap-2 mb-2">
-                  <input 
-                    value={listingEditForm.tagInput}
-                    onChange={(e) => setListingEditForm(f => ({ ...f, tagInput: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (listingEditForm.tagInput.trim() && !listingEditForm.tags.includes(listingEditForm.tagInput.trim())) {
-                          setListingEditForm(f => ({ ...f, tags: [...f.tags, f.tagInput.trim()], tagInput: "" }));
-                        }
-                      }
-                    }}
-                    className="input flex-1"
-                    placeholder="Add keywords (Press Enter)"
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      if (listingEditForm.tagInput.trim() && !listingEditForm.tags.includes(listingEditForm.tagInput.trim())) {
-                        setListingEditForm(f => ({ ...f, tags: [...f.tags, f.tagInput.trim()], tagInput: "" }));
-                      }
-                    }}
-                    className="btn-secondary px-4 text-xs font-semibold"
-                  >
-                    Add
-                  </button>
-                </div>
-                {listingEditForm.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {listingEditForm.tags.map((t, idx) => (
-                      <span key={idx} className="badge bg-primary-500/15 text-primary-300 border border-primary-500/30 px-2.5 py-1 text-xs flex items-center gap-1">
-                        #{t}
-                        <button type="button" onClick={() => setListingEditForm(f => ({ ...f, tags: f.tags.filter((_, i) => i !== idx) }))} className="hover:text-white">
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="label font-medium text-xs text-ink-300 uppercase tracking-wider mb-1 block">Listing Images</label>
-                <div className="border-2 border-dashed border-ink-700 rounded-2xl p-6 text-center bg-ink-950/40 hover:border-primary-500/50 transition-colors relative cursor-pointer">
-                  <input 
-                    type="file" 
-                    multiple 
-                    accept="image/*"
-                    disabled={imageUploading}
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files.length > 0) {
-                        handleListingImageUpload(e.target.files);
-                      }
-                    }}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                  <div className="flex flex-col items-center pointer-events-none">
-                    <Upload size={28} className="text-primary-400 mb-2" />
-                    <p className="text-sm font-semibold text-white">Click to upload or drag & drop</p>
-                    <p className="text-xs text-ink-400 mt-1">Upload up to 8 images (JPG, PNG, WebP)</p>
-                  </div>
-                </div>
-
-                {imageUploading && (
-                  <p className="text-xs text-primary-400 mt-2 flex items-center gap-1.5">
-                    <Loader2 size={14} className="animate-spin" /> Uploading images...
-                  </p>
-                )}
-
-                {listingEditForm.images.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2.5 mt-3">
-                    {listingEditForm.images.map((imgUrl, imgIdx) => (
-                      <div key={imgIdx} className="relative h-20 rounded-xl overflow-hidden border border-ink-700 bg-ink-800 group">
-                        <img src={imgUrl} alt="" className="h-full w-full object-cover" />
-                        <button 
-                          type="button"
-                          onClick={() => setListingEditForm(f => ({ ...f, images: f.images.filter((_, i) => i !== imgIdx) }))}
-                          className="absolute top-1 right-1 bg-ink-950/80 text-error-400 p-1 rounded-lg hover:bg-error-500 hover:text-white transition-colors"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t border-ink-800">
-                <button type="submit" disabled={updatingListing} className="btn-primary flex-1 py-3 font-semibold shadow-lg">
-                  {updatingListing ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Update Listing
-                </button>
-                <button type="button" onClick={() => setEditListingModalOpen(false)} className="btn-secondary px-6 py-3">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {logoutModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setLogoutModalOpen(false)}>
           <div className="card w-full max-w-md p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
@@ -959,7 +649,6 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Helpful Links এর ঠিক নিচে একদম লম্বা এবং সুন্দর ফুল-উইথ লগআউট বাটন */}
       <div className="mt-6">
         <button
           type="button"
