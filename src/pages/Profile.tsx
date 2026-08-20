@@ -434,7 +434,7 @@ export default function Profile() {
                 )}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="label font-medium text-xs text-ink-300">BKash Number (Seller)</label>
+                    <label className="label font-medium text-xs text-ink-300">BKash Number</label>
                     <input value={paymentForm.bkash_number} onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} className="input mt-1.5" placeholder="01XXXXXXXXX" />
                   </div>
                   <div>
