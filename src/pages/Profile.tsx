@@ -438,7 +438,7 @@ export default function Profile() {
                     <input value={paymentForm.bkash_number} onChange={(e) => setPaymentForm((f) => ({ ...f, bkash_number: e.target.value }))} className="input mt-1.5" placeholder="01XXXXXXXXX" />
                   </div>
                   <div>
-                    <label className="label font-medium text-xs text-ink-300">Nagad Number (Seller)</label>
+                    <label className="label font-medium text-xs text-ink-300">Nagad Number</label>
                     <input value={paymentForm.nagad_number} onChange={(e) => setPaymentForm((f) => ({ ...f, nagad_number: e.target.value }))} className="input mt-1.5" placeholder="01XXXXXXXXX" />
                   </div>
                 </div>
