@@ -99,8 +99,8 @@ export default function Profile() {
           <h2 className="font-display text-xl font-bold text-white mb-2">Log in to view your profile</h2>
           <p className="text-sm text-ink-400 mb-6">Please log in or sign up to access your profile, listings, and dashboard settings.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/login?redirect=/profile" className="btn-primary px-6 py-2.5 font-semibold shadow-lg">Log In</Link>
-            <Link to="/signup" className="btn-secondary px-6 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200">Sign Up</Link>
+            <Link to="/signup" className="btn-primary px-6 py-2.5 font-semibold shadow-lg">Sign Up</Link>
+            <Link to="/login?redirect=/profile" className="btn-secondary px-6 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200">Log In</Link>
           </div>
         </div>
       </div>
