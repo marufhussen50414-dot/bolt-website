@@ -2,7 +2,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Search, User, Home as HomeIcon,
-  Tag, MessageSquare, X, Store,
+  Tag, MessageSquare, Store,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -11,7 +11,6 @@ import { classNames } from "../lib/utils";
 
 export default function Header() {
   const { user, profile } = useAuth();
-  const [authOpen, setAuthOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   async function loadUnread() {
@@ -81,11 +80,7 @@ export default function Header() {
                     )}
                   </span>
                 </NavLink>
-                {user ? (
-                  <NavLink to="/profile" className={linkClass}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></NavLink>
-                ) : (
-                  <button onClick={() => setAuthOpen(true)} className={linkClass({ isActive: false })}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></button>
-                )}
+                <NavLink to="/profile" className={linkClass}><span className="flex items-center gap-1.5"><User size={15} /> Profile</span></NavLink>
               </nav>
             </div>
 
@@ -114,23 +109,6 @@ export default function Header() {
             </div>
           </div>
         </div>
-        {authOpen && !user && (
-          <>
-            <div className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setAuthOpen(false)} />
-            <div className="fixed inset-0 z-[9999] grid place-items-center p-4 pointer-events-none">
-              <div className="relative w-full max-w-sm card p-6 animate-scale-in pointer-events-auto">
-                <button onClick={() => setAuthOpen(false)} className="absolute right-3 top-3 text-ink-500 hover:text-white transition-colors" aria-label="Close"><X size={18} /></button>
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-primary-500/10 text-primary-400 mx-auto"><User size={22} /></div>
-                <h2 className="font-display text-xl font-extrabold text-center text-white mt-3">Access your profile</h2>
-                <p className="text-center text-sm text-ink-400 mt-1">Log in or create an account to view your profile, listings, and messages.</p>
-                <div className="mt-5 space-y-2.5">
-                  <Link to="/login" onClick={() => setAuthOpen(false)} className="btn-primary w-full justify-center">Log In</Link>
-                  <Link to="/register" onClick={() => setAuthOpen(false)} className="btn-secondary w-full justify-center">Create Account</Link>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </header>
 
       {/* Mobile Fixed Bottom Navigation Bar */}
@@ -156,17 +134,10 @@ export default function Header() {
             </span>
           )}
         </Link>
-        {user ? (
-          <Link to="/profile" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px]">
-            <User size={20} />
-            <span>Profile</span>
-          </Link>
-        ) : (
-          <button onClick={() => setAuthOpen(true)} className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px] bg-transparent border-none cursor-pointer">
-            <User size={20} />
-            <span>Profile</span>
-          </button>
-        )}
+        <Link to="/profile" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px]">
+          <User size={20} />
+          <span>Profile</span>
+        </Link>
       </div>
     </div>
   );
