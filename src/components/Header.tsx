@@ -116,8 +116,8 @@ export default function Header() {
         </div>
         {authOpen && !user && (
           <>
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setAuthOpen(false)} />
-            <div className="fixed inset-0 z-50 grid place-items-center p-4 pointer-events-none">
+            <div className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setAuthOpen(false)} />
+            <div className="fixed inset-0 z-[9999] grid place-items-center p-4 pointer-events-none">
               <div className="relative w-full max-w-sm card p-6 animate-scale-in pointer-events-auto">
                 <button onClick={() => setAuthOpen(false)} className="absolute right-3 top-3 text-ink-500 hover:text-white transition-colors" aria-label="Close"><X size={18} /></button>
                 <div className="grid h-12 w-12 place-items-center rounded-full bg-primary-500/10 text-primary-400 mx-auto"><User size={22} /></div>
