@@ -156,10 +156,17 @@ export default function Header() {
             </span>
           )}
         </Link>
-        <Link to="/profile" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px]">
-          <User size={20} />
-          <span>Profile</span>
-        </Link>
+        {user ? (
+          <Link to="/profile" className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px]">
+            <User size={20} />
+            <span>Profile</span>
+          </Link>
+        ) : (
+          <button onClick={() => setAuthOpen(true)} className="flex flex-col items-center gap-0.5 text-ink-400 hover:text-primary-400 text-[10px] bg-transparent border-none cursor-pointer">
+            <User size={20} />
+            <span>Profile</span>
+          </button>
+        )}
       </div>
     </div>
   );
