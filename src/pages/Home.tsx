@@ -50,50 +50,57 @@ export default function Home() {
   return (
     <div>
       {/* Animated Hero Banner */}
-      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800">
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 h-28 sm:h-32">
         {/* Animated gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary-950 via-ink-950 to-accent-950/40 bg-[length:200%_200%] animate-gradient-shift" />
 
         {/* Faint grid overlay, fading toward the edges */}
-        <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-[0.12] [mask-image:radial-gradient(ellipse_65%_65%_at_50%_50%,black,transparent)]" />
+        <div className="absolute inset-0 bg-grid-pattern bg-[size:24px_24px] opacity-[0.1] [mask-image:radial-gradient(ellipse_65%_65%_at_50%_50%,black,transparent)]" />
 
-        {/* Floating blurred orbs */}
-        <div className="absolute -top-12 left-[18%] w-40 h-40 bg-primary-500/20 rounded-full blur-3xl animate-float" />
-        <div className="absolute -bottom-14 right-[20%] w-48 h-48 bg-accent-500/20 rounded-full blur-3xl animate-float [animation-delay:1.5s]" />
-        <div className="absolute top-1/3 left-[6%] w-28 h-28 bg-success-500/15 rounded-full blur-3xl animate-drift" />
-
-        {/* Drifting game icons */}
-        <div className="absolute inset-0 pointer-events-none hidden sm:block">
-          <Gamepad2 className="absolute top-6 left-[14%] text-primary-400/25 animate-drift" size={26} />
-          <ShieldCheck className="absolute bottom-8 left-[34%] text-success-400/25 animate-float [animation-delay:0.8s]" size={22} />
-          <Zap className="absolute top-8 right-[22%] text-accent-400/30 animate-drift [animation-delay:2s]" size={22} />
-          <Sword className="absolute bottom-6 right-[10%] text-primary-300/25 animate-float [animation-delay:1.2s]" size={24} />
-          <Crosshair className="absolute top-1/2 right-[36%] text-accent-300/20 animate-drift [animation-delay:0.4s]" size={18} />
-        </div>
+        {/* Floating blurred glow orbs */}
+        <div className="absolute -top-10 left-[20%] w-28 h-28 bg-primary-500/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute -bottom-10 right-[22%] w-32 h-32 bg-accent-500/20 rounded-full blur-3xl animate-float [animation-delay:1.5s]" />
 
         {/* Shimmer sweep */}
         <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
 
-        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:py-14 flex flex-col items-center text-center">
-          {/* Orbit ring with center logo */}
-          <div className="relative w-24 h-24 sm:w-28 sm:h-28 mb-5">
-            <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary-500/30 animate-[spin_12s_linear_infinite]" />
-            <div className="absolute inset-2 rounded-full bg-gradient-to-tr from-primary-600 via-accent-500 to-primary-500 p-0.5 shadow-glow animate-pulse-glow">
-              <div className="w-full h-full rounded-full bg-ink-950 flex items-center justify-center">
-                <ShieldCheck size={32} className="text-primary-400" />
+        {/* Objects that fly toward the viewer, then recede — smooth repeating loop */}
+        <div className="relative h-full mx-auto max-w-7xl flex items-center justify-center gap-8 sm:gap-14">
+          <div className="animate-flyby [animation-delay:0s]">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-primary-400 p-0.5 shadow-glow">
+              <div className="w-full h-full rounded-[14px] bg-ink-950 flex items-center justify-center">
+                <Gamepad2 size={20} className="text-primary-400" />
               </div>
             </div>
-            <div className="absolute inset-0 animate-orbit">
-              <div className="w-3 h-3 rounded-full bg-accent-400 shadow-glow absolute top-0 left-1/2 -translate-x-1/2" />
+          </div>
+          <div className="animate-flyby [animation-delay:1.2s]">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-accent-600 to-accent-400 p-0.5 shadow-glow">
+              <div className="w-full h-full rounded-[16px] bg-ink-950 flex items-center justify-center">
+                <ShieldCheck size={24} className="text-accent-400" />
+              </div>
             </div>
           </div>
-
-          <h1 className="font-display text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-primary-300 via-white to-accent-300 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
-            Buy &amp; Sell Game IDs, Safely
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-ink-400 max-w-lg">
-            Bangladesh&apos;s trusted marketplace for gaming &amp; social media accounts
-          </p>
+          <div className="animate-flyby [animation-delay:2.4s]">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-success-600 to-success-400 p-0.5 shadow-glow">
+              <div className="w-full h-full rounded-[12px] bg-ink-950 flex items-center justify-center">
+                <Zap size={18} className="text-success-400" />
+              </div>
+            </div>
+          </div>
+          <div className="animate-flyby [animation-delay:3.6s] hidden sm:block">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary-500 to-accent-500 p-0.5 shadow-glow">
+              <div className="w-full h-full rounded-[14px] bg-ink-950 flex items-center justify-center">
+                <Sword size={20} className="text-primary-300" />
+              </div>
+            </div>
+          </div>
+          <div className="animate-flyby [animation-delay:4.8s] hidden sm:block">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-accent-500 to-success-500 p-0.5 shadow-glow">
+              <div className="w-full h-full rounded-[12px] bg-ink-950 flex items-center justify-center">
+                <Crosshair size={16} className="text-accent-300" />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
