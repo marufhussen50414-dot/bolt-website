@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Loader2, AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
+import { useParams, useSearchParams, Link } from "react-router-dom";
+import { ArrowLeft, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { GameListing, Offer, Profile } from "../lib/types";
@@ -9,7 +9,6 @@ import { formatBDT } from "../lib/utils";
 export default function Checkout() {
   const { id } = useParams();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [params] = useSearchParams();
   const offerId = params.get("offer");
 
@@ -18,9 +17,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [method, setMethod] = useState<"bkash" | "nagad" | "card">("bkash");
   const [paymentNumber, setPaymentNumber] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [showDisabledNotice, setShowDisabledNotice] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -68,38 +65,8 @@ export default function Checkout() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("");
-    if (!user || !listing) return;
-    setSubmitting(true);
-    const { data: orderRow, error: insErr } = await supabase
-      .from("orders")
-      .insert({
-        listing_id: listing.id, buyer_id: user.id, seller_id: listing.seller_id,
-        price: unitPrice, payment_method: method, payment_number: paymentNumber || null,
-      })
-      .select("id")
-      .single();
-    if (insErr) { setSubmitting(false); setError(insErr.message); return; }
-
-    if (useOffer && offer && orderRow) {
-      await supabase
-        .from("offers")
-        .update({ status: "paid", paid_order_id: (orderRow as { id: string }).id })
-        .eq("id", offer.id);
-    }
-    setSubmitting(false);
-    setSuccess(true);
-    setTimeout(() => navigate("/profile"), 1500);
+    setShowDisabledNotice(true);
   }
-
-  if (success) return (
-    <div className="mx-auto max-w-md py-16 text-center">
-      <CheckCircle2 size={48} className="mx-auto text-success-400" />
-      <h2 className="font-display text-xl font-bold text-white mt-4">Order Placed!</h2>
-      <p className="text-sm text-ink-400 mt-1">Your payment is held in escrow. The seller will deliver the account shortly.</p>
-      <Loader2 size={20} className="animate-spin text-primary-400 mx-auto mt-3" />
-    </div>
-  );
 
   return (
     <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-8">
@@ -122,7 +89,6 @@ export default function Checkout() {
         </div>
       </div>
       <form onSubmit={handleSubmit} className="card p-6 space-y-5">
-        {error && <div className="flex items-start gap-2 rounded-xl bg-error-500/10 border border-error-500/20 p-3 text-sm text-error-400"><AlertCircle size={18} className="shrink-0 mt-0.5" /><span>{error}</span></div>}
         <div>
           <label className="label">Payment Method</label>
           <div className="grid grid-cols-3 gap-2">
@@ -138,7 +104,13 @@ export default function Checkout() {
           <div className="flex justify-between font-bold text-base border-t border-ink-700 pt-2"><span className="text-white">You Pay</span><span className="text-primary-400">{formatBDT(unitPrice)}</span></div>
         </div>
         <div className="flex items-start gap-2 rounded-xl bg-success-500/10 border border-success-500/20 p-3 text-xs text-success-400"><ShieldCheck size={16} className="shrink-0 mt-0.5" /><span>Your payment is held in escrow and only released to the seller once you confirm the account transfer.</span></div>
-        <button type="submit" disabled={submitting} className="btn-primary w-full">{submitting ? <Loader2 size={18} className="animate-spin" /> : `Pay ${formatBDT(unitPrice)}`}</button>
+        {showDisabledNotice && (
+          <div className="rounded-xl bg-warning-500/10 border border-warning-500/20 p-4 text-sm animate-fade-in">
+            <p className="font-semibold text-warning-400">Buying is temporarily unavailable — the site hasn't officially launched yet. You'll be able to buy IDs once GameHaatBD goes live. You're welcome to list your ID for sale in the meantime.</p>
+            <p className="text-ink-400 mt-2">এই মুহূর্তে কেনাকাটা সাময়িকভাবে বন্ধ আছে — ওয়েবসাইট এখনো অফিসিয়ালি চালু হয়নি। ওয়েবসাইট লঞ্চ হওয়ার পর আপনি আইডি কিনতে পারবেন। তবে চাইলে এখনই আপনার আইডি সেল পোস্ট করে রাখতে পারেন।</p>
+          </div>
+        )}
+        <button type="submit" className="btn-primary w-full">{`Pay ${formatBDT(unitPrice)}`}</button>
       </form>
     </div>
   );
