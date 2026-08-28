@@ -64,41 +64,36 @@ export default function Home() {
         {/* Shimmer sweep */}
         <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
 
-        {/* Objects that fly toward the viewer, then recede — smooth repeating loop */}
-        <div className="relative h-full mx-auto max-w-7xl flex items-center justify-center gap-8 sm:gap-14">
-          <div className="animate-flyby [animation-delay:0s]">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-primary-400 p-0.5 shadow-glow">
-              <div className="w-full h-full rounded-[14px] bg-ink-950 flex items-center justify-center">
-                <Gamepad2 size={20} className="text-primary-400" />
+        {/* A little character that flies in, hovers a while, flies off, waits, then returns — looping */}
+        <div className="relative h-full mx-auto max-w-7xl flex items-center justify-center">
+          <div className="animate-character-fly">
+            <div className="relative">
+              {/* motion trail behind the character */}
+              <div className="absolute right-full top-1/2 -translate-y-1/2 mr-1 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-400/40 blur-[2px]" />
+                <span className="w-1 h-1 rounded-full bg-accent-400/30 blur-[2px]" />
               </div>
-            </div>
-          </div>
-          <div className="animate-flyby [animation-delay:1.2s]">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-accent-600 to-accent-400 p-0.5 shadow-glow">
-              <div className="w-full h-full rounded-[16px] bg-ink-950 flex items-center justify-center">
-                <ShieldCheck size={24} className="text-accent-400" />
-              </div>
-            </div>
-          </div>
-          <div className="animate-flyby [animation-delay:2.4s]">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-success-600 to-success-400 p-0.5 shadow-glow">
-              <div className="w-full h-full rounded-[12px] bg-ink-950 flex items-center justify-center">
-                <Zap size={18} className="text-success-400" />
-              </div>
-            </div>
-          </div>
-          <div className="animate-flyby [animation-delay:3.6s] hidden sm:block">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary-500 to-accent-500 p-0.5 shadow-glow">
-              <div className="w-full h-full rounded-[14px] bg-ink-950 flex items-center justify-center">
-                <Sword size={20} className="text-primary-300" />
-              </div>
-            </div>
-          </div>
-          <div className="animate-flyby [animation-delay:4.8s] hidden sm:block">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-accent-500 to-success-500 p-0.5 shadow-glow">
-              <div className="w-full h-full rounded-[12px] bg-ink-950 flex items-center justify-center">
-                <Crosshair size={16} className="text-accent-300" />
-              </div>
+
+              <svg viewBox="0 0 100 100" className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-[0_0_16px_rgba(21,184,245,0.5)]">
+                <defs>
+                  <linearGradient id="charBody" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#41d0ff" />
+                    <stop offset="100%" stopColor="#ffb01f" />
+                  </linearGradient>
+                </defs>
+                {/* floating blob-character body */}
+                <path
+                  d="M50 12c19 0 32 14 32 33v20c0 3-2 5-5 5-3 0-4-2-6-2s-3 4-6 4-3-4-6-4-3 4-6 4-3-4-6-4-4 2-6 2c-3 0-5-2-5-5V45c0-19 13-33 32-33z"
+                  fill="url(#charBody)"
+                />
+                {/* eyes */}
+                <circle cx="40" cy="46" r="5" fill="#0a0d11" />
+                <circle cx="62" cy="46" r="5" fill="#0a0d11" />
+                <circle cx="41.5" cy="44.5" r="1.6" fill="#fff" />
+                <circle cx="63.5" cy="44.5" r="1.6" fill="#fff" />
+                {/* smile */}
+                <path d="M44 58c3 3 9 3 12 0" stroke="#0a0d11" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+              </svg>
             </div>
           </div>
         </div>
