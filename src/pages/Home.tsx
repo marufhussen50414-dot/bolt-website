@@ -49,41 +49,51 @@ export default function Home() {
 
   return (
     <div>
-      {/* NO TEXT - COMPACT UNIQUE LOOPING ANIMATION BANNER */}
-      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800 py-4 px-4">
-        <div className="relative mx-auto max-w-7xl flex items-center justify-center">
-          <div className="w-full max-w-3xl h-24 sm:h-28 rounded-2xl bg-gradient-to-r from-ink-900 via-primary-950/40 to-ink-900 border border-primary-500/30 flex items-center justify-center shadow-2xl relative overflow-hidden">
-            
-            {/* Background Glow */}
-            <div className="absolute inset-0 bg-primary-500/10 blur-xl animate-pulse" />
+      {/* Animated Hero Banner */}
+      <section className="relative overflow-hidden bg-ink-950 border-b border-ink-800">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-950 via-ink-950 to-accent-950/40 bg-[length:200%_200%] animate-gradient-shift" />
 
-            {/* Center Animated Unique Graphic without Text */}
-            <div className="relative z-10 flex items-center justify-center gap-6">
-              
-              {/* Rotating Ring Icon 1 */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary-600 to-accent-500 p-0.5 shadow-lg animate-bounce duration-1000">
-                <div className="w-full h-full bg-ink-950 rounded-[10px] flex items-center justify-center text-primary-400">
-                  <Gamepad2 size={24} className="animate-pulse text-white" />
-                </div>
+        {/* Faint grid overlay, fading toward the edges */}
+        <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-[0.12] [mask-image:radial-gradient(ellipse_65%_65%_at_50%_50%,black,transparent)]" />
+
+        {/* Floating blurred orbs */}
+        <div className="absolute -top-12 left-[18%] w-40 h-40 bg-primary-500/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute -bottom-14 right-[20%] w-48 h-48 bg-accent-500/20 rounded-full blur-3xl animate-float [animation-delay:1.5s]" />
+        <div className="absolute top-1/3 left-[6%] w-28 h-28 bg-success-500/15 rounded-full blur-3xl animate-drift" />
+
+        {/* Drifting game icons */}
+        <div className="absolute inset-0 pointer-events-none hidden sm:block">
+          <Gamepad2 className="absolute top-6 left-[14%] text-primary-400/25 animate-drift" size={26} />
+          <ShieldCheck className="absolute bottom-8 left-[34%] text-success-400/25 animate-float [animation-delay:0.8s]" size={22} />
+          <Zap className="absolute top-8 right-[22%] text-accent-400/30 animate-drift [animation-delay:2s]" size={22} />
+          <Sword className="absolute bottom-6 right-[10%] text-primary-300/25 animate-float [animation-delay:1.2s]" size={24} />
+          <Crosshair className="absolute top-1/2 right-[36%] text-accent-300/20 animate-drift [animation-delay:0.4s]" size={18} />
+        </div>
+
+        {/* Shimmer sweep */}
+        <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+
+        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:py-14 flex flex-col items-center text-center">
+          {/* Orbit ring with center logo */}
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 mb-5">
+            <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary-500/30 animate-[spin_12s_linear_infinite]" />
+            <div className="absolute inset-2 rounded-full bg-gradient-to-tr from-primary-600 via-accent-500 to-primary-500 p-0.5 shadow-glow animate-pulse-glow">
+              <div className="w-full h-full rounded-full bg-ink-950 flex items-center justify-center">
+                <ShieldCheck size={32} className="text-primary-400" />
               </div>
-
-              {/* Pulsing Center Shield */}
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-accent-600 to-primary-500 p-0.5 shadow-lg animate-pulse">
-                <div className="w-full h-full bg-ink-950 rounded-[14px] flex items-center justify-center text-accent-400">
-                  <ShieldCheck size={28} className="animate-spin duration-[6000ms]" />
-                </div>
-              </div>
-
-              {/* Rotating Ring Icon 3 */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary-500 to-success-500 p-0.5 shadow-lg animate-bounce duration-1000 delay-500">
-                <div className="w-full h-full bg-ink-950 rounded-[10px] flex items-center justify-center text-success-400">
-                  <Zap size={24} className="animate-pulse text-white" />
-                </div>
-              </div>
-
             </div>
-
+            <div className="absolute inset-0 animate-orbit">
+              <div className="w-3 h-3 rounded-full bg-accent-400 shadow-glow absolute top-0 left-1/2 -translate-x-1/2" />
+            </div>
           </div>
+
+          <h1 className="font-display text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-primary-300 via-white to-accent-300 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
+            Buy &amp; Sell Game IDs, Safely
+          </h1>
+          <p className="mt-2 text-sm sm:text-base text-ink-400 max-w-lg">
+            Bangladesh&apos;s trusted marketplace for gaming &amp; social media accounts
+          </p>
         </div>
       </section>
 
