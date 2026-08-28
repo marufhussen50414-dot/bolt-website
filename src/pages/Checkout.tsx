@@ -16,7 +16,6 @@ export default function Checkout() {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
   const [method, setMethod] = useState<"bkash" | "nagad" | "card">("bkash");
-  const [paymentNumber, setPaymentNumber] = useState("");
   const [showDisabledNotice, setShowDisabledNotice] = useState(false);
 
   useEffect(() => {
@@ -62,6 +61,7 @@ export default function Checkout() {
   const seller = listing.seller as Profile | undefined;
   const unitPrice = useOffer ? (offer!.offer_price) : listing.price;
   const commission = unitPrice * 0.02;
+  const totalPay = unitPrice + commission;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -97,11 +97,10 @@ export default function Checkout() {
             ))}
           </div>
         </div>
-        <div><label className="label">{method === "card" ? "Card Number" : `${method} Number`}</label><input required value={paymentNumber} onChange={(e) => setPaymentNumber(e.target.value)} className="input" placeholder={method === "card" ? "XXXX XXXX XXXX XXXX" : "01XXXXXXXXX"} /></div>
         <div className="rounded-xl bg-ink-800 p-4 space-y-2 text-sm">
           <div className="flex justify-between text-ink-400"><span>Price</span><span className="text-white">{formatBDT(unitPrice)}</span></div>
           <div className="flex justify-between text-ink-400"><span>Commission (2%)</span><span className="text-white">{formatBDT(commission)}</span></div>
-          <div className="flex justify-between font-bold text-base border-t border-ink-700 pt-2"><span className="text-white">You Pay</span><span className="text-primary-400">{formatBDT(unitPrice)}</span></div>
+          <div className="flex justify-between font-bold text-base border-t border-ink-700 pt-2"><span className="text-white">You Pay</span><span className="text-primary-400">{formatBDT(totalPay)}</span></div>
         </div>
         <div className="flex items-start gap-2 rounded-xl bg-success-500/10 border border-success-500/20 p-3 text-xs text-success-400"><ShieldCheck size={16} className="shrink-0 mt-0.5" /><span>Your payment is held in escrow and only released to the seller once you confirm the account transfer.</span></div>
         {showDisabledNotice && (
@@ -110,7 +109,7 @@ export default function Checkout() {
             <p className="text-ink-400 mt-2">এই মুহূর্তে কেনাকাটা সাময়িকভাবে বন্ধ আছে — ওয়েবসাইট এখনো অফিসিয়ালি চালু হয়নি। ওয়েবসাইট লঞ্চ হওয়ার পর আপনি আইডি কিনতে পারবেন। তবে চাইলে এখনই আপনার আইডি সেল পোস্ট করে রাখতে পারেন।</p>
           </div>
         )}
-        <button type="submit" className="btn-primary w-full">{`Pay ${formatBDT(unitPrice)}`}</button>
+        <button type="submit" className="btn-primary w-full">{`Pay ${formatBDT(totalPay)}`}</button>
       </form>
     </div>
   );
