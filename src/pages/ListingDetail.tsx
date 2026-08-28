@@ -15,6 +15,7 @@ export default function ListingDetail() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
+  const [showBuyDisabled, setShowBuyDisabled] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -91,8 +92,14 @@ export default function ListingDetail() {
             </div>
             {canBuy && (
               <div className="mt-5 space-y-2">
-                <button onClick={() => navigate(`/checkout/${listing.id}`)} className="btn-primary w-full">Buy Now — {formatBDT(listing.price)}</button>
+                <button onClick={() => setShowBuyDisabled(true)} className="btn-primary w-full">Buy Now — {formatBDT(listing.price)}</button>
                 <Link to={`/messages?listing=${listing.id}`} className="btn-secondary w-full"><MessageSquare size={16} /> Message Seller</Link>
+                {showBuyDisabled && (
+                  <div className="rounded-xl bg-warning-500/10 border border-warning-500/20 p-4 text-sm animate-fade-in">
+                    <p className="font-semibold text-warning-400">Buying is temporarily unavailable — the site hasn't officially launched yet. You'll be able to buy IDs once GameHaatBD goes live. You're welcome to list your ID for sale in the meantime.</p>
+                    <p className="text-ink-400 mt-2">এই মুহূর্তে কেনাকাটা সাময়িকভাবে বন্ধ আছে — ওয়েবসাইট এখনো অফিসিয়ালি চালু হয়নি। ওয়েবসাইট লঞ্চ হওয়ার পর আপনি আইডি কিনতে পারবেন। তবে চাইলে এখনই আপনার আইডি সেল পোস্ট করে রাখতে পারেন।</p>
+                  </div>
+                )}
               </div>
             )}
             {isOwn && <div className="rounded-xl bg-warning-500/10 border border-warning-500/20 p-3 text-sm text-warning-400 mt-4">This is your own listing.</div>}
