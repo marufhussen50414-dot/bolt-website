@@ -30,6 +30,7 @@ export default {
         "drift": "drift 8s ease-in-out infinite",
         "orbit": "orbit 9s linear infinite",
         "shimmer": "shimmer 3.5s ease-in-out infinite",
+        "flyby": "flyby 6s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: { from: { opacity: "0" }, to: { opacity: "1" } },
@@ -41,6 +42,13 @@ export default {
         drift: { "0%,100%": { transform: "translate(0,0) rotate(0deg)" }, "50%": { transform: "translate(14px,-18px) rotate(8deg)" } },
         orbit: { "0%": { transform: "rotate(0deg) translateX(44px) rotate(0deg)" }, "100%": { transform: "rotate(360deg) translateX(44px) rotate(-360deg)" } },
         shimmer: { "0%": { transform: "translateX(-120%) skewX(-12deg)" }, "100%": { transform: "translateX(220%) skewX(-12deg)" } },
+        flyby: {
+          "0%": { transform: "translateX(-90px) scale(0.35)", opacity: "0" },
+          "15%": { opacity: "0.9" },
+          "50%": { transform: "translateX(0) scale(1.25)", opacity: "1" },
+          "85%": { opacity: "0.9" },
+          "100%": { transform: "translateX(90px) scale(0.35)", opacity: "0" },
+        },
       },
     },
   },
