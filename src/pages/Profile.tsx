@@ -234,7 +234,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 pb-28 animate-fade-in">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 pb-12 animate-fade-in">
       <div className="card overflow-hidden mb-6 border border-ink-800 shadow-2xl bg-ink-900">
         <div className="h-32 sm:h-40 bg-gradient-to-r from-primary-900/70 via-ink-800 to-accent-950/70 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
