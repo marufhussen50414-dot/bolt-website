@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, X, Flame, Crosshair, Target, Shield, Gamepad2, Music2, Facebook, Instagram, Package, ShieldCheck, Star, TrendingUp, DollarSign, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, X, Flame, Crosshair, Target, Shield, Gamepad2, Music2, Facebook, Instagram, LayoutGrid, Package, ShieldCheck, Star, TrendingUp, DollarSign, Sparkles } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton, EmptyState } from "../components/ListingCard";
@@ -113,7 +113,7 @@ export default function Browse() {
             <h3 className="font-semibold text-white mb-3">Category</h3>
             <div className="space-y-1">
               <button onClick={() => updateParam("category", "")} className={classNames("w-full text-left px-3 py-2 rounded-lg text-sm transition-colors", !category ? "bg-primary-500/15 text-primary-300 font-semibold" : "text-ink-400 hover:bg-ink-800 hover:text-white")}>All Categories</button>
-              {categories.map((cat) => { const Icon = iconMap[cat.icon ?? "gamepad"] ?? Gamepad2; return (
+              {categories.map((cat) => { const Icon = cat.slug === "others" ? LayoutGrid : (iconMap[cat.icon ?? "gamepad"] ?? Gamepad2); return (
                 <button key={cat.id} onClick={() => updateParam("category", cat.slug)} className={classNames("w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2", category === cat.slug ? "bg-primary-500/15 text-primary-300 font-semibold" : "text-ink-400 hover:bg-ink-800 hover:text-white")}>
                   <Icon size={16} /> {cat.name}
                 </button>
