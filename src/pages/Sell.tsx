@@ -1,12 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tag, Loader2, AlertCircle, CheckCircle2, Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, UploadCloud, X, ImageIcon, Star, GripVertical } from "lucide-react";
+import { Tag, Loader2, AlertCircle, CheckCircle2, Flame, Crosshair, Target, Shield, Gamepad2, Music2, Facebook, Instagram, UploadCloud, X, ImageIcon, Star, GripVertical } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { Category } from "../lib/types";
 import { classNames, IconType } from "../lib/utils";
 
-const iconMap: Record<string, IconType> = { flame: Flame, crosshair: Crosshair, target: Target, shield: Shield, sword: Sword, zap: Zap, gamepad: Gamepad2 };
+const iconMap: Record<string, IconType> = { flame: Flame, crosshair: Crosshair, target: Target, shield: Shield, gamepad: Gamepad2, music2: Music2, facebook: Facebook, instagram: Instagram };
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
