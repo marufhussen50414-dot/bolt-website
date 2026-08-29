@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Gamepad2, Music2, Facebook, Instagram, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -9,7 +9,8 @@ import { IconType } from "../lib/utils";
 
 const iconMap: Record<string, IconType> = {
   flame: Flame, crosshair: Crosshair, target: Target,
-  shield: Shield, sword: Sword, zap: Zap, gamepad: Gamepad2,
+  shield: Shield, gamepad: Gamepad2,
+  music2: Music2, facebook: Facebook, instagram: Instagram,
 };
 
 export default function Home() {
