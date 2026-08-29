@@ -1,0 +1,14 @@
+/*
+  # Add follower & likes fields for social media listings
+
+  1. Changes
+    - Add `follower_count` (integer, nullable) to `game_listings` — used
+      for TikTok/Facebook/Instagram listings instead of `account_level`.
+    - Add `total_likes` (integer, nullable) to `game_listings` — same
+      idea, only relevant for social media accounts.
+    - Both columns are nullable and simply left null for regular game
+      listings, so nothing about existing rows changes.
+*/
+
+ALTER TABLE game_listings ADD COLUMN IF NOT EXISTS follower_count integer;
+ALTER TABLE game_listings ADD COLUMN IF NOT EXISTS total_likes integer;
