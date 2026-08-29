@@ -16,7 +16,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
             <Logo />
-            <p className="text-sm text-ink-400 mt-3 max-w-xs">Bangladesh's safest game ID marketplace. Buy and sell with escrow protection and only 2% commission.</p>
+            <p className="text-sm text-ink-400 mt-3 max-w-xs">Bangladesh's safest game ID marketplace. Buy and sell with escrow protection and only 1% commission.</p>
           </div>
           <div>
             <h4 className="font-semibold text-white text-sm mb-3">Marketplace</h4>
