@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
 import Footer from "../components/Footer";
-import { IconType } from "../lib/utils";
+import { IconType, classNames } from "../lib/utils";
 
 const iconMap: Record<string, IconType> = {
   flame: Flame, crosshair: Crosshair, target: Target,
@@ -129,28 +129,60 @@ export default function Home() {
         )}
       </section>
 
-      {/* Browse by Game */}
+      {/* Browse by Category */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
           <div>
-            <h2 className="font-display text-2xl md:text-3xl font-extrabold text-white">Browse by Game</h2>
+            <h2 className="font-display text-2xl md:text-3xl font-extrabold text-white">Browse by Category</h2>
             <p className="text-sm text-ink-400 mt-1">Pick your favorite and start exploring</p>
           </div>
           <Link to="/browse" className="text-sm font-semibold text-primary-400 hover:text-primary-300 flex items-center gap-1">View all <ArrowRight size={16} /></Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          {categories.map((cat) => {
-            const Icon = iconMap[cat.icon ?? "gamepad"] ?? Gamepad2;
-            return (
-              <Link key={cat.id} to={`/browse?category=${cat.slug}`} className="card-hover p-5 text-center group">
-                <div className="inline-grid place-items-center h-14 w-14 rounded-2xl bg-primary-500/15 text-primary-400 group-hover:bg-primary-500 group-hover:text-white group-hover:scale-110 transition-all mx-auto">
-                  <Icon size={26} />
+
+        {(() => {
+          const socialSlugs = new Set(["tiktok", "facebook", "instagram"]);
+          const gameCats = categories.filter((c) => !socialSlugs.has(c.slug));
+          const socialCats = categories.filter((c) => socialSlugs.has(c.slug));
+          const renderGrid = (list: Category[], accent: string) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {list.map((cat) => {
+                const Icon = iconMap[cat.icon ?? "gamepad"] ?? Gamepad2;
+                return (
+                  <Link key={cat.id} to={`/browse?category=${cat.slug}`} className="card-hover p-5 text-center group">
+                    <div className={classNames("inline-grid place-items-center h-14 w-14 rounded-2xl mx-auto transition-all group-hover:scale-110 group-hover:text-white", accent)}>
+                      <Icon size={26} />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-white">{cat.name}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          );
+          return (
+            <div className="space-y-10">
+              {gameCats.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="inline-grid place-items-center h-7 w-7 rounded-lg bg-primary-500/15 text-primary-400"><Gamepad2 size={15} /></span>
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-ink-300">Games</h3>
+                    <span className="h-px flex-1 bg-ink-800" />
+                  </div>
+                  {renderGrid(gameCats, "bg-primary-500/15 text-primary-400 group-hover:bg-primary-500")}
                 </div>
-                <p className="mt-3 text-sm font-semibold text-white">{cat.name}</p>
-              </Link>
-            );
-          })}
-        </div>
+              )}
+              {socialCats.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="inline-grid place-items-center h-7 w-7 rounded-lg bg-accent-500/15 text-accent-400"><Users size={15} /></span>
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-ink-300">Social Media</h3>
+                    <span className="h-px flex-1 bg-ink-800" />
+                  </div>
+                  {renderGrid(socialCats, "bg-accent-500/15 text-accent-400 group-hover:bg-accent-500")}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </section>
 
       {/* Features */}
