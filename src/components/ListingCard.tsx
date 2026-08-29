@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Eye, Star, ShieldCheck, TrendingUp, User, MessageSquare } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Music2, Facebook, Instagram, Gamepad2, Eye, Star, ShieldCheck, TrendingUp, User, MessageSquare } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import type { GameListing, ListingStatus, OrderStatus } from "../lib/types";
@@ -13,7 +13,7 @@ const fallbackImages = [
 
 const gameIcons: Record<string, IconType> = {
   "Free Fire": Flame, "PUBG Mobile": Crosshair, "Call of Duty Mobile": Target,
-  "Clash of Clans": Shield, "Mobile Legends": Sword, Valorant: Zap,
+  "Clash of Clans": Shield, TikTok: Music2, Facebook: Facebook, Instagram: Instagram,
 };
 
 export function StatusBadge({ status }: { status: ListingStatus | OrderStatus }) {
