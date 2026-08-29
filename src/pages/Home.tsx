@@ -158,7 +158,7 @@ export default function Home() {
           {[
             { icon: ShieldCheck, title: "Secure Escrow", desc: "Your money stays protected until you confirm the account transfer is complete.", color: "text-success-400 bg-success-500/15" },
             { icon: CreditCard, title: "Easy Payments", desc: "Pay with bKash, Nagad, or debit/credit card. All methods supported.", color: "text-primary-400 bg-primary-500/15" },
-            { icon: TrendingUp, title: "Only 2% Commission", desc: "Lowest fees in Bangladesh. 98% goes directly to the seller. No hidden charges.", color: "text-accent-400 bg-accent-500/15" },
+            { icon: TrendingUp, title: "Only 1% Commission", desc: "Lowest fees in Bangladesh. 99% goes directly to the seller. No hidden charges.", color: "text-accent-400 bg-accent-500/15" },
           ].map((f) => (
             <div key={f.title} className="card p-6 hover:border-primary-500/30 transition-colors">
               <div className={`inline-grid place-items-center h-12 w-12 rounded-xl ${f.color}`}><f.icon size={24} /></div>
@@ -174,7 +174,7 @@ export default function Home() {
         <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
           <div className="text-center"><ShieldCheck size={28} className="mx-auto text-success-400" /><p className="font-display text-lg font-bold text-white mt-2">100%</p><p className="text-xs text-ink-400">Escrow Protected</p></div>
           <div className="text-center"><Users size={28} className="mx-auto text-primary-400" /><p className="font-display text-lg font-bold text-white mt-2">Trusted</p><p className="text-xs text-ink-400">Verified Sellers</p></div>
-          <div className="text-center"><Star size={28} className="mx-auto text-accent-400" /><p className="font-display text-lg font-bold text-white mt-2">2% Only</p><p className="text-xs text-ink-400">Lowest Fees</p></div>
+          <div className="text-center"><Star size={28} className="mx-auto text-accent-400" /><p className="font-display text-lg font-bold text-white mt-2">1% Only</p><p className="text-xs text-ink-400">Lowest Fees</p></div>
         </div>
       </section>
 
