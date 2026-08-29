@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, X, Flame, Crosshair, Target, Shield, Sword, Zap, Gamepad2, Package, ShieldCheck, Star, TrendingUp, DollarSign, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, X, Flame, Crosshair, Target, Shield, Gamepad2, Music2, Facebook, Instagram, Package, ShieldCheck, Star, TrendingUp, DollarSign, Sparkles } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton, EmptyState } from "../components/ListingCard";
 import { classNames, IconType } from "../lib/utils";
 
-const iconMap: Record<string, IconType> = { flame: Flame, crosshair: Crosshair, target: Target, shield: Shield, sword: Sword, zap: Zap, gamepad: Gamepad2 };
+const iconMap: Record<string, IconType> = { flame: Flame, crosshair: Crosshair, target: Target, shield: Shield, gamepad: Gamepad2, music2: Music2, facebook: Facebook, instagram: Instagram };
 type SortKey = "all" | "newest" | "price_low" | "price_high" | "popular";
 type QuickFilter = "all" | "verified" | "deals";
 
