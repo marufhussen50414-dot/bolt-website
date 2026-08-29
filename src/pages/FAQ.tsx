@@ -13,7 +13,7 @@ const faqCategories: FAQCategory[] = [
     { q: "How long does delivery take?", a: "Most deliveries happen within minutes to a few hours after payment, depending on the seller's response time." },
   ]},
   { title: "Selling", icon: TrendingUp, items: [
-    { q: "How much commission does GameHaatBD charge?", a: "Only 2% per completed sale — the lowest in Bangladesh. 98% of the sale price goes directly to you. No hidden fees or listing charges." },
+    { q: "How much commission does GameHaatBD charge?", a: "Only 1% per completed sale — the lowest in Bangladesh. 99% of the sale price goes directly to you. No hidden fees or listing charges." },
     { q: "How do I list my game ID for sale?", a: "Click 'Sell ID', choose your game, fill in account details, set a price, and add images. Your listing is reviewed and goes live quickly." },
     { q: "When do I get paid?", a: "Payment is released to your bKash/Nagad account once the buyer confirms the account transfer, usually within 24 hours." },
     { q: "Can I edit or remove my listing?", a: "Yes. Go to Dashboard → My Listings to edit, update price, or delist your account anytime before it's sold." },
