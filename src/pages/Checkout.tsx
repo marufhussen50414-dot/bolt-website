@@ -60,7 +60,7 @@ export default function Checkout() {
 
   const seller = listing.seller as Profile | undefined;
   const unitPrice = useOffer ? (offer!.offer_price) : listing.price;
-  const commission = unitPrice * 0.02;
+  const commission = unitPrice * 0.01;
   const totalPay = unitPrice + commission;
 
   async function handleSubmit(e: FormEvent) {
@@ -99,7 +99,7 @@ export default function Checkout() {
         </div>
         <div className="rounded-xl bg-ink-800 p-4 space-y-2 text-sm">
           <div className="flex justify-between text-ink-400"><span>Price</span><span className="text-white">{formatBDT(unitPrice)}</span></div>
-          <div className="flex justify-between text-ink-400"><span>Commission (2%)</span><span className="text-white">{formatBDT(commission)}</span></div>
+          <div className="flex justify-between text-ink-400"><span>Commission (1%)</span><span className="text-white">{formatBDT(commission)}</span></div>
           <div className="flex justify-between font-bold text-base border-t border-ink-700 pt-2"><span className="text-white">You Pay</span><span className="text-primary-400">{formatBDT(totalPay)}</span></div>
         </div>
         <div className="flex items-start gap-2 rounded-xl bg-success-500/10 border border-success-500/20 p-3 text-xs text-success-400"><ShieldCheck size={16} className="shrink-0 mt-0.5" /><span>Your payment is held in escrow and only released to the seller once you confirm the account transfer.</span></div>
