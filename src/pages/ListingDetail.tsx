@@ -87,6 +87,8 @@ export default function ListingDetail() {
               {listing.account_level != null && <Info label="Level" value={String(listing.account_level)} />}
               {listing.rank_tier && <Info label="Rank" value={listing.rank_tier} icon={TrendingUp} />}
               {listing.server_region && <Info label="Region" value={listing.server_region} />}
+              {listing.follower_count != null && <Info label="Followers" value={listing.follower_count.toLocaleString()} />}
+              {listing.total_likes != null && <Info label="Total Likes" value={listing.total_likes.toLocaleString()} />}
               <Info label="Views" value={String(listing.view_count)} icon={Eye} />
             </div>
             {canBuy && (
