@@ -544,7 +544,7 @@ export default function Messages() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8 py-2 sm:py-4 pb-20 sm:pb-6">
+    <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8 py-2 sm:py-4 pb-6">
       {error && <div className="card p-3 mb-4 text-sm text-error-400 border border-error-500/20">{error}</div>}
 
       <div className="card overflow-hidden h-[calc(100vh-130px)] sm:h-[calc(100vh-110px)] min-h-[500px] flex border border-cyan-500/10 rounded-xl shadow-2xl bg-ink-950">
