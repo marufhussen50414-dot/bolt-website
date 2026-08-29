@@ -1,3 +1,3 @@
-# bolt-website
+# GameHaatBD
 
-[![Open in Bolt](https://bolt.new/static/open-in-bolt.svg)](https://bolt.new/~/sb1-m3gukvrk)
+Bangladesh's marketplace for buying and selling gaming and social media accounts.
