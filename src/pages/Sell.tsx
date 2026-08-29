@@ -14,11 +14,22 @@ const MAX_FILES = 8;
 
 type UploadedImage = { url: string; path: string };
 
+function parseCompactNumber(raw: string): number | null {
+  const s = raw.trim().toUpperCase();
+  if (!s) return null;
+  const m = s.match(/^(\d*\.?\d+)\s*([KM]?)$/);
+  if (!m) return null;
+  const num = parseFloat(m[1]);
+  if (isNaN(num)) return null;
+  const mult = m[2] === "K" ? 1_000 : m[2] === "M" ? 1_000_000 : 1;
+  return Math.round(num * mult);
+}
+
 export default function Sell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "Bangladesh", game_name: "", follower_count: "", total_likes: "" });
+  const [form, setForm] = useState({ category_id: "", other_type: "" as "" | "game" | "social", title: "", description: "", price: "", account_level: "", prime: "", server_region: "Bangladesh", game_name: "", follower_count: "", total_likes: "" });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -38,7 +49,9 @@ export default function Sell() {
   const selectedCategory = categories.find((c) => c.id === form.category_id);
   const isFreeFire = selectedCategory?.slug === "free-fire";
   const isOthers = selectedCategory?.slug === "others";
-  const isSocial = ["tiktok", "facebook", "instagram"].includes(selectedCategory?.slug ?? "");
+  const isOthersGame = isOthers && form.other_type === "game";
+  const isOthersSocial = isOthers && form.other_type === "social";
+  const isSocial = ["tiktok", "facebook", "instagram"].includes(selectedCategory?.slug ?? "") || isOthersSocial;
   const primeNum = form.prime === "" ? null : parseInt(form.prime);
   const primeInvalid = primeNum !== null && (isNaN(primeNum) || primeNum < 0 || primeNum > 8);
 
@@ -116,7 +129,8 @@ export default function Sell() {
     if (!user) { setError("Please log in to create a listing."); return; }
     const price = parseFloat(form.price); if (!price || price <= 0) { setError("Enter a valid price."); return; }
     if (images.length === 0) { setImageError(true); setError("Please upload at least one image."); return; }
-    if (isOthers && !form.game_name.trim()) { setError("Enter the game name for your custom listing."); return; }
+    if (isOthers && !form.other_type) { setError("Select whether this is a Game or a Social Media account."); return; }
+    if (isOthers && !form.game_name.trim()) { setError(isOthersSocial ? "Enter the platform name for your custom listing." : "Enter the game name for your custom listing."); return; }
     if (isFreeFire && primeInvalid) { setError("Prime must be between 0 and 8."); return; }
     setLoading(true);
     const uploaded = await uploadAll(user.id);
@@ -127,8 +141,8 @@ export default function Sell() {
       game_name: isOthers ? form.game_name.trim() : (categories.find((c) => c.id === form.category_id)?.name ?? "Others"),
       title: form.title, description: form.description || null, price,
       account_level: !isOthers && !isSocial && form.account_level ? parseInt(form.account_level) : null,
-      follower_count: isSocial && form.follower_count !== "" && !isNaN(parseInt(form.follower_count)) ? parseInt(form.follower_count) : null,
-      total_likes: isSocial && form.total_likes !== "" && !isNaN(parseInt(form.total_likes)) ? parseInt(form.total_likes) : null,
+      follower_count: isSocial ? parseCompactNumber(form.follower_count) : null,
+      total_likes: isSocial ? parseCompactNumber(form.total_likes) : null,
       prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
       server_region: !isOthers && !isSocial ? "Bangladesh" : null,
       images: imageUrls.length ? imageUrls : null, tags: tags.length > 0 ? tags : null, status: "active",
@@ -155,14 +169,23 @@ export default function Sell() {
             <label className="label">Game</label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {categories.map((c) => { const Icon = iconMap[c.icon ?? "gamepad"] ?? Gamepad2; return (
-                <button type="button" key={c.id} onClick={() => update("category_id", c.id)} className={classNames("rounded-xl border-2 px-2 py-3 text-xs font-semibold transition-all flex flex-col items-center gap-1.5", form.category_id === c.id ? "border-primary-500 bg-primary-500/10 text-primary-300" : "border-ink-700 bg-ink-900 text-ink-400 hover:bg-ink-800")}>
+                <button type="button" key={c.id} onClick={() => setForm((f) => ({ ...f, category_id: c.id, other_type: c.slug === "others" ? f.other_type : "" }))} className={classNames("rounded-xl border-2 px-2 py-3 text-xs font-semibold transition-all flex flex-col items-center gap-1.5", form.category_id === c.id ? "border-primary-500 bg-primary-500/10 text-primary-300" : "border-ink-700 bg-ink-900 text-ink-400 hover:bg-ink-800")}>
                   <Icon size={18} /> {c.name}
                 </button>
               ); })}
             </div>
           </div>
           {isOthers && (
-            <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="Game Name" /></div>
+            <div>
+              <label className="label">Is this a Game or a Social Media account?</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => update("other_type", "game")} className={classNames("rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all", form.other_type === "game" ? "border-primary-500 bg-primary-500/10 text-primary-300" : "border-ink-700 bg-ink-900 text-ink-400 hover:bg-ink-800")}>Game</button>
+                <button type="button" onClick={() => update("other_type", "social")} className={classNames("rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all", form.other_type === "social" ? "border-primary-500 bg-primary-500/10 text-primary-300" : "border-ink-700 bg-ink-900 text-ink-400 hover:bg-ink-800")}>Social Media</button>
+              </div>
+            </div>
+          )}
+          {(isOthersGame || isOthersSocial) && (
+            <div><label className="label">{isOthersSocial ? "Platform Name" : "Game Name"}</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder={isOthersSocial ? "Platform Name" : "Game Name"} /></div>
           )}
           <div><label className="label">Listing Title</label><input required value={form.title} onChange={(e) => update("title", e.target.value)} className="input" placeholder="Title" /></div>
           <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder={isSocial ? "Describe the account — niche, content type, engagement, etc." : "Describe the account — skins, characters, diamonds, binds, etc."} /></div>
@@ -188,8 +211,8 @@ export default function Sell() {
             )}
             {isSocial && (
               <>
-                <div><label className="label">Followers</label><input type="number" min={0} value={form.follower_count} onChange={(e) => update("follower_count", e.target.value)} className="input" placeholder="e.g. 10000" /></div>
-                <div><label className="label">Total Likes</label><input type="number" min={0} value={form.total_likes} onChange={(e) => update("total_likes", e.target.value)} className="input" placeholder="e.g. 50000" /></div>
+                <div><label className="label">Followers</label><input type="text" inputMode="decimal" value={form.follower_count} onChange={(e) => update("follower_count", e.target.value)} className="input" placeholder="" /></div>
+                <div><label className="label">Total Likes</label><input type="text" inputMode="decimal" value={form.total_likes} onChange={(e) => update("total_likes", e.target.value)} className="input" placeholder="" /></div>
               </>
             )}
           </div>
