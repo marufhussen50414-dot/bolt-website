@@ -44,6 +44,8 @@ export type GameListing = {
   description: string | null;
   price: number;
   account_level: number | null;
+  follower_count: number | null;
+  total_likes: number | null;
   rank_tier: string | null;
   account_id_display: string | null;
   server_region: string | null;
