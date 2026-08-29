@@ -1,0 +1,19 @@
+/*
+  # Swap Mobile Legends & Valorant for TikTok, Facebook & Instagram
+
+  1. Changes
+    - Remove the `Mobile Legends` and `Valorant` categories.
+      Any existing listing that pointed at one of these gets its
+      `category_id` cleared automatically (ON DELETE SET NULL) — the
+      listing itself and its stored `game_name` text are not touched.
+    - Add three new categories: `TikTok`, `Facebook`, `Instagram`,
+      so sellers can list social media accounts alongside game IDs.
+*/
+
+DELETE FROM categories WHERE slug IN ('mlbb', 'valorant');
+
+INSERT INTO categories (name, slug, icon, description, sort_order) VALUES
+('TikTok', 'tiktok', 'music2', 'TikTok অ্যাকাউন্ট', 5),
+('Facebook', 'facebook', 'facebook', 'Facebook অ্যাকাউন্ট', 6),
+('Instagram', 'instagram', 'instagram', 'Instagram অ্যাকাউন্ট', 7)
+ON CONFLICT (slug) DO NOTHING;
