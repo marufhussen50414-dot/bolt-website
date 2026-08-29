@@ -18,7 +18,7 @@ export default function Sell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "Bangladesh", game_name: "" });
+  const [form, setForm] = useState({ category_id: "", title: "", description: "", price: "", account_level: "", prime: "", server_region: "Bangladesh", game_name: "", follower_count: "", total_likes: "" });
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -38,6 +38,7 @@ export default function Sell() {
   const selectedCategory = categories.find((c) => c.id === form.category_id);
   const isFreeFire = selectedCategory?.slug === "free-fire";
   const isOthers = selectedCategory?.slug === "others";
+  const isSocial = ["tiktok", "facebook", "instagram"].includes(selectedCategory?.slug ?? "");
   const primeNum = form.prime === "" ? null : parseInt(form.prime);
   const primeInvalid = primeNum !== null && (isNaN(primeNum) || primeNum < 0 || primeNum > 8);
 
@@ -125,9 +126,11 @@ export default function Sell() {
       seller_id: user.id, category_id: form.category_id || null,
       game_name: isOthers ? form.game_name.trim() : (categories.find((c) => c.id === form.category_id)?.name ?? "Others"),
       title: form.title, description: form.description || null, price,
-      account_level: !isOthers && form.account_level ? parseInt(form.account_level) : null,
+      account_level: !isOthers && !isSocial && form.account_level ? parseInt(form.account_level) : null,
+      follower_count: isSocial && form.follower_count !== "" && !isNaN(parseInt(form.follower_count)) ? parseInt(form.follower_count) : null,
+      total_likes: isSocial && form.total_likes !== "" && !isNaN(parseInt(form.total_likes)) ? parseInt(form.total_likes) : null,
       prime: isFreeFire && form.prime !== "" && !isNaN(parseInt(form.prime)) ? parseInt(form.prime) : null,
-      server_region: !isOthers ? "Bangladesh" : null,
+      server_region: !isOthers && !isSocial ? "Bangladesh" : null,
       images: imageUrls.length ? imageUrls : null, tags: tags.length > 0 ? tags : null, status: "active",
     }).select().single();
     setLoading(false);
@@ -162,10 +165,10 @@ export default function Sell() {
             <div><label className="label">Game Name</label><input required value={form.game_name} onChange={(e) => update("game_name", e.target.value)} className="input" placeholder="Game Name" /></div>
           )}
           <div><label className="label">Listing Title</label><input required value={form.title} onChange={(e) => update("title", e.target.value)} className="input" placeholder="Title" /></div>
-          <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder="Describe the account — skins, characters, diamonds, binds, etc." /></div>
+          <div><label className="label">Description</label><textarea value={form.description} onChange={(e) => update("description", e.target.value)} rows={4} className="input" placeholder={isSocial ? "Describe the account — niche, content type, engagement, etc." : "Describe the account — skins, characters, diamonds, binds, etc."} /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="label">Price (৳)</label><input type="number" required value={form.price} onChange={(e) => update("price", e.target.value)} className="input" /></div>
-            {!isOthers && (
+            {!isOthers && !isSocial && (
               <div><label className="label">Account Level</label><input type="number" value={form.account_level} onChange={(e) => update("account_level", e.target.value)} className="input" /></div>
             )}
             {isFreeFire && (
@@ -175,13 +178,19 @@ export default function Sell() {
                 {primeInvalid && <p className="mt-1 text-xs text-error-400">Prime must be between 0 and 8.</p>}
               </div>
             )}
-            {!isOthers && (
+            {!isOthers && !isSocial && (
               <div>
                 <label className="label">Server / Region</label>
                 <select value={form.server_region} onChange={(e) => update("server_region", e.target.value)} className="input">
                   <option value="Bangladesh">Bangladesh</option>
                 </select>
               </div>
+            )}
+            {isSocial && (
+              <>
+                <div><label className="label">Followers</label><input type="number" min={0} value={form.follower_count} onChange={(e) => update("follower_count", e.target.value)} className="input" placeholder="e.g. 10000" /></div>
+                <div><label className="label">Total Likes</label><input type="number" min={0} value={form.total_likes} onChange={(e) => update("total_likes", e.target.value)} className="input" placeholder="e.g. 50000" /></div>
+              </>
             )}
           </div>
 
