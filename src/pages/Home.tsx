@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Crosshair, Target, Shield, Gamepad2, Music2, Facebook, Instagram, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
+import { Flame, Crosshair, Target, Shield, Gamepad2, Music2, Facebook, Instagram, LayoutGrid, ArrowRight, ShieldCheck, CreditCard, TrendingUp, Package, Users, Star } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Category, GameListing } from "../lib/types";
 import ListingCard, { ListingCardSkeleton } from "../components/ListingCard";
@@ -141,12 +141,13 @@ export default function Home() {
 
         {(() => {
           const socialSlugs = new Set(["tiktok", "facebook", "instagram"]);
-          const gameCats = categories.filter((c) => !socialSlugs.has(c.slug));
+          const gameCats = categories.filter((c) => c.slug !== "others" && !socialSlugs.has(c.slug));
           const socialCats = categories.filter((c) => socialSlugs.has(c.slug));
-          const renderGrid = (list: Category[], accent: string) => (
+          const otherCats = categories.filter((c) => c.slug === "others");
+          const renderGrid = (list: Category[], accent: string, forceIcon?: IconType) => (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {list.map((cat) => {
-                const Icon = iconMap[cat.icon ?? "gamepad"] ?? Gamepad2;
+                const Icon = forceIcon ?? iconMap[cat.icon ?? "gamepad"] ?? Gamepad2;
                 return (
                   <Link key={cat.id} to={`/browse?category=${cat.slug}`} className="card-hover p-5 text-center group">
                     <div className={classNames("inline-grid place-items-center h-14 w-14 rounded-2xl mx-auto transition-all group-hover:scale-110 group-hover:text-white", accent)}>
@@ -178,6 +179,16 @@ export default function Home() {
                     <span className="h-px flex-1 bg-ink-800" />
                   </div>
                   {renderGrid(socialCats, "bg-accent-500/15 text-accent-400 group-hover:bg-accent-500")}
+                </div>
+              )}
+              {otherCats.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="inline-grid place-items-center h-7 w-7 rounded-lg bg-ink-700 text-ink-300"><LayoutGrid size={15} /></span>
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-ink-300">More</h3>
+                    <span className="h-px flex-1 bg-ink-800" />
+                  </div>
+                  {renderGrid(otherCats, "bg-ink-700 text-ink-300 group-hover:bg-ink-600", LayoutGrid)}
                 </div>
               )}
             </div>
