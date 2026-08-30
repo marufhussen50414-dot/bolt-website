@@ -12,7 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import type { GameListing, Order, Review } from "../lib/types";
 import { formatBDT, timeAgo, classNames, IconType } from "../lib/utils";
 
-type Tab = "overview" | "payment" | "security" | "activity" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
+type Tab = "overview" | "payment" | "security" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
 
 export default function Profile() {
   const { user, profile, loading: authLoading, refreshProfile, signOut } = useAuth();
@@ -147,7 +147,6 @@ export default function Profile() {
     { id: "wishlist", label: "Wishlist", icon: Heart },
     { id: "insights", label: "Insights", icon: BarChart3 },
     { id: "verify", label: "Verification", icon: BadgeCheck },
-    { id: "activity", label: "Activity", icon: TrendingUp },
     { id: "reviews", label: "Reviews", icon: Star },
     { id: "security", label: "Security", icon: Lock },
   ];
@@ -235,7 +234,7 @@ export default function Profile() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 pb-12 animate-fade-in">
-      <div className="card overflow-hidden mb-6 border border-ink-800 shadow-2xl bg-ink-900">
+      <div className="card overflow-hidden border border-ink-800 shadow-2xl bg-ink-900 rounded-b-none border-b-0">
         <div className="h-32 sm:h-40 bg-gradient-to-r from-primary-900/70 via-ink-800 to-accent-950/70 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-transparent to-transparent" />
@@ -307,6 +306,22 @@ export default function Profile() {
             ) : (
               <p className="text-sm text-ink-500 italic">No bio added yet. Click 'Edit Profile' to add one.</p>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="card rounded-t-none border-t-0 mb-6 border border-ink-800 shadow-xl bg-ink-950/60">
+        <div className="px-5 pt-4 pb-3 border-b border-ink-800">
+          <h3 className="font-semibold text-white flex items-center gap-2"><TrendingUp size={18} className="text-primary-400" /> Recent Activity</h3>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-5 p-5">
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-ink-400 mb-3">Recent Sales</h4>
+            {sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-500 py-2">No sales recorded yet.</p>}
+          </div>
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-ink-400 mb-3">Recent Purchases</h4>
+            {buyOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{buyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-500 py-2">No purchases recorded yet.</p>}
           </div>
         </div>
       </div>
@@ -555,13 +570,6 @@ export default function Profile() {
                 </div>
                 <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-3 py-1 font-semibold"><Mail size={13} /> Verified</span>
               </div>
-            </div>
-          )}
-
-          {tab === "activity" && (
-            <div className="space-y-6">
-              <div className="card p-5 border border-ink-800 shadow-xl"><h3 className="font-semibold text-white mb-3 text-base">Recent Sales</h3>{sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-400 py-2">No sales recorded yet.</p>}</div>
-              <div className="card p-5 border border-ink-800 shadow-xl"><h3 className="font-semibold text-white mb-3 text-base">Recent Purchases</h3>{buyOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{buyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-400 py-2">No purchases recorded yet.</p>}</div>
             </div>
           )}
 
