@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -9,6 +9,7 @@ import { formatBDT } from "../lib/utils";
 export default function Checkout() {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const offerId = params.get("offer");
 
@@ -16,7 +17,8 @@ export default function Checkout() {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [loading, setLoading] = useState(true);
   const [method, setMethod] = useState<"bkash" | "nagad" | "card">("bkash");
-  const [showDisabledNotice, setShowDisabledNotice] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -65,7 +67,28 @@ export default function Checkout() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setShowDisabledNotice(true);
+    if (!user || !listing) return;
+    setError("");
+    setSubmitting(true);
+
+    const { error: insErr } = await supabase
+      .from("orders")
+      .insert({
+        listing_id: listing.id, buyer_id: user.id, seller_id: listing.seller_id,
+        price: unitPrice, commission_rate: 0.01, commission_amount: commission, seller_amount: unitPrice - commission,
+        payment_method: method, status: "paid",
+      })
+      .select("id")
+      .single();
+
+    if (insErr) { setSubmitting(false); setError(insErr.message); return; }
+
+    if (useOffer && offer) {
+      await supabase.from("offers").update({ status: "paid" }).eq("id", offer.id);
+    }
+
+    setSubmitting(false);
+    navigate(`/messages?listing=${listing.id}`);
   }
 
   return (
@@ -103,13 +126,8 @@ export default function Checkout() {
           <div className="flex justify-between font-bold text-base border-t border-ink-700 pt-2"><span className="text-white">You Pay</span><span className="text-primary-400">{formatBDT(totalPay)}</span></div>
         </div>
         <div className="flex items-start gap-2 rounded-xl bg-success-500/10 border border-success-500/20 p-3 text-xs text-success-400"><ShieldCheck size={16} className="shrink-0 mt-0.5" /><span>Your payment is held in escrow and only released to the seller once you confirm the account transfer.</span></div>
-        {showDisabledNotice && (
-          <div className="rounded-xl bg-warning-500/10 border border-warning-500/20 p-4 text-sm animate-fade-in">
-            <p className="font-semibold text-warning-400">Buying is temporarily unavailable — the site hasn't officially launched yet. You'll be able to buy IDs once GameHaatBD goes live. You're welcome to list your ID for sale in the meantime.</p>
-            <p className="text-ink-400 mt-2">এই মুহূর্তে কেনাকাটা সাময়িকভাবে বন্ধ আছে — ওয়েবসাইট এখনো অফিসিয়ালি চালু হয়নি। ওয়েবসাইট লঞ্চ হওয়ার পর আপনি আইডি কিনতে পারবেন। তবে চাইলে এখনই আপনার আইডি সেল পোস্ট করে রাখতে পারেন।</p>
-          </div>
-        )}
-        <button type="submit" className="btn-primary w-full">{`Pay ${formatBDT(totalPay)}`}</button>
+        {error && <div className="flex items-start gap-2 rounded-xl bg-error-500/10 border border-error-500/20 p-3 text-sm text-error-400"><AlertCircle size={18} className="shrink-0 mt-0.5" /><span>{error}</span></div>}
+        <button type="submit" disabled={submitting} className="btn-primary w-full">{submitting ? <Loader2 size={18} className="animate-spin" /> : `Pay ${formatBDT(totalPay)}`}</button>
       </form>
     </div>
   );
