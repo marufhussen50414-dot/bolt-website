@@ -3,11 +3,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   Loader2, Send, MessageSquare, ArrowLeft, ShieldCheck, Tag, Search,
   HandCoins, X, Store, ChevronDown, ChevronUp,
-  ImagePlus, Check
+  ImagePlus, Check, Lock, Video, Eye, EyeOff, Copy, AlertTriangle, Clock, CheckCircle2, Gavel, UploadCloud
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
-import type { Conversation, GameListing, Message, Offer, Profile } from "../lib/types";
+import type { Conversation, GameListing, Message, Offer, Order, Profile } from "../lib/types";
 import { classNames, timeAgo, formatBDT } from "../lib/utils";
 
 type ConversationRow = Conversation & {
@@ -46,8 +46,30 @@ function formatMessageTime(dateStr: string) {
   });
 }
 
+function EscrowStatusBadge({ status }: { status: Order["status"] }) {
+  const map: Record<Order["status"], { label: string; cls: string }> = {
+    pending: { label: "Pending", cls: "bg-ink-700 text-ink-300" },
+    paid: { label: "Escrow Held", cls: "bg-cyan-500/15 text-cyan-400" },
+    delivering: { label: "Buyer Reviewing", cls: "bg-amber-500/15 text-amber-400" },
+    completed: { label: "Completed", cls: "bg-green-500/15 text-green-400" },
+    cancelled: { label: "Cancelled", cls: "bg-ink-700 text-ink-300" },
+    disputed: { label: "Disputed", cls: "bg-red-500/15 text-red-400" },
+    refunded: { label: "Refunded", cls: "bg-ink-700 text-ink-300" },
+  };
+  const s = map[status];
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>;
+}
+
+function CountdownText({ deadline, now }: { deadline: string; now: number }) {
+  const diff = new Date(deadline).getTime() - now;
+  if (diff <= 0) return <span>Finalizing…</span>;
+  const mins = Math.floor(diff / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  return <span>{mins}:{secs.toString().padStart(2, "0")} left to review — auto-confirms after that</span>;
+}
+
 export default function Messages() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [params, setParams] = useSearchParams();
   const listingIdParam = params.get("listing");
 
@@ -98,6 +120,23 @@ export default function Messages() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
+  // Escrow order state
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loadingOrder, setLoadingOrder] = useState(false);
+  const [deliveryPassword, setDeliveryPassword] = useState("");
+  const [deliveryVideoFile, setDeliveryVideoFile] = useState<File | null>(null);
+  const [submittingDelivery, setSubmittingDelivery] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [buyerVideoFile, setBuyerVideoFile] = useState<File | null>(null);
+  const [uploadingBuyerVideo, setUploadingBuyerVideo] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [submittingDispute, setSubmittingDispute] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [resolving, setResolving] = useState(false);
+  const [escrowError, setEscrowError] = useState("");
+
   useEffect(() => {
     if (!lightboxSrc) return;
     function onKey(e: KeyboardEvent) {
@@ -111,12 +150,17 @@ export default function Messages() {
     };
   }, [lightboxSrc]);
 
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const active = conversations.find((c) => c.id === activeId) ?? null;
 
   async function loadConversations(silent = false) {
     if (!user) return;
     if (!silent) setLoadingList(true);
-    const { data, error: err } = await supabase
+    let query = supabase
       .from("conversations")
       .select(`
         id, listing_id, buyer_id, seller_id, last_message_at, created_at,
@@ -124,8 +168,12 @@ export default function Messages() {
         buyer:profiles!conversations_buyer_id_fkey(id, full_name, username, avatar_url, is_verified),
         seller:profiles!conversations_seller_id_fkey(id, full_name, username, avatar_url, is_verified)
       `)
-      .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
       .order("last_message_at", { ascending: false });
+    // Admins can see every conversation (needed to find & resolve disputes);
+    // everyone else only sees conversations they're actually part of.
+    if (!profile?.is_admin) query = query.or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`);
+
+    const { data, error: err } = await query;
 
     if (err) setError(err.message);
     setConversations((data as unknown as ConversationRow[]) ?? []);
@@ -223,6 +271,133 @@ export default function Messages() {
       loadThread(activeId);
     }
   }, [activeId]);
+
+  async function loadOrder(convo: ConversationRow) {
+    if (!convo.listing_id) { setOrder(null); return; }
+    setLoadingOrder(true);
+    const { data } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("listing_id", convo.listing_id).eq("buyer_id", convo.buyer_id).eq("seller_id", convo.seller_id)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const o = (data as Order | null) ?? null;
+    setOrder(o);
+    setLoadingOrder(false);
+
+    // Lazy auto-confirm: if the buyer's review window has passed and nobody disputed, release escrow.
+    if (o && o.status === "delivering" && o.buyer_confirm_deadline && new Date(o.buyer_confirm_deadline).getTime() <= Date.now()) {
+      const { data: updated } = await supabase
+        .from("orders")
+        .update({ status: "completed", completed_at: new Date().toISOString(), escrow_released: true })
+        .eq("id", o.id).eq("status", "delivering")
+        .select("*")
+        .maybeSingle();
+      if (updated) setOrder(updated as Order);
+    }
+  }
+
+  useEffect(() => {
+    if (active) loadOrder(active);
+    else setOrder(null);
+    setDeliveryPassword(""); setDeliveryVideoFile(null); setBuyerVideoFile(null);
+    setDisputeOpen(false); setDisputeReason(""); setEscrowError("");
+  }, [activeId]);
+
+  async function uploadEscrowVideo(file: File): Promise<string> {
+    const ext = file.name.split(".").pop() || "mp4";
+    const path = `${user!.id}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("escrow-videos").upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) throw upErr;
+    const { data: pub } = supabase.storage.from("escrow-videos").getPublicUrl(path);
+    return pub.publicUrl;
+  }
+
+  async function submitDelivery() {
+    if (!order || !user) return;
+    setEscrowError("");
+    if (!deliveryPassword.trim()) { setEscrowError("Enter the account password."); return; }
+    if (!deliveryVideoFile) { setEscrowError("Upload a video showing the account details."); return; }
+    setSubmittingDelivery(true);
+    try {
+      const videoUrl = await uploadEscrowVideo(deliveryVideoFile);
+      const deadline = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      const { data, error: updErr } = await supabase
+        .from("orders")
+        .update({ delivery_password: deliveryPassword.trim(), delivery_video_url: videoUrl, delivered_at: new Date().toISOString(), buyer_confirm_deadline: deadline, status: "delivering" })
+        .eq("id", order.id)
+        .select("*")
+        .single();
+      if (updErr) { setEscrowError(updErr.message); return; }
+      setOrder(data as Order);
+    } catch (err) {
+      setEscrowError(err instanceof Error ? err.message : "Video upload failed. Please try again.");
+    } finally {
+      setSubmittingDelivery(false);
+    }
+  }
+
+  async function uploadBuyerVideoNow() {
+    if (!order || !buyerVideoFile) return;
+    setUploadingBuyerVideo(true);
+    setEscrowError("");
+    try {
+      const videoUrl = await uploadEscrowVideo(buyerVideoFile);
+      const { data, error: updErr } = await supabase.from("orders").update({ buyer_video_url: videoUrl }).eq("id", order.id).select("*").single();
+      if (updErr) { setEscrowError(updErr.message); return; }
+      setOrder(data as Order);
+      setBuyerVideoFile(null);
+    } catch (err) {
+      setEscrowError(err instanceof Error ? err.message : "Video upload failed. Please try again.");
+    } finally {
+      setUploadingBuyerVideo(false);
+    }
+  }
+
+  async function confirmOrder() {
+    if (!order) return;
+    setConfirming(true);
+    const { data, error: updErr } = await supabase
+      .from("orders")
+      .update({ status: "completed", completed_at: new Date().toISOString(), escrow_released: true })
+      .eq("id", order.id)
+      .select("*")
+      .single();
+    setConfirming(false);
+    if (updErr) { setEscrowError(updErr.message); return; }
+    setOrder(data as Order);
+  }
+
+  async function submitDispute() {
+    if (!order) return;
+    setEscrowError("");
+    if (!disputeReason.trim()) { setEscrowError("Briefly describe the problem before submitting a dispute."); return; }
+    setSubmittingDispute(true);
+    const { data, error: updErr } = await supabase
+      .from("orders")
+      .update({ status: "disputed", dispute_reason: disputeReason.trim(), dispute_opened_at: new Date().toISOString() })
+      .eq("id", order.id)
+      .select("*")
+      .single();
+    setSubmittingDispute(false);
+    if (updErr) { setEscrowError(updErr.message); return; }
+    setOrder(data as Order);
+    setDisputeOpen(false);
+  }
+
+  async function resolveDispute(decision: "completed" | "refunded") {
+    if (!order || !user) return;
+    setResolving(true);
+    const payload = decision === "completed"
+      ? { status: "completed", completed_at: new Date().toISOString(), escrow_released: true, resolved_at: new Date().toISOString(), resolved_by: user.id }
+      : { status: "refunded", resolved_at: new Date().toISOString(), resolved_by: user.id };
+    const { data, error: updErr } = await supabase.from("orders").update(payload).eq("id", order.id).select("*").single();
+    setResolving(false);
+    if (updErr) { setEscrowError(updErr.message); return; }
+    setOrder(data as Order);
+  }
 
   useEffect(() => {
     if (threadRef.current) {
@@ -684,6 +859,160 @@ export default function Messages() {
                     >
                       <X size={14} />
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Escrow order status card */}
+              {loadingOrder && !order && active?.listing_id && (
+                <div className="px-4 pt-2 z-10">
+                  <div className="flex items-center gap-2 rounded-xl border border-ink-800 bg-ink-900 px-3.5 py-2.5 text-xs text-ink-400">
+                    <Loader2 size={13} className="animate-spin" /> Checking order status…
+                  </div>
+                </div>
+              )}
+              {order && (
+                <div className="px-4 pt-2 z-10">
+                  <div className="rounded-xl border border-ink-800 bg-ink-900 overflow-hidden">
+                    <div className="flex items-center gap-2 px-3.5 py-2.5 border-b border-ink-800 bg-ink-950/50">
+                      <ShieldCheck size={15} className="text-cyan-400 shrink-0" />
+                      <p className="text-xs font-bold text-gray-200 flex-1">Escrow Order — {formatBDT(order.price)}</p>
+                      <EscrowStatusBadge status={order.status} />
+                    </div>
+
+                    <div className="p-3.5 space-y-3">
+                      {escrowError && <div className="flex items-start gap-1.5 rounded-lg bg-red-500/10 border border-red-500/20 px-2.5 py-2 text-xs text-red-400"><AlertTriangle size={13} className="shrink-0 mt-0.5" />{escrowError}</div>}
+
+                      {/* Awaiting delivery */}
+                      {order.status === "paid" && (
+                        iAmBuyer ? (
+                          <p className="text-xs text-gray-400">Payment received and held in escrow. Waiting for the seller to submit the account password and a verification video.</p>
+                        ) : (
+                          <div className="space-y-2.5">
+                            <p className="text-xs text-gray-400">The buyer has paid — funds are held in escrow. Submit the account password and a short video proving you own the account to release delivery.</p>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-ink-400 mb-1">Account Password</label>
+                              <input type="text" value={deliveryPassword} onChange={(e) => setDeliveryPassword(e.target.value)} className="input py-1.5 text-sm" placeholder="Account password" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-ink-400 mb-1">Proof Video</label>
+                              <label className="flex items-center gap-2 rounded-lg border border-dashed border-ink-700 bg-ink-950 px-3 py-2 text-xs text-ink-400 cursor-pointer hover:border-cyan-500/50">
+                                <UploadCloud size={14} />
+                                {deliveryVideoFile ? deliveryVideoFile.name : "Upload a video showing the account"}
+                                <input type="file" accept="video/*" className="hidden" onChange={(e) => setDeliveryVideoFile(e.target.files?.[0] ?? null)} />
+                              </label>
+                            </div>
+                            <button type="button" onClick={submitDelivery} disabled={submittingDelivery} className="btn-primary w-full py-2 text-sm">
+                              {submittingDelivery ? <Loader2 size={14} className="animate-spin" /> : <Video size={14} />} Submit Password &amp; Video
+                            </button>
+                          </div>
+                        )
+                      )}
+
+                      {/* Buyer reviewing window */}
+                      {order.status === "delivering" && (
+                        <div className="space-y-3">
+                          {order.buyer_confirm_deadline && (
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400">
+                              <Clock size={13} /> <CountdownText deadline={order.buyer_confirm_deadline} now={now} />
+                            </div>
+                          )}
+
+                          {iAmBuyer ? (
+                            <>
+                              <div className="rounded-lg bg-ink-950 border border-ink-800 p-2.5">
+                                <p className="text-[11px] font-semibold text-ink-400 mb-1">Account Password</p>
+                                <div className="flex items-center gap-2">
+                                  <code className="flex-1 text-sm text-gray-200 font-mono">{passwordVisible ? order.delivery_password : "•".repeat(order.delivery_password?.length ?? 8)}</code>
+                                  <button type="button" onClick={() => setPasswordVisible((v) => !v)} className="text-ink-400 hover:text-gray-200">{passwordVisible ? <EyeOff size={14} /> : <Eye size={14} />}</button>
+                                  <button type="button" onClick={() => order.delivery_password && navigator.clipboard.writeText(order.delivery_password)} className="text-ink-400 hover:text-gray-200"><Copy size={14} /></button>
+                                </div>
+                              </div>
+                              {order.delivery_video_url && (
+                                <video src={order.delivery_video_url} controls className="w-full rounded-lg border border-ink-800 max-h-56" />
+                              )}
+                              <p className="text-xs text-gray-400">Turn your camera/screen recorder on and log in now. If everything checks out, confirm below — otherwise open a dispute and our team will review the videos.</p>
+                              <div>
+                                <label className="flex items-center gap-2 rounded-lg border border-dashed border-ink-700 bg-ink-950 px-3 py-2 text-xs text-ink-400 cursor-pointer hover:border-cyan-500/50">
+                                  <UploadCloud size={14} />
+                                  {buyerVideoFile ? buyerVideoFile.name : order.buyer_video_url ? "Replace login video" : "Upload your login video (recommended)"}
+                                  <input type="file" accept="video/*" className="hidden" onChange={(e) => setBuyerVideoFile(e.target.files?.[0] ?? null)} />
+                                </label>
+                                {buyerVideoFile && (
+                                  <button type="button" onClick={uploadBuyerVideoNow} disabled={uploadingBuyerVideo} className="mt-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                                    {uploadingBuyerVideo ? <Loader2 size={12} className="animate-spin" /> : <UploadCloud size={12} />} Upload video
+                                  </button>
+                                )}
+                                {order.buyer_video_url && !buyerVideoFile && <video src={order.buyer_video_url} controls className="w-full rounded-lg border border-ink-800 max-h-56 mt-2" />}
+                              </div>
+
+                              {!disputeOpen ? (
+                                <div className="flex gap-2">
+                                  <button type="button" onClick={confirmOrder} disabled={confirming} className="btn-primary flex-1 py-2 text-sm">
+                                    {confirming ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Everything's Fine
+                                  </button>
+                                  <button type="button" onClick={() => setDisputeOpen(true)} className="flex-1 py-2 text-sm rounded-xl border-2 border-red-500/30 text-red-400 font-semibold hover:bg-red-500/10 transition-all">Dispute</button>
+                                </div>
+                              ) : (
+                                <div className="space-y-2 rounded-lg border border-red-500/20 bg-red-500/5 p-2.5">
+                                  <label className="block text-[11px] font-semibold text-red-400">What went wrong?</label>
+                                  <textarea value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)} rows={3} className="input py-1.5 text-sm" placeholder="e.g. password doesn't work, account details don't match..." />
+                                  <div className="flex gap-2">
+                                    <button type="button" onClick={submitDispute} disabled={submittingDispute} className="flex-1 py-1.5 text-xs font-bold rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all">
+                                      {submittingDispute ? <Loader2 size={12} className="animate-spin mx-auto" /> : "Submit Dispute"}
+                                    </button>
+                                    <button type="button" onClick={() => setDisputeOpen(false)} className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-ink-700 text-ink-300 hover:bg-ink-800">Cancel</button>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-xs text-gray-400">The buyer is reviewing the account now. If they don't respond or dispute before the timer runs out, the order auto-completes and funds are released to you.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Disputed */}
+                      {order.status === "disputed" && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-start gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-2 text-xs text-amber-400">
+                            <Gavel size={13} className="shrink-0 mt-0.5" /> This order is under dispute. Our team is reviewing both videos and will decide shortly.
+                          </div>
+                          {order.dispute_reason && <p className="text-xs text-gray-400"><span className="font-semibold text-gray-300">Buyer's report:</span> {order.dispute_reason}</p>}
+                          <div className="grid grid-cols-2 gap-2">
+                            {order.delivery_video_url && (
+                              <div><p className="text-[10px] font-semibold text-ink-400 mb-1">Seller's video</p><video src={order.delivery_video_url} controls className="w-full rounded-lg border border-ink-800 max-h-40" /></div>
+                            )}
+                            {order.buyer_video_url && (
+                              <div><p className="text-[10px] font-semibold text-ink-400 mb-1">Buyer's video</p><video src={order.buyer_video_url} controls className="w-full rounded-lg border border-ink-800 max-h-40" /></div>
+                            )}
+                          </div>
+                          {profile?.is_admin && (
+                            <div className="pt-2 border-t border-ink-800 space-y-2">
+                              <p className="text-[11px] font-bold text-gray-300 flex items-center gap-1"><Gavel size={12} /> Admin Decision</p>
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => resolveDispute("completed")} disabled={resolving} className="flex-1 py-1.5 text-xs font-bold rounded-lg bg-green-600 text-white hover:bg-green-700">Release to Seller</button>
+                                <button type="button" onClick={() => resolveDispute("refunded")} disabled={resolving} className="flex-1 py-1.5 text-xs font-bold rounded-lg bg-red-600 text-white hover:bg-red-700">Refund Buyer</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Completed */}
+                      {order.status === "completed" && (
+                        <div className="flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/20 px-2.5 py-2 text-xs text-green-400">
+                          <CheckCircle2 size={14} className="shrink-0" /> Order completed — funds released to the seller.
+                        </div>
+                      )}
+
+                      {/* Refunded */}
+                      {order.status === "refunded" && (
+                        <div className="flex items-center gap-2 rounded-lg bg-ink-800 border border-ink-700 px-2.5 py-2 text-xs text-ink-300">
+                          <Lock size={14} className="shrink-0" /> This order was refunded to the buyer by an admin.
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
