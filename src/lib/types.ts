@@ -30,6 +30,7 @@ export type Profile = {
   total_purchases: number;
   is_verified: boolean;
   is_banned: boolean;
+  is_admin: boolean;
   created_at: string;
 };
 
@@ -76,6 +77,16 @@ export type Order = {
   status: OrderStatus;
   escrow_released: boolean;
   completed_at: string | null;
+  delivery_password: string | null;
+  delivery_video_url: string | null;
+  delivered_at: string | null;
+  buyer_confirm_deadline: string | null;
+  buyer_video_url: string | null;
+  dispute_reason: string | null;
+  dispute_opened_at: string | null;
+  admin_notes: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
   created_at: string;
   updated_at: string;
   listing?: GameListing;
