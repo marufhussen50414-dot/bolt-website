@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldCheck, Eye, Star, TrendingUp, Loader2, MessageSquare, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -7,7 +7,7 @@ import type { GameListing, Review, Profile } from "../lib/types";
 import { formatBDT, timeAgo, classNames } from "../lib/utils";
 import { StatusBadge } from "../components/ListingCard";
 
-// Image Gallery Modal Component
+// Image Gallery Modal Component - Mobile friendly with isolated zoom
 function ImageGalleryModal({ 
   images, 
   currentIndex, 
@@ -19,6 +19,13 @@ function ImageGalleryModal({
 }) {
   const [selectedIndex, setSelectedIndex] = useState(currentIndex);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [translateX, setTranslateX] = useState(0);
+  const [translateY, setTranslateY] = useState(0);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
 
   // Keyboard navigation
   useEffect(() => {
@@ -31,27 +38,116 @@ function ImageGalleryModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  // Prevent browser zoom on mobile (pinch to zoom)
+  useEffect(() => {
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    
+    const modalElement = modalRef.current;
+    if (modalElement) {
+      modalElement.addEventListener('touchmove', preventZoom, { passive: false });
+    }
+    
+    return () => {
+      if (modalElement) {
+        modalElement.removeEventListener('touchmove', preventZoom);
+      }
+    };
+  }, []);
+
   const handlePrev = () => {
     setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
     setZoomLevel(1);
+    setTranslateX(0);
+    setTranslateY(0);
   };
 
   const handleNext = () => {
     setSelectedIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
     setZoomLevel(1);
+    setTranslateX(0);
+    setTranslateY(0);
   };
 
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.5, 3));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.5, 0.5));
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setZoomLevel((prev) => Math.min(prev + 0.5, 3));
+  };
+
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setZoomLevel((prev) => Math.max(prev - 0.5, 0.5));
+  };
+
+  // Mouse wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.deltaY < 0) {
+      setZoomLevel((prev) => Math.min(prev + 0.2, 3));
+    } else {
+      setZoomLevel((prev) => Math.max(prev - 0.2, 0.5));
+    }
+  };
+
+  // Touch drag for panning when zoomed
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (zoomLevel > 1) {
+      const touch = e.touches[0];
+      setStartX(touch.clientX);
+      setStartY(touch.clientY);
+      setIsDragging(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && zoomLevel > 1) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      setTranslateX(deltaX);
+      setTranslateY(deltaY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Double tap to reset zoom
+  const handleDoubleClick = () => {
+    setZoomLevel(1);
+    setTranslateX(0);
+    setTranslateY(0);
+  };
 
   if (!images || images.length === 0) return null;
 
   return (
     <div 
+      ref={modalRef}
       className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Close Button */}
       <button 
@@ -68,56 +164,82 @@ function ImageGalleryModal({
 
       {/* Zoom Controls */}
       <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-2 rounded-lg backdrop-blur-sm">
-        <button onClick={handleZoomOut} className="text-white hover:text-gray-300 p-1.5 transition">
+        <button 
+          onClick={handleZoomOut} 
+          className="text-white hover:text-gray-300 p-1.5 transition"
+        >
           <ZoomOut size={22} />
         </button>
         <span className="text-white text-xs flex items-center px-2 min-w-[40px] justify-center">{Math.round(zoomLevel * 100)}%</span>
-        <button onClick={handleZoomIn} className="text-white hover:text-gray-300 p-1.5 transition">
+        <button 
+          onClick={handleZoomIn} 
+          className="text-white hover:text-gray-300 p-1.5 transition"
+        >
           <ZoomIn size={22} />
         </button>
       </div>
 
-      {/* Navigation Buttons */}
-      {images.length > 1 && (
+      {/* Navigation Buttons - Hide on mobile when zoomed */}
+      {images.length > 1 && zoomLevel === 1 && (
         <>
           <button 
             onClick={handlePrev}
-            className="absolute left-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70"
+            className="absolute left-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70 hidden sm:block"
           >
             <ChevronLeft size={32} />
           </button>
           <button 
             onClick={handleNext}
-            className="absolute right-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70"
+            className="absolute right-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70 hidden sm:block"
           >
             <ChevronRight size={32} />
           </button>
         </>
       )}
 
+      {/* Mobile swipe indicators */}
+      {images.length > 1 && zoomLevel === 1 && (
+        <>
+          <button 
+            onClick={handlePrev}
+            className="absolute left-2 text-white hover:text-gray-300 transition bg-black/50 p-1.5 rounded-full hover:bg-black/70 sm:hidden"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button 
+            onClick={handleNext}
+            className="absolute right-2 text-white hover:text-gray-300 transition bg-black/50 p-1.5 rounded-full hover:bg-black/70 sm:hidden"
+          >
+            <ChevronRight size={24} />
+          </button>
+        </>
+      )}
+
       {/* Main Image */}
-      <div className="w-[95vw] h-[75vh] flex items-center justify-center overflow-hidden">
+      <div className="w-[100vw] h-[100vh] flex items-center justify-center overflow-hidden">
         <img
+          ref={imageRef}
           src={images[selectedIndex]}
           alt={`Product image ${selectedIndex + 1}`}
           style={{ 
-            transform: `scale(${zoomLevel})`,
-            transition: 'transform 0.2s ease'
+            transform: `scale(${zoomLevel}) translate(${translateX / zoomLevel}px, ${translateY / zoomLevel}px)`,
+            transition: isDragging ? 'none' : 'transform 0.2s ease'
           }}
-          className="max-w-full max-h-full object-contain select-none"
+          className="max-w-[95vw] max-h-[85vh] object-contain select-none"
           draggable={false}
+          onDoubleClick={handleDoubleClick}
         />
       </div>
 
       {/* Thumbnails */}
-      {images.length > 1 && (
+      {images.length > 1 && zoomLevel === 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[85vw] overflow-x-auto p-2 scrollbar-hide">
           {images.map((img, idx) => (
             <button
               key={idx}
-              onClick={() => { setSelectedIndex(idx); setZoomLevel(1); }}
-              className={`w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
-                idx === selectedIndex ? 'border-primary-500' : 'border-transparent hover:border-gray-500'
+              onClick={() => { setSelectedIndex(idx); setZoomLevel(1); setTranslateX(0); setTranslateY(0); }}
+              className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                idx === selectedIndex ? 'border-primary-500 ring-2 ring-primary-500/50' : 'border-transparent hover:border-gray-500'
               }`}
             >
               <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
@@ -125,6 +247,11 @@ function ImageGalleryModal({
           ))}
         </div>
       )}
+
+      {/* Zoom hint */}
+      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 text-ink-500 text-xs opacity-50 select-none">
+        {zoomLevel === 1 ? '🖱️ Scroll to zoom • Double tap to reset' : '✋ Drag to pan • Double tap to reset'}
+      </div>
     </div>
   );
 }
