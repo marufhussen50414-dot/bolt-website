@@ -7,7 +7,7 @@ import type { GameListing, Review, Profile } from "../lib/types";
 import { formatBDT, timeAgo, classNames } from "../lib/utils";
 import { StatusBadge } from "../components/ListingCard";
 
-// Image Gallery Modal Component - FIXED ZOOM ISSUE
+// Image Gallery Modal Component
 function ImageGalleryModal({ 
   images, 
   currentIndex, 
@@ -31,18 +31,6 @@ function ImageGalleryModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex]);
 
-  // Prevent browser zoom with Ctrl+MouseWheel
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    document.addEventListener('wheel', handleWheel, { passive: false, capture: true });
-    return () => document.removeEventListener('wheel', handleWheel, { capture: true });
-  }, []);
-
   const handlePrev = () => {
     setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
     setZoomLevel(1);
@@ -53,28 +41,8 @@ function ImageGalleryModal({
     setZoomLevel(1);
   };
 
-  const handleZoomIn = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setZoomLevel((prev) => Math.min(prev + 0.5, 3));
-  };
-
-  const handleZoomOut = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setZoomLevel((prev) => Math.max(prev - 0.5, 0.5));
-  };
-
-  // Handle mouse wheel for zoom
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.deltaY < 0) {
-      setZoomLevel((prev) => Math.min(prev + 0.2, 3));
-    } else {
-      setZoomLevel((prev) => Math.max(prev - 0.2, 0.5));
-    }
-  };
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.5, 3));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.5, 0.5));
 
   if (!images || images.length === 0) return null;
 
@@ -84,7 +52,6 @@ function ImageGalleryModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      onWheel={handleWheel}
     >
       {/* Close Button */}
       <button 
@@ -101,17 +68,11 @@ function ImageGalleryModal({
 
       {/* Zoom Controls */}
       <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-2 rounded-lg backdrop-blur-sm">
-        <button 
-          onClick={handleZoomOut} 
-          className="text-white hover:text-gray-300 p-1.5 transition"
-        >
+        <button onClick={handleZoomOut} className="text-white hover:text-gray-300 p-1.5 transition">
           <ZoomOut size={22} />
         </button>
         <span className="text-white text-xs flex items-center px-2 min-w-[40px] justify-center">{Math.round(zoomLevel * 100)}%</span>
-        <button 
-          onClick={handleZoomIn} 
-          className="text-white hover:text-gray-300 p-1.5 transition"
-        >
+        <button onClick={handleZoomIn} className="text-white hover:text-gray-300 p-1.5 transition">
           <ZoomIn size={22} />
         </button>
       </div>
@@ -135,7 +96,7 @@ function ImageGalleryModal({
       )}
 
       {/* Main Image */}
-      <div className="w-[95vw] h-[75vh] flex items-center justify-center overflow-hidden select-none">
+      <div className="w-[95vw] h-[75vh] flex items-center justify-center overflow-hidden">
         <img
           src={images[selectedIndex]}
           alt={`Product image ${selectedIndex + 1}`}
@@ -143,7 +104,7 @@ function ImageGalleryModal({
             transform: `scale(${zoomLevel})`,
             transition: 'transform 0.2s ease'
           }}
-          className="max-w-full max-h-full object-contain select-none pointer-events-none"
+          className="max-w-full max-h-full object-contain select-none"
           draggable={false}
         />
       </div>
@@ -156,7 +117,7 @@ function ImageGalleryModal({
               key={idx}
               onClick={() => { setSelectedIndex(idx); setZoomLevel(1); }}
               className={`w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
-                idx === selectedIndex ? 'border-primary-500 ring-2 ring-primary-500/50' : 'border-transparent hover:border-gray-500'
+                idx === selectedIndex ? 'border-primary-500' : 'border-transparent hover:border-gray-500'
               }`}
             >
               <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
@@ -164,11 +125,6 @@ function ImageGalleryModal({
           ))}
         </div>
       )}
-
-      {/* Zoom hint */}
-      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 text-ink-500 text-xs opacity-50 select-none">
-        Scroll to zoom • Click to close
-      </div>
     </div>
   );
 }
