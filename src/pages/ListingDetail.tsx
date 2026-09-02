@@ -1,11 +1,133 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, Eye, Star, TrendingUp, Loader2, MessageSquare } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Eye, Star, TrendingUp, Loader2, MessageSquare, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { GameListing, Review, Profile } from "../lib/types";
 import { formatBDT, timeAgo, classNames } from "../lib/utils";
 import { StatusBadge } from "../components/ListingCard";
+
+// Image Gallery Modal Component
+function ImageGalleryModal({ 
+  images, 
+  currentIndex, 
+  onClose 
+}: { 
+  images: string[]; 
+  currentIndex: number; 
+  onClose: () => void;
+}) {
+  const [selectedIndex, setSelectedIndex] = useState(currentIndex);
+  const [zoomLevel, setZoomLevel] = useState(1);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'ArrowRight') handleNext();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIndex]);
+
+  const handlePrev = () => {
+    setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setZoomLevel(1);
+  };
+
+  const handleNext = () => {
+    setSelectedIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setZoomLevel(1);
+  };
+
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.5, 3));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.5, 0.5));
+
+  if (!images || images.length === 0) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      {/* Close Button */}
+      <button 
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white hover:text-gray-300 transition z-10 bg-black/50 p-2 rounded-full hover:bg-black/70"
+      >
+        <X size={28} />
+      </button>
+
+      {/* Image Counter */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-1.5 rounded-full">
+        {selectedIndex + 1} / {images.length}
+      </div>
+
+      {/* Zoom Controls */}
+      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-2 rounded-lg backdrop-blur-sm">
+        <button onClick={handleZoomOut} className="text-white hover:text-gray-300 p-1.5 transition">
+          <ZoomOut size={22} />
+        </button>
+        <span className="text-white text-xs flex items-center px-2 min-w-[40px] justify-center">{Math.round(zoomLevel * 100)}%</span>
+        <button onClick={handleZoomIn} className="text-white hover:text-gray-300 p-1.5 transition">
+          <ZoomIn size={22} />
+        </button>
+      </div>
+
+      {/* Navigation Buttons */}
+      {images.length > 1 && (
+        <>
+          <button 
+            onClick={handlePrev}
+            className="absolute left-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70"
+          >
+            <ChevronLeft size={32} />
+          </button>
+          <button 
+            onClick={handleNext}
+            className="absolute right-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70"
+          >
+            <ChevronRight size={32} />
+          </button>
+        </>
+      )}
+
+      {/* Main Image */}
+      <div className="w-[95vw] h-[75vh] flex items-center justify-center overflow-hidden">
+        <img
+          src={images[selectedIndex]}
+          alt={`Product image ${selectedIndex + 1}`}
+          style={{ 
+            transform: `scale(${zoomLevel})`,
+            transition: 'transform 0.2s ease'
+          }}
+          className="max-w-full max-h-full object-contain select-none"
+          draggable={false}
+        />
+      </div>
+
+      {/* Thumbnails */}
+      {images.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[85vw] overflow-x-auto p-2 scrollbar-hide">
+          {images.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => { setSelectedIndex(idx); setZoomLevel(1); }}
+              className={`w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                idx === selectedIndex ? 'border-primary-500' : 'border-transparent hover:border-gray-500'
+              }`}
+            >
+              <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ListingDetail() {
   const { id } = useParams();
@@ -15,6 +137,8 @@ export default function ListingDetail() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -40,6 +164,11 @@ export default function ListingDetail() {
     })();
   }, [id, user?.id]);
 
+  const handleImageClick = (index: number) => {
+    setModalImageIndex(index);
+    setIsModalOpen(true);
+  };
+
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="animate-spin text-primary-500" size={28} /></div>;
   if (!listing) return <div className="mx-auto max-w-md py-16 text-center"><p className="text-ink-400">Listing not found.</p><Link to="/browse" className="btn-primary mt-4 inline-flex">Browse IDs</Link></div>;
 
@@ -50,92 +179,132 @@ export default function ListingDetail() {
   const canBuy = !!user && !isOwn && (listing.status === "active" || listing.status === "approved");
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-      <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-white mb-4"><ArrowLeft size={16} /> Go back</button>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <div className="card overflow-hidden"><img src={images[activeImg]} alt={listing.title} className="w-full h-72 object-cover" /></div>
-          {images.length > 1 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-              {images.map((img, i) => (
-                <button key={i} onClick={() => setActiveImg(i)} className={classNames("h-16 w-16 rounded-lg overflow-hidden border-2 shrink-0", activeImg === i ? "border-primary-500" : "border-ink-700")}>
-                  <img src={img} alt="" className="h-full w-full object-cover" />
-                </button>
-              ))}
+    <>
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-white mb-4"><ArrowLeft size={16} /> Go back</button>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            {/* Main Image - Clickable */}
+            <div 
+              className="card overflow-hidden cursor-zoom-in relative group"
+              onClick={() => handleImageClick(activeImg)}
+            >
+              <img 
+                src={images[activeImg]} 
+                alt={listing.title} 
+                className="w-full h-72 object-cover transition-transform duration-300 group-hover:scale-105" 
+              />
+              {images.length > 1 && (
+                <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+                  {activeImg + 1} / {images.length}
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                <span className="opacity-0 group-hover:opacity-100 text-white text-sm bg-black/50 px-3 py-1.5 rounded-lg transition-opacity">
+                  🔍 Click to zoom
+                </span>
+              </div>
             </div>
-          )}
-        </div>
-        <div className="space-y-4">
-          <div className="card p-5">
-            <div className="flex items-center gap-2 flex-wrap mb-2">
-              <span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20">{listing.game_name}</span>
-              <StatusBadge status={listing.status} />
-              {listing.is_featured && <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20"><Star size={12} className="fill-accent-300" /> Featured</span>}
-            </div>
-            <h1 className="font-display text-2xl font-extrabold text-white">{listing.title}</h1>
-            {listing.tags && listing.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {listing.tags.map((tag) => (
-                  <span key={tag} className="inline-flex items-center rounded-full bg-accent-500/10 px-2.5 py-0.5 text-xs font-medium text-accent-300 ring-1 ring-inset ring-accent-500/25">
-                    {tag}
-                  </span>
+            
+            {/* Thumbnails - Clickable */}
+            {images.length > 1 && (
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                {images.map((img, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => setActiveImg(i)} 
+                    className={classNames(
+                      "h-16 w-16 rounded-lg overflow-hidden border-2 shrink-0 transition-all hover:scale-105",
+                      activeImg === i ? "border-primary-500 ring-2 ring-primary-500/50" : "border-ink-700 hover:border-ink-500"
+                    )}
+                  >
+                    <img src={img} alt="" className="h-full w-full object-cover" />
+                  </button>
                 ))}
               </div>
             )}
-            <p className="font-display text-3xl font-extrabold text-primary-400 mt-3">{formatBDT(listing.price)}</p>
-            <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-              {listing.account_level != null && <Info label="Level" value={String(listing.account_level)} />}
-              {listing.rank_tier && <Info label="Rank" value={listing.rank_tier} icon={TrendingUp} />}
-              {listing.server_region && <Info label="Region" value={listing.server_region} />}
-              {listing.follower_count != null && <Info label="Followers" value={listing.follower_count.toLocaleString()} />}
-              {listing.total_likes != null && <Info label="Total Likes" value={listing.total_likes.toLocaleString()} />}
-              <Info label="Views" value={String(listing.view_count)} icon={Eye} />
+          </div>
+          <div className="space-y-4">
+            <div className="card p-5">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <span className="badge bg-primary-500/15 text-primary-300 border border-primary-500/20">{listing.game_name}</span>
+                <StatusBadge status={listing.status} />
+                {listing.is_featured && <span className="badge bg-accent-500/15 text-accent-300 border border-accent-500/20"><Star size={12} className="fill-accent-300" /> Featured</span>}
+              </div>
+              <h1 className="font-display text-2xl font-extrabold text-white">{listing.title}</h1>
+              {listing.tags && listing.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {listing.tags.map((tag) => (
+                    <span key={tag} className="inline-flex items-center rounded-full bg-accent-500/10 px-2.5 py-0.5 text-xs font-medium text-accent-300 ring-1 ring-inset ring-accent-500/25">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="font-display text-3xl font-extrabold text-primary-400 mt-3">{formatBDT(listing.price)}</p>
+              <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
+                {listing.account_level != null && <Info label="Level" value={String(listing.account_level)} />}
+                {listing.rank_tier && <Info label="Rank" value={listing.rank_tier} icon={TrendingUp} />}
+                {listing.server_region && <Info label="Region" value={listing.server_region} />}
+                {listing.follower_count != null && <Info label="Followers" value={listing.follower_count.toLocaleString()} />}
+                {listing.total_likes != null && <Info label="Total Likes" value={listing.total_likes.toLocaleString()} />}
+                <Info label="Views" value={String(listing.view_count)} icon={Eye} />
+              </div>
+              {canBuy && (
+                <div className="mt-5 space-y-2">
+                  <button onClick={() => navigate(`/checkout/${listing.id}`)} className="btn-primary w-full">Buy Now — {formatBDT(listing.price)}</button>
+                  <Link to={`/messages?listing=${listing.id}`} className="btn-secondary w-full"><MessageSquare size={16} /> Message Seller</Link>
+                </div>
+              )}
+              {isOwn && <div className="rounded-xl bg-warning-500/10 border border-warning-500/20 p-3 text-sm text-warning-400 mt-4">This is your own listing.</div>}
+              {!user && <Link to="/login" className="btn-primary w-full mt-5">Log in to buy</Link>}
             </div>
-            {canBuy && (
-              <div className="mt-5 space-y-2">
-                <button onClick={() => navigate(`/checkout/${listing.id}`)} className="btn-primary w-full">Buy Now — {formatBDT(listing.price)}</button>
-                <Link to={`/messages?listing=${listing.id}`} className="btn-secondary w-full"><MessageSquare size={16} /> Message Seller</Link>
+            {seller && (
+              <div className="card p-5">
+                <h3 className="font-semibold text-white mb-3">Seller</h3>
+                <div className="flex items-center gap-3">
+                  <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white font-bold">{(seller.full_name ?? seller.username)?.[0]?.toUpperCase()}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5"><span className="font-semibold text-white">{seller.full_name ?? seller.username}</span>{seller.is_verified && <ShieldCheck size={15} className="text-success-400" />}</div>
+                    <div className="flex items-center gap-2 text-xs text-ink-400 mt-0.5"><span className="flex items-center gap-0.5 text-warning-400"><Star size={11} className="fill-warning-400" /> {Number(seller.trust_score).toFixed(1)}</span><span>•</span><span>{seller.total_sales} sales</span></div>
+                  </div>
+                  <Link to="/profile" className="btn-ghost text-xs">View</Link>
+                </div>
               </div>
             )}
-            {isOwn && <div className="rounded-xl bg-warning-500/10 border border-warning-500/20 p-3 text-sm text-warning-400 mt-4">This is your own listing.</div>}
-            {!user && <Link to="/login" className="btn-primary w-full mt-5">Log in to buy</Link>}
           </div>
-          {seller && (
-            <div className="card p-5">
-              <h3 className="font-semibold text-white mb-3">Seller</h3>
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white font-bold">{(seller.full_name ?? seller.username)?.[0]?.toUpperCase()}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5"><span className="font-semibold text-white">{seller.full_name ?? seller.username}</span>{seller.is_verified && <ShieldCheck size={15} className="text-success-400" />}</div>
-                  <div className="flex items-center gap-2 text-xs text-ink-400 mt-0.5"><span className="flex items-center gap-0.5 text-warning-400"><Star size={11} className="fill-warning-400" /> {Number(seller.trust_score).toFixed(1)}</span><span>•</span><span>{seller.total_sales} sales</span></div>
-                </div>
-                <Link to="/profile" className="btn-ghost text-xs">View</Link>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6 mt-6">
+          <div className="card p-5">
+            <h3 className="font-semibold text-white mb-3">Description</h3>
+            {listing.description ? <p className="text-sm text-ink-300 whitespace-pre-line leading-relaxed">{listing.description}</p> : <p className="text-sm text-ink-500">No description provided.</p>}
+          </div>
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-white">Seller Reviews</h3>{reviews.length > 0 && <span className="badge bg-warning-500/15 text-warning-400 border border-warning-500/20"><Star size={12} className="fill-warning-400" /> {avgRating.toFixed(1)} ({reviews.length})</span>}</div>
+            {reviews.length > 0 ? (
+              <div className="space-y-3">
+                {reviews.slice(0, 4).map((r) => (
+                  <div key={r.id} className="border-b border-ink-800 pb-3 last:border-0">
+                    <div className="flex items-center gap-2"><span className="text-sm font-semibold text-white">{r.reviewer?.full_name ?? r.reviewer?.username ?? "Anonymous"}</span><span className="text-xs text-ink-500">{timeAgo(r.created_at)}</span></div>
+                    <div className="flex mt-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} className={i < r.rating ? "text-warning-400 fill-warning-400" : "text-ink-700"} />)}</div>
+                    {r.comment && <p className="text-sm text-ink-300 mt-1">{r.comment}</p>}
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
+            ) : <p className="text-sm text-ink-500">No reviews yet.</p>}
+          </div>
         </div>
       </div>
-      <div className="grid md:grid-cols-2 gap-6 mt-6">
-        <div className="card p-5">
-          <h3 className="font-semibold text-white mb-3">Description</h3>
-          {listing.description ? <p className="text-sm text-ink-300 whitespace-pre-line leading-relaxed">{listing.description}</p> : <p className="text-sm text-ink-500">No description provided.</p>}
-        </div>
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-white">Seller Reviews</h3>{reviews.length > 0 && <span className="badge bg-warning-500/15 text-warning-400 border border-warning-500/20"><Star size={12} className="fill-warning-400" /> {avgRating.toFixed(1)} ({reviews.length})</span>}</div>
-          {reviews.length > 0 ? (
-            <div className="space-y-3">
-              {reviews.slice(0, 4).map((r) => (
-                <div key={r.id} className="border-b border-ink-800 pb-3 last:border-0">
-                  <div className="flex items-center gap-2"><span className="text-sm font-semibold text-white">{r.reviewer?.full_name ?? r.reviewer?.username ?? "Anonymous"}</span><span className="text-xs text-ink-500">{timeAgo(r.created_at)}</span></div>
-                  <div className="flex mt-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} className={i < r.rating ? "text-warning-400 fill-warning-400" : "text-ink-700"} />)}</div>
-                  {r.comment && <p className="text-sm text-ink-300 mt-1">{r.comment}</p>}
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-sm text-ink-500">No reviews yet.</p>}
-        </div>
-      </div>
-    </div>
+
+      {/* Image Gallery Modal */}
+      {isModalOpen && (
+        <ImageGalleryModal
+          images={images}
+          currentIndex={modalImageIndex}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+    </>
   );
 }
 
