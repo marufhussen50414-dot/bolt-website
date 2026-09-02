@@ -31,7 +31,8 @@ export default function Login() {
 
   async function handleGoogle() {
     setError(""); setGoogleLoading(true);
-    const redirectTo = `${window.location.origin}${params.get("redirect") ?? "/profile"}`;
+    // Google Login-এর পর সরাসরি PKCE callback হ্যান্ডলার (/AuthCallback) পেজে পাঠাবে
+    const redirectTo = `${window.location.origin}/AuthCallback`;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo },
