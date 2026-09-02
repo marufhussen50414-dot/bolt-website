@@ -7,7 +7,7 @@ import type { GameListing, Review, Profile } from "../lib/types";
 import { formatBDT, timeAgo, classNames } from "../lib/utils";
 import { StatusBadge } from "../components/ListingCard";
 
-// Image Gallery Modal Component - Mobile friendly with isolated zoom
+// Image Gallery Modal Component - Perfect isolated zoom
 function ImageGalleryModal({ 
   images, 
   currentIndex, 
@@ -18,14 +18,13 @@ function ImageGalleryModal({
   onClose: () => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(currentIndex);
-  const [zoomLevel, setZoomLevel] = useState(1);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [startY, setStartY] = useState(0);
-  const [translateX, setTranslateX] = useState(0);
-  const [translateY, setTranslateY] = useState(0);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
   const modalRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   // Keyboard navigation
   useEffect(() => {
@@ -38,7 +37,7 @@ function ImageGalleryModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex]);
 
-  // Prevent body scroll when modal is open
+  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -46,50 +45,52 @@ function ImageGalleryModal({
     };
   }, []);
 
-  // Prevent browser zoom on mobile (pinch to zoom)
+  // 🔥 CRITICAL: Prevent ALL page zoom/scroll on mobile
   useEffect(() => {
-    const preventZoom = (e: TouchEvent) => {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
+    const preventTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
     };
     
-    const modalElement = modalRef.current;
-    if (modalElement) {
-      modalElement.addEventListener('touchmove', preventZoom, { passive: false });
+    const modal = modalRef.current;
+    if (modal) {
+      modal.addEventListener('touchmove', preventTouchMove, { passive: false });
     }
     
     return () => {
-      if (modalElement) {
-        modalElement.removeEventListener('touchmove', preventZoom);
+      if (modal) {
+        modal.removeEventListener('touchmove', preventTouchMove);
       }
     };
   }, []);
 
   const handlePrev = () => {
     setSelectedIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-    setZoomLevel(1);
-    setTranslateX(0);
-    setTranslateY(0);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
   };
 
   const handleNext = () => {
     setSelectedIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-    setZoomLevel(1);
-    setTranslateX(0);
-    setTranslateY(0);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
   };
 
   const handleZoomIn = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setZoomLevel((prev) => Math.min(prev + 0.5, 3));
+    setScale((prev) => Math.min(prev + 0.3, 3));
   };
 
   const handleZoomOut = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setZoomLevel((prev) => Math.max(prev - 0.5, 0.5));
+    setScale((prev) => {
+      const newScale = Math.max(prev - 0.3, 0.5);
+      if (newScale === 1) {
+        setPosition({ x: 0, y: 0 });
+      }
+      return newScale;
+    });
   };
 
   // Mouse wheel zoom
@@ -97,30 +98,62 @@ function ImageGalleryModal({
     e.preventDefault();
     e.stopPropagation();
     if (e.deltaY < 0) {
-      setZoomLevel((prev) => Math.min(prev + 0.2, 3));
+      setScale((prev) => Math.min(prev + 0.2, 3));
     } else {
-      setZoomLevel((prev) => Math.max(prev - 0.2, 0.5));
+      setScale((prev) => {
+        const newScale = Math.max(prev - 0.2, 0.5);
+        if (newScale === 1) {
+          setPosition({ x: 0, y: 0 });
+        }
+        return newScale;
+      });
     }
   };
 
-  // Touch drag for panning when zoomed
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (zoomLevel > 1) {
-      const touch = e.touches[0];
-      setStartX(touch.clientX);
-      setStartY(touch.clientY);
+  // Mouse drag for panning
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale > 1) {
       setIsDragging(true);
+      setDragStart({ x: e.clientX, y: e.clientY });
+      setLastPosition({ x: position.x, y: position.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && scale > 1) {
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      setPosition({
+        x: lastPosition.x + deltaX,
+        y: lastPosition.y + deltaY
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Touch drag for panning
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (scale > 1 && e.touches.length === 1) {
+      const touch = e.touches[0];
+      setIsDragging(true);
+      setDragStart({ x: touch.clientX, y: touch.clientY });
+      setLastPosition({ x: position.x, y: position.y });
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isDragging && zoomLevel > 1) {
+    if (isDragging && scale > 1 && e.touches.length === 1) {
       e.preventDefault();
       const touch = e.touches[0];
-      const deltaX = touch.clientX - startX;
-      const deltaY = touch.clientY - startY;
-      setTranslateX(deltaX);
-      setTranslateY(deltaY);
+      const deltaX = touch.clientX - dragStart.x;
+      const deltaY = touch.clientY - dragStart.y;
+      setPosition({
+        x: lastPosition.x + deltaX,
+        y: lastPosition.y + deltaY
+      });
     }
   };
 
@@ -128,23 +161,33 @@ function ImageGalleryModal({
     setIsDragging(false);
   };
 
-  // Double tap to reset zoom
+  // Double click/tap to reset
   const handleDoubleClick = () => {
-    setZoomLevel(1);
-    setTranslateX(0);
-    setTranslateY(0);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
   };
+
+  // Reset position when scale goes back to 1
+  useEffect(() => {
+    if (scale === 1) {
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [scale]);
 
   if (!images || images.length === 0) return null;
 
   return (
     <div 
       ref={modalRef}
-      className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
+      className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center select-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -152,25 +195,25 @@ function ImageGalleryModal({
       {/* Close Button */}
       <button 
         onClick={onClose}
-        className="absolute top-4 right-4 text-white hover:text-gray-300 transition z-10 bg-black/50 p-2 rounded-full hover:bg-black/70"
+        className="absolute top-4 right-4 text-white hover:text-gray-300 transition z-20 bg-black/50 p-2 rounded-full hover:bg-black/70"
       >
         <X size={28} />
       </button>
 
       {/* Image Counter */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-1.5 rounded-full">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-4 py-1.5 rounded-full z-20">
         {selectedIndex + 1} / {images.length}
       </div>
 
       {/* Zoom Controls */}
-      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-2 rounded-lg backdrop-blur-sm">
+      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-2 rounded-lg backdrop-blur-sm z-20">
         <button 
           onClick={handleZoomOut} 
           className="text-white hover:text-gray-300 p-1.5 transition"
         >
           <ZoomOut size={22} />
         </button>
-        <span className="text-white text-xs flex items-center px-2 min-w-[40px] justify-center">{Math.round(zoomLevel * 100)}%</span>
+        <span className="text-white text-xs flex items-center px-2 min-w-[40px] justify-center">{Math.round(scale * 100)}%</span>
         <button 
           onClick={handleZoomIn} 
           className="text-white hover:text-gray-300 p-1.5 transition"
@@ -179,66 +222,53 @@ function ImageGalleryModal({
         </button>
       </div>
 
-      {/* Navigation Buttons - Hide on mobile when zoomed */}
-      {images.length > 1 && zoomLevel === 1 && (
+      {/* Navigation Buttons */}
+      {images.length > 1 && scale === 1 && (
         <>
           <button 
             onClick={handlePrev}
-            className="absolute left-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70 hidden sm:block"
-          >
-            <ChevronLeft size={32} />
-          </button>
-          <button 
-            onClick={handleNext}
-            className="absolute right-4 text-white hover:text-gray-300 transition bg-black/50 p-2 rounded-full hover:bg-black/70 hidden sm:block"
-          >
-            <ChevronRight size={32} />
-          </button>
-        </>
-      )}
-
-      {/* Mobile swipe indicators */}
-      {images.length > 1 && zoomLevel === 1 && (
-        <>
-          <button 
-            onClick={handlePrev}
-            className="absolute left-2 text-white hover:text-gray-300 transition bg-black/50 p-1.5 rounded-full hover:bg-black/70 sm:hidden"
+            className="absolute left-2 md:left-4 text-white hover:text-gray-300 transition bg-black/50 p-1.5 md:p-2 rounded-full hover:bg-black/70 z-20"
           >
             <ChevronLeft size={24} />
           </button>
           <button 
             onClick={handleNext}
-            className="absolute right-2 text-white hover:text-gray-300 transition bg-black/50 p-1.5 rounded-full hover:bg-black/70 sm:hidden"
+            className="absolute right-2 md:right-4 text-white hover:text-gray-300 transition bg-black/50 p-1.5 md:p-2 rounded-full hover:bg-black/70 z-20"
           >
             <ChevronRight size={24} />
           </button>
         </>
       )}
 
-      {/* Main Image */}
-      <div className="w-[100vw] h-[100vh] flex items-center justify-center overflow-hidden">
+      {/* Image Container */}
+      <div 
+        ref={imageContainerRef}
+        className="w-full h-full flex items-center justify-center overflow-hidden"
+        style={{ cursor: scale > 1 ? 'grab' : 'default' }}
+      >
         <img
-          ref={imageRef}
           src={images[selectedIndex]}
           alt={`Product image ${selectedIndex + 1}`}
           style={{ 
-            transform: `scale(${zoomLevel}) translate(${translateX / zoomLevel}px, ${translateY / zoomLevel}px)`,
-            transition: isDragging ? 'none' : 'transform 0.2s ease'
+            transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
+            transition: isDragging ? 'none' : 'transform 0.2s ease',
+            maxWidth: '95%',
+            maxHeight: '85%'
           }}
-          className="max-w-[95vw] max-h-[85vh] object-contain select-none"
+          className="object-contain select-none"
           draggable={false}
           onDoubleClick={handleDoubleClick}
         />
       </div>
 
       {/* Thumbnails */}
-      {images.length > 1 && zoomLevel === 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[85vw] overflow-x-auto p-2 scrollbar-hide">
+      {images.length > 1 && scale === 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-[85vw] overflow-x-auto p-2 scrollbar-hide z-20">
           {images.map((img, idx) => (
             <button
               key={idx}
-              onClick={() => { setSelectedIndex(idx); setZoomLevel(1); setTranslateX(0); setTranslateY(0); }}
-              className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
+              onClick={() => { setSelectedIndex(idx); setScale(1); setPosition({ x: 0, y: 0 }); }}
+              className={`w-12 h-12 md:w-14 md:h-14 flex-shrink-0 rounded-lg overflow-hidden border-2 transition ${
                 idx === selectedIndex ? 'border-primary-500 ring-2 ring-primary-500/50' : 'border-transparent hover:border-gray-500'
               }`}
             >
@@ -248,9 +278,9 @@ function ImageGalleryModal({
         </div>
       )}
 
-      {/* Zoom hint */}
-      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 text-ink-500 text-xs opacity-50 select-none">
-        {zoomLevel === 1 ? '🖱️ Scroll to zoom • Double tap to reset' : '✋ Drag to pan • Double tap to reset'}
+      {/* Hint */}
+      <div className="absolute bottom-32 left-1/2 -translate-x-1/2 text-ink-400 text-xs opacity-50 select-none z-10">
+        {scale === 1 ? '🖱️ Scroll to zoom • Double tap to reset' : '✋ Drag to pan • Double tap to reset'}
       </div>
     </div>
   );
@@ -276,8 +306,6 @@ export default function ListingDetail() {
       const revRes = await supabase.from("reviews").select("*, reviewer:profiles(full_name, username, avatar_url)").eq("reviewee_id", (data as GameListing).seller_id).order("created_at", { ascending: false });
       setReviews((revRes.data as Review[]) ?? []);
       setLoading(false);
-      // Record a unique view: the server-side function excludes the owner and
-      // dedupes so each user/session only increments the count once per listing.
       if (!isOwnerView(data as GameListing, user?.id)) {
         const sessionId = getOrCreateSessionId();
         const { data: newCount } = await supabase.rpc("record_listing_view", {
@@ -311,7 +339,6 @@ export default function ListingDetail() {
         <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-white mb-4"><ArrowLeft size={16} /> Go back</button>
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            {/* Main Image - Clickable */}
             <div 
               className="card overflow-hidden cursor-zoom-in relative group"
               onClick={() => handleImageClick(activeImg)}
@@ -333,7 +360,6 @@ export default function ListingDetail() {
               </div>
             </div>
             
-            {/* Thumbnails - Clickable */}
             {images.length > 1 && (
               <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
                 {images.map((img, i) => (
