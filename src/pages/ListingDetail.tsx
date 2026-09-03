@@ -7,7 +7,7 @@ import type { GameListing, Review, Profile } from "../lib/types";
 import { formatBDT, timeAgo, classNames } from "../lib/utils";
 import { StatusBadge } from "../components/ListingCard";
 
-// Image Gallery Modal Component - Perfect isolated zoom
+// Image Gallery Modal Component - With Pinch Zoom
 function ImageGalleryModal({ 
   images, 
   currentIndex, 
@@ -23,6 +23,12 @@ function ImageGalleryModal({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
+  
+  // Pinch zoom states
+  const [pinchStartDist, setPinchStartDist] = useState(0);
+  const [pinchStartScale, setPinchStartScale] = useState(1);
+  const [isPinching, setIsPinching] = useState(false);
+  
   const modalRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
@@ -42,24 +48,6 @@ function ImageGalleryModal({
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
-    };
-  }, []);
-
-  // 🔥 CRITICAL: Prevent ALL page zoom/scroll on mobile
-  useEffect(() => {
-    const preventTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-    
-    const modal = modalRef.current;
-    if (modal) {
-      modal.addEventListener('touchmove', preventTouchMove, { passive: false });
-    }
-    
-    return () => {
-      if (modal) {
-        modal.removeEventListener('touchmove', preventTouchMove);
-      }
     };
   }, []);
 
@@ -93,7 +81,7 @@ function ImageGalleryModal({
     });
   };
 
-  // Mouse wheel zoom
+  // Mouse wheel zoom (for desktop)
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -134,20 +122,52 @@ function ImageGalleryModal({
     setIsDragging(false);
   };
 
-  // Touch drag for panning
+  // 🔥 PINCH ZOOM - Get distance between two fingers
+  const getDistance = (touches: TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // 🔥 PINCH ZOOM - Touch start
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (scale > 1 && e.touches.length === 1) {
-      const touch = e.touches[0];
+    const touches = e.touches;
+    
+    if (touches.length === 2) {
+      // Pinch zoom started
+      setIsPinching(true);
+      const dist = getDistance(touches);
+      setPinchStartDist(dist);
+      setPinchStartScale(scale);
+    } else if (touches.length === 1 && scale > 1) {
+      // Single finger drag (pan)
+      const touch = touches[0];
       setIsDragging(true);
       setDragStart({ x: touch.clientX, y: touch.clientY });
       setLastPosition({ x: position.x, y: position.y });
     }
   };
 
+  // 🔥 PINCH ZOOM - Touch move
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (isDragging && scale > 1 && e.touches.length === 1) {
+    const touches = e.touches;
+    
+    if (touches.length === 2 && isPinching) {
+      // Pinch zoom
       e.preventDefault();
-      const touch = e.touches[0];
+      const dist = getDistance(touches);
+      const delta = dist / pinchStartDist;
+      let newScale = Math.min(Math.max(pinchStartScale * delta, 0.5), 3);
+      setScale(newScale);
+      
+      if (newScale === 1) {
+        setPosition({ x: 0, y: 0 });
+      }
+    } else if (touches.length === 1 && isDragging && scale > 1) {
+      // Pan
+      e.preventDefault();
+      const touch = touches[0];
       const deltaX = touch.clientX - dragStart.x;
       const deltaY = touch.clientY - dragStart.y;
       setPosition({
@@ -157,8 +177,10 @@ function ImageGalleryModal({
     }
   };
 
-  const handleTouchEnd = () => {
+  // 🔥 PINCH ZOOM - Touch end
+  const handleTouchEnd = (e: React.TouchEvent) => {
     setIsDragging(false);
+    setIsPinching(false);
   };
 
   // Double click/tap to reset
@@ -179,7 +201,7 @@ function ImageGalleryModal({
   return (
     <div 
       ref={modalRef}
-      className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center select-none"
+      className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center select-none touch-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -222,7 +244,7 @@ function ImageGalleryModal({
         </button>
       </div>
 
-      {/* Navigation Buttons */}
+      {/* Navigation Buttons - hide when zoomed */}
       {images.length > 1 && scale === 1 && (
         <>
           <button 
@@ -251,9 +273,10 @@ function ImageGalleryModal({
           alt={`Product image ${selectedIndex + 1}`}
           style={{ 
             transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-            transition: isDragging ? 'none' : 'transform 0.2s ease',
+            transition: (isDragging || isPinching) ? 'none' : 'transform 0.2s ease',
             maxWidth: '95%',
-            maxHeight: '85%'
+            maxHeight: '85%',
+            touchAction: 'none'
           }}
           className="object-contain select-none"
           draggable={false}
@@ -280,7 +303,7 @@ function ImageGalleryModal({
 
       {/* Hint */}
       <div className="absolute bottom-32 left-1/2 -translate-x-1/2 text-ink-400 text-xs opacity-50 select-none z-10">
-        {scale === 1 ? '🖱️ Scroll to zoom • Double tap to reset' : '✋ Drag to pan • Double tap to reset'}
+        {scale === 1 ? '🖱️ Scroll to zoom • Pinch to zoom' : '✋ Drag to pan • Double tap to reset'}
       </div>
     </div>
   );
