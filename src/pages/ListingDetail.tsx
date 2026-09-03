@@ -30,7 +30,6 @@ function ImageGalleryModal({
   const [isPinching, setIsPinching] = useState(false);
   
   const modalRef = useRef<HTMLDivElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   // Keyboard navigation
   useEffect(() => {
@@ -122,8 +121,8 @@ function ImageGalleryModal({
     setIsDragging(false);
   };
 
-  // PINCH ZOOM - Get distance between two fingers
-  const getDistance = (touches: TouchList) => {
+  // FIXED: Get distance between two fingers - using TouchList properly
+  const getDistance = (touches: React.TouchList) => {
     if (touches.length < 2) return 0;
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
@@ -131,7 +130,7 @@ function ImageGalleryModal({
   };
 
   // PINCH ZOOM - Touch start
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     const touches = e.touches;
     
     if (touches.length === 2) {
@@ -150,7 +149,7 @@ function ImageGalleryModal({
   };
 
   // PINCH ZOOM - Touch move
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     const touches = e.touches;
     
     if (touches.length === 2 && isPinching) {
@@ -264,7 +263,6 @@ function ImageGalleryModal({
 
       {/* Image Container */}
       <div 
-        ref={imageContainerRef}
         className="w-full h-full flex items-center justify-center overflow-hidden"
         style={{ cursor: scale > 1 ? 'grab' : 'default' }}
       >
