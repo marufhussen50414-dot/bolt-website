@@ -122,7 +122,7 @@ function ImageGalleryModal({
     setIsDragging(false);
   };
 
-  // 🔥 PINCH ZOOM - Get distance between two fingers
+  // PINCH ZOOM - Get distance between two fingers
   const getDistance = (touches: TouchList) => {
     if (touches.length < 2) return 0;
     const dx = touches[0].clientX - touches[1].clientX;
@@ -130,7 +130,7 @@ function ImageGalleryModal({
     return Math.sqrt(dx * dx + dy * dy);
   };
 
-  // 🔥 PINCH ZOOM - Touch start
+  // PINCH ZOOM - Touch start
   const handleTouchStart = (e: React.TouchEvent) => {
     const touches = e.touches;
     
@@ -149,7 +149,7 @@ function ImageGalleryModal({
     }
   };
 
-  // 🔥 PINCH ZOOM - Touch move
+  // PINCH ZOOM - Touch move
   const handleTouchMove = (e: React.TouchEvent) => {
     const touches = e.touches;
     
@@ -177,8 +177,8 @@ function ImageGalleryModal({
     }
   };
 
-  // 🔥 PINCH ZOOM - Touch end
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  // PINCH ZOOM - Touch end
+  const handleTouchEnd = () => {
     setIsDragging(false);
     setIsPinching(false);
   };
