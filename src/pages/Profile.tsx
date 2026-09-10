@@ -706,10 +706,14 @@ function Row({ icon: Icon, label, value }: { icon: IconType; label: string; valu
 }
 
 function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" }) {
+  const navigate = useNavigate();
   return (
-    <div className="card p-3.5 flex items-center gap-3.5 border border-ink-800 shadow-sm hover:border-primary-500/30 transition-colors">
+    <div
+      onClick={() => navigate(`/order/${order.id}`)}
+      className="card p-3.5 flex items-center gap-3.5 border border-ink-800 shadow-sm hover:border-primary-500/30 hover:bg-ink-800/40 transition-all cursor-pointer"
+    >
       <div className="h-10 w-10 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
-      <Link to={`/listing/${order.listing_id}`} className="flex-1 min-w-0 text-sm font-medium text-white hover:text-primary-400 line-clamp-1">{order.listing?.title ?? "Account"}</Link>
+      <span className="flex-1 min-w-0 text-sm font-medium text-white line-clamp-1">{order.listing?.title ?? "Account"}</span>
       <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
       <StatusBadge status={order.status} />
     </div>
