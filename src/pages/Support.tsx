@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { LifeBuoy, MessageCircle, Mail, Phone, Send, Loader2, CheckCircle2, ShieldCheck, CreditCard, TrendingUp, AlertTriangle, User, Package } from "lucide-react";
+import { LifeBuoy, MessageCircle, Mail, Phone, Send, Loader2, CheckCircle2, ShieldCheck, CreditCard, TrendingUp, AlertTriangle, User, Package, ImagePlus, X } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 const supportCategories = [
   { id: "payment", label: "Payment Issue", icon: CreditCard },
@@ -15,13 +16,65 @@ export default function Support() {
   const [form, setForm] = useState({ name: "", email: "", category: "", subject: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   function update(k: keyof typeof form, v: string) { setForm((f) => ({ ...f, [k]: v })); }
 
+  function onPickImage() {
+    fileInputRef.current?.click();
+  }
+
+  function onFileChosen(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Please select an image file."); return; }
+    if (file.size > 8 * 1024 * 1024) { setError("Image must be under 8 MB."); return; }
+    setError(null);
+    setPendingFile(file);
+    setPendingImage(URL.createObjectURL(file));
+  }
+
+  function clearPendingImage() {
+    if (pendingImage) URL.revokeObjectURL(pendingImage);
+    setPendingImage(null);
+    setPendingFile(null);
+  }
+
   async function handleSubmit(e: FormEvent) {
-    e.preventDefault(); setLoading(true);
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (pendingFile) {
+      setUploadingImage(true);
+      const ext = pendingFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `tickets/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("support-attachments")
+        .upload(path, pendingFile, { cacheControl: "3600", upsert: false });
+      setUploadingImage(false);
+      if (upErr) {
+        setLoading(false);
+        setError(upErr.message);
+        return;
+      }
+    }
+
     await new Promise((r) => setTimeout(r, 900));
-    setLoading(false); setSubmitted(true);
+    setLoading(false);
+    setSubmitted(true);
+  }
+
+  function resetForm() {
+    setSubmitted(false);
+    setForm({ name: "", email: "", category: "", subject: "", message: "" });
+    clearPendingImage();
   }
 
   return (
@@ -52,7 +105,7 @@ export default function Support() {
               <CheckCircle2 size={48} className="mx-auto text-success-400" />
               <h3 className="font-display text-lg font-bold text-white mt-4">Ticket Submitted!</h3>
               <p className="text-sm text-ink-400 mt-1 max-w-sm mx-auto">We've received your request and will email you back at <span className="text-primary-400">{form.email}</span> within 24 hours.</p>
-              <button onClick={() => { setSubmitted(false); setForm({ name: "", email: "", category: "", subject: "", message: "" }); }} className="btn-secondary mt-5">Submit Another</button>
+              <button onClick={resetForm} className="btn-secondary mt-5">Submit Another</button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -70,7 +123,34 @@ export default function Support() {
               </div>
               <div><label className="label">Subject</label><input required value={form.subject} onChange={(e) => update("subject", e.target.value)} className="input" placeholder="Brief summary of the issue" /></div>
               <div><label className="label">Message</label><textarea required value={form.message} onChange={(e) => update("message", e.target.value)} rows={5} className="input" placeholder="Describe your issue in detail..." /></div>
-              <button type="submit" disabled={loading} className="btn-primary w-full">{loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />} Submit Ticket</button>
+
+              <div>
+                <label className="label">Attach Screenshot (optional)</label>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={onFileChosen} className="hidden" />
+                {pendingImage ? (
+                  <div className="flex items-center gap-3 rounded-xl border border-ink-700 bg-ink-900 p-3">
+                    <img src={pendingImage} alt="Attachment preview" className="h-14 w-14 rounded-lg object-cover shrink-0" />
+                    <p className="text-xs text-ink-300 flex-1 truncate">{pendingFile?.name}</p>
+                    <button type="button" onClick={clearPendingImage} className="p-1.5 text-ink-400 hover:text-white hover:bg-ink-800 rounded-lg transition-colors">
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onPickImage}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink-700 bg-ink-900 px-3 py-4 text-xs font-semibold text-ink-400 hover:border-primary-500/50 hover:text-primary-300 transition-colors"
+                  >
+                    <ImagePlus size={18} /> Add an image
+                  </button>
+                )}
+                {error && <p className="text-xs text-error-400 mt-1.5">{error}</p>}
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-primary w-full">
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                {uploadingImage ? "Uploading image..." : "Submit Ticket"}
+              </button>
             </form>
           )}
         </div>
