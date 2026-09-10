@@ -1,6 +1,7 @@
 import AuthCallback from './AuthCallback';
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
+import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import Browse from "./pages/Browse";
 import Sell from "./pages/Sell";
@@ -20,6 +21,7 @@ import Privacy from "./pages/Privacy";
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
+      <ScrollToTop />
       <Header />
       <main className="flex-1 pb-[84px] md:pb-0">
         <Routes>
