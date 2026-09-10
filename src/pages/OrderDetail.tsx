@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { formatBDT, timeAgo, statusClass, statusLabel } from "../lib/utils";
+import OrderRoadmap from "../components/OrderRoadmap";
 
 type OrderDetailRow = {
   id: string;
@@ -167,10 +168,10 @@ export default function OrderDetail() {
         </div>
       </div>
 
-      {/* Order timeline placeholder — roadmap to be added later */}
-      <div className="card p-5 border border-ink-800 border-dashed shadow-lg">
-        <h3 className="font-semibold text-white mb-1 flex items-center gap-2"><Map size={18} className="text-primary-400" /> Order Timeline</h3>
-        <p className="text-xs text-ink-500">Step-by-step order status (Order Placed → Payment Received → Completed) coming soon.</p>
+      {/* Order timeline */}
+      <div className="card p-5 border border-ink-800 shadow-lg">
+        <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Map size={18} className="text-primary-400" /> Order Timeline</h3>
+        <OrderRoadmap status={order.status} />
       </div>
 
       <div className="mt-5 flex justify-center">
