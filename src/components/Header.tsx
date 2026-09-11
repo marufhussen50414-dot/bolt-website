@@ -7,6 +7,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
+import PresenceDot from "./PresenceDot";
 import { classNames } from "../lib/utils";
 
 export default function Header() {
@@ -96,7 +97,7 @@ export default function Header() {
                     ) : (
                       <div className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-sm font-bold">{initials}</div>
                     )}
-                    <span className={classNames("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
+                    <PresenceDot userId={profile?.id} className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900" />
                   </div>
                   <span className="hidden sm:block text-sm font-semibold text-white max-w-[100px] truncate">{displayName}</span>
                 </Link>
