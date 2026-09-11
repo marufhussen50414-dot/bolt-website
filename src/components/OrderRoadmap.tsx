@@ -109,8 +109,8 @@ export default function OrderRoadmap({ status }: { status: OrderStatus | string 
           <div key={step.title} className="relative flex gap-4">
             {/* Connector line to the next node */}
             {!isLast && (
-              <div className="absolute left-[15px] top-8 bottom-0 w-0.5 overflow-hidden">
-                <div className={classNames("h-full w-full", step.state === "completed" ? "bg-success-500" : "bg-ink-700")} />
+              <div className="absolute left-5 top-10 bottom-0 w-0.5 overflow-hidden -translate-x-1/2">
+                <div className={classNames("h-full w-full", step.state === "completed" ? "bg-success-500" : "bg-ink-800")} />
                 {step.state === "active" && (
                   <div className="absolute left-1/2 top-0 -translate-x-1/2 h-3 w-3 rounded-full bg-primary-400 shadow-glow animate-road-flow" />
                 )}
@@ -118,57 +118,60 @@ export default function OrderRoadmap({ status }: { status: OrderStatus | string 
             )}
 
             {/* Node */}
-            <div className="relative z-10 shrink-0 pb-8">
+            <div className="relative z-10 shrink-0 pb-8 h-10 w-10 flex items-start justify-center">
               {step.state === "completed" && (
-                <div className="h-8 w-8 rounded-full bg-success-500 grid place-items-center text-white shadow-md">
-                  <Check size={16} strokeWidth={3} />
+                <div className="h-6 w-6 rounded-full bg-success-500 grid place-items-center text-white shadow-md">
+                  <Check size={13} strokeWidth={3} />
                 </div>
               )}
               {step.state === "active" && (
-                <span className="relative flex h-8 w-8">
+                <span className="relative flex h-10 w-10">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-60" />
-                  <span className="relative inline-flex h-8 w-8 rounded-full bg-primary-500 items-center justify-center text-white text-xs font-bold shadow-glow">
+                  <span className="relative inline-flex h-10 w-10 rounded-full bg-primary-500 items-center justify-center text-white text-sm font-bold shadow-glow ring-4 ring-primary-500/20">
                     {i + 1}
                   </span>
                 </span>
               )}
               {step.state === "disputed" && (
-                <span className="relative flex h-8 w-8">
+                <span className="relative flex h-10 w-10">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error-400 opacity-60" />
-                  <span className="relative inline-flex h-8 w-8 rounded-full bg-error-500 items-center justify-center text-white shadow-md">
-                    <X size={16} strokeWidth={3} />
+                  <span className="relative inline-flex h-10 w-10 rounded-full bg-error-500 items-center justify-center text-white shadow-md ring-4 ring-error-500/20">
+                    <X size={18} strokeWidth={3} />
                   </span>
                 </span>
               )}
               {step.state === "upcoming" && (
-                <div className="h-8 w-8 rounded-full border-2 border-ink-700 bg-ink-900 grid place-items-center text-ink-500 text-xs font-bold">
+                <div className="h-6 w-6 rounded-full border-2 border-ink-700 bg-ink-900 grid place-items-center text-ink-600 text-[10px] font-bold">
                   {i + 1}
                 </div>
               )}
             </div>
 
             {/* Info */}
-            <div className="flex-1 pt-1 pb-8">
+            <div className={classNames("flex-1 pb-8", step.state === "active" || step.state === "disputed" ? "pt-2" : "pt-1")}>
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className={classNames(
-                  "text-sm font-semibold",
+                  step.state === "active" || step.state === "disputed" ? "text-base font-bold" : "text-sm font-semibold",
                   step.state === "upcoming" ? "text-ink-500" : "text-white"
                 )}>
                   {step.title}
                 </h4>
-                <span className={classNames(
-                  "badge border px-2 py-0.5 text-[10px] font-semibold",
-                  step.state === "completed" && "bg-success-500/15 text-success-400 border-success-500/30",
-                  step.state === "active" && "bg-primary-500/15 text-primary-300 border-primary-500/30",
-                  step.state === "disputed" && "bg-error-500/15 text-error-400 border-error-500/30",
-                  step.state === "upcoming" && "bg-ink-800 text-ink-500 border-ink-700"
-                )}>
-                  {step.label}
-                </span>
+                {step.state !== "upcoming" && (
+                  <span className={classNames(
+                    "badge border px-2 py-0.5 text-[10px] font-semibold",
+                    step.state === "completed" && "bg-success-500/15 text-success-400 border-success-500/30",
+                    step.state === "active" && "bg-primary-500/15 text-primary-300 border-primary-500/30",
+                    step.state === "disputed" && "bg-error-500/15 text-error-400 border-error-500/30"
+                  )}>
+                    {step.label}
+                  </span>
+                )}
               </div>
-              <p className={classNames("text-xs mt-1", step.state === "upcoming" ? "text-ink-600" : "text-ink-400")}>
-                {step.dialogue}
-              </p>
+              {step.state !== "upcoming" && (
+                <p className={classNames("mt-1", step.state === "active" || step.state === "disputed" ? "text-sm text-ink-300" : "text-xs text-ink-500")}>
+                  {step.dialogue}
+                </p>
+              )}
             </div>
           </div>
         );
