@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, Package, User, Mail, Phone, CreditCard,
+  ArrowLeft, Loader2, User, Mail, Phone, CreditCard,
   Tag, Gavel, Calendar, CheckCircle2, AlertTriangle, Map,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -80,7 +80,7 @@ export default function OrderDetail() {
   const isBuyer = order.role === "buyer";
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
       <Link to="/profile" className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-white mb-5 transition-colors">
         <ArrowLeft size={16} /> Back to Profile
       </Link>
@@ -106,78 +106,75 @@ export default function OrderDetail() {
         </div>
       </div>
 
-      {/* Amount card */}
-      <div className="card p-5 border border-ink-800 shadow-lg mb-5">
-        <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Tag size={18} className="text-primary-400" /> Payment</h3>
-        <div className="space-y-2.5 text-sm">
-          <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
-            <span className="text-ink-400">Listing Price</span>
-            <span className="font-semibold text-white">{formatBDT(order.listing_price)}</span>
-          </div>
-          {order.offer_price != null && (
-            <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
-              <span className="text-ink-400 flex items-center gap-1.5"><Gavel size={14} className="text-accent-400" /> Purchased via Offer</span>
-              <span className="font-semibold text-accent-300">{formatBDT(order.offer_price)}</span>
+      <div className="grid lg:grid-cols-[1fr_380px] gap-5 items-start">
+        {/* Order timeline — left on desktop */}
+        <div className="card p-5 border border-ink-800 shadow-lg lg:order-1">
+          <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Map size={18} className="text-primary-400" /> Order Timeline</h3>
+          <OrderRoadmap status={order.status} />
+        </div>
+
+        {/* Payment + counterparty — right on desktop */}
+        <div className="space-y-5 lg:order-2">
+          <div className="card p-5 border border-ink-800 shadow-lg">
+            <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Tag size={18} className="text-primary-400" /> Payment</h3>
+            <div className="space-y-2.5 text-sm">
+              <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
+                <span className="text-ink-400">Listing Price</span>
+                <span className="font-semibold text-white">{formatBDT(order.listing_price)}</span>
+              </div>
+              {order.offer_price != null && (
+                <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
+                  <span className="text-ink-400 flex items-center gap-1.5"><Gavel size={14} className="text-accent-400" /> Purchased via Offer</span>
+                  <span className="font-semibold text-accent-300">{formatBDT(order.offer_price)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
+                <span className="text-ink-400">{isBuyer ? "You Paid" : "You'll Receive"}</span>
+                <span className="font-bold text-primary-300 text-base">{formatBDT(order.my_amount)}</span>
+              </div>
+              <div className="flex items-center justify-between py-1">
+                <span className="text-ink-400 flex items-center gap-1.5"><CreditCard size={14} /> Payment Method</span>
+                <span className="font-semibold text-white capitalize">{order.payment_method}{order.payment_number ? ` · ${order.payment_number}` : ""}</span>
+              </div>
             </div>
-          )}
-          <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
-            <span className="text-ink-400">{isBuyer ? "You Paid" : "You'll Receive"}</span>
-            <span className="font-bold text-primary-300 text-base">{formatBDT(order.my_amount)}</span>
           </div>
-          <div className="flex items-center justify-between py-1">
-            <span className="text-ink-400 flex items-center gap-1.5"><CreditCard size={14} /> Payment Method</span>
-            <span className="font-semibold text-white capitalize">{order.payment_method}{order.payment_number ? ` · ${order.payment_number}` : ""}</span>
+
+          <div className="card p-5 border border-ink-800 shadow-lg">
+            <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+              <User size={18} className="text-primary-400" /> {isBuyer ? "Seller" : "Buyer"} Information
+            </h3>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white font-bold overflow-hidden shrink-0">
+                {order.counterparty_avatar ? (
+                  <img src={order.counterparty_avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (order.counterparty_name ?? "U").trim()[0]?.toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-white truncate">{order.counterparty_name ?? "Unknown"}</p>
+                {order.counterparty_username && <p className="text-xs text-ink-500">@{order.counterparty_username}</p>}
+              </div>
+            </div>
+            <div className="space-y-2 text-sm">
+              {order.counterparty_email && (
+                <div className="flex items-center gap-2.5">
+                  <Mail size={15} className="text-ink-500 shrink-0" />
+                  <span className="text-ink-200">{order.counterparty_email}</span>
+                </div>
+              )}
+              {order.counterparty_phone && (
+                <div className="flex items-center gap-2.5">
+                  <Phone size={15} className="text-ink-500 shrink-0" />
+                  <span className="text-ink-200">{order.counterparty_phone}</span>
+                </div>
+              )}
+              {!order.counterparty_email && !order.counterparty_phone && (
+                <p className="text-ink-500 text-xs">No contact info on file.</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Counterparty card */}
-      <div className="card p-5 border border-ink-800 shadow-lg mb-5">
-        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-          <User size={18} className="text-primary-400" /> {isBuyer ? "Seller" : "Buyer"} Information
-        </h3>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white font-bold overflow-hidden shrink-0">
-            {order.counterparty_avatar ? (
-              <img src={order.counterparty_avatar} alt="" className="h-full w-full object-cover" />
-            ) : (
-              (order.counterparty_name ?? "U").trim()[0]?.toUpperCase()
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-white truncate">{order.counterparty_name ?? "Unknown"}</p>
-            {order.counterparty_username && <p className="text-xs text-ink-500">@{order.counterparty_username}</p>}
-          </div>
-        </div>
-        <div className="space-y-2 text-sm">
-          {order.counterparty_email && (
-            <div className="flex items-center gap-2.5">
-              <Mail size={15} className="text-ink-500 shrink-0" />
-              <span className="text-ink-200">{order.counterparty_email}</span>
-            </div>
-          )}
-          {order.counterparty_phone && (
-            <div className="flex items-center gap-2.5">
-              <Phone size={15} className="text-ink-500 shrink-0" />
-              <span className="text-ink-200">{order.counterparty_phone}</span>
-            </div>
-          )}
-          {!order.counterparty_email && !order.counterparty_phone && (
-            <p className="text-ink-500 text-xs">No contact info on file.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Order timeline */}
-      <div className="card p-5 border border-ink-800 shadow-lg">
-        <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Map size={18} className="text-primary-400" /> Order Timeline</h3>
-        <OrderRoadmap status={order.status} />
-      </div>
-
-      <div className="mt-5 flex justify-center">
-        <Link to={`/listing/${order.listing_id}`} className="text-xs font-semibold text-primary-400 hover:text-primary-300 inline-flex items-center gap-1.5">
-          <Package size={14} /> View Listing
-        </Link>
       </div>
     </div>
   );
