@@ -11,6 +11,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { GameListing, Order, Review } from "../lib/types";
 import { formatBDT, timeAgo, classNames, IconType } from "../lib/utils";
+import PresenceDot from "../components/PresenceDot";
 
 type Tab = "overview" | "payment" | "security" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
 
@@ -251,7 +252,7 @@ export default function Profile() {
                     {initials}
                   </div>
                 )}
-                <span className={classNames("absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-ink-900 shadow-md", profile?.is_online ? "bg-success-400" : "bg-ink-500")} />
+                <PresenceDot userId={profile?.id} className="absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-ink-900 shadow-md" />
               </Link>
 
               <div className="pt-2 sm:pt-0">

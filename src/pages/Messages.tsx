@@ -9,6 +9,8 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { Conversation, GameListing, Message, Offer, Order, Profile } from "../lib/types";
 import { classNames, timeAgo, formatBDT } from "../lib/utils";
+import PresenceDot from "../components/PresenceDot";
+import PresenceLabel from "../components/PresenceLabel";
 
 type ConversationRow = Conversation & {
   listing: Pick<GameListing, "id" | "title" | "price" | "images"> | null;
@@ -769,6 +771,7 @@ export default function Messages() {
                           {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
                         </div>
                       )}
+                      <PresenceDot userId={other?.id} className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ink-900" />
                       {unread > 0 && <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-cyan-400 px-1 text-[11px] font-bold text-black">{unread}</span>}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -814,11 +817,16 @@ export default function Messages() {
                   >
                     {(() => {
                       const other = otherParty(active);
-                      return other?.avatar_url ? (
-                        <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-1 ring-ink-700" />
-                      ) : (
-                        <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 text-white text-sm font-bold">
-                          {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
+                      return (
+                        <div className="relative shrink-0">
+                          {other?.avatar_url ? (
+                            <img src={other.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover ring-1 ring-ink-700" />
+                          ) : (
+                            <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-cyan-600 to-blue-700 text-white text-sm font-bold">
+                              {(other?.full_name ?? other?.username ?? "U")[0]?.toUpperCase()}
+                            </div>
+                          )}
+                          <PresenceDot userId={other?.id} className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900" />
                         </div>
                       );
                     })()}
@@ -827,7 +835,7 @@ export default function Messages() {
                         {otherParty(active)?.full_name ?? otherParty(active)?.username ?? "User"}
                         {otherParty(active)?.is_verified && <ShieldCheck size={13} className="text-cyan-400" />}
                       </p>
-                      <p className="text-[11px] text-cyan-400 font-medium">online</p>
+                      <PresenceLabel userId={otherParty(active)?.id} className="text-[11px] font-medium" />
                     </div>
                   </Link>
                 </div>

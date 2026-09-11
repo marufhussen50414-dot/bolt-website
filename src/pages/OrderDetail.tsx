@@ -7,6 +7,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { formatBDT, timeAgo, statusClass, statusLabel } from "../lib/utils";
 import OrderRoadmap from "../components/OrderRoadmap";
+import PresenceDot from "../components/PresenceDot";
 
 type OrderDetailRow = {
   id: string;
@@ -144,12 +145,15 @@ export default function OrderDetail() {
               <User size={18} className="text-primary-400" /> {isBuyer ? "Seller" : "Buyer"} Information
             </h3>
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white font-bold overflow-hidden shrink-0">
-                {order.counterparty_avatar ? (
-                  <img src={order.counterparty_avatar} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  (order.counterparty_name ?? "U").trim()[0]?.toUpperCase()
-                )}
+              <div className="relative shrink-0">
+                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white font-bold overflow-hidden">
+                  {order.counterparty_avatar ? (
+                    <img src={order.counterparty_avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (order.counterparty_name ?? "U").trim()[0]?.toUpperCase()
+                  )}
+                </div>
+                <PresenceDot userId={order.counterparty_id} className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ink-900" />
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-white truncate">{order.counterparty_name ?? "Unknown"}</p>

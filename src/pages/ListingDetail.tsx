@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import type { GameListing, Review, Profile } from "../lib/types";
 import { formatBDT, timeAgo, classNames } from "../lib/utils";
 import { StatusBadge } from "../components/ListingCard";
+import PresenceDot from "../components/PresenceDot";
 
 // Image Gallery Modal Component - With Pinch Zoom
 function ImageGalleryModal({ 
@@ -437,7 +438,12 @@ export default function ListingDetail() {
               <div className="card p-5">
                 <h3 className="font-semibold text-white mb-3">Seller</h3>
                 <div className="flex items-center gap-3">
-                  <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white font-bold">{(seller.full_name ?? seller.username)?.[0]?.toUpperCase()}</div>
+                  <div className="relative shrink-0">
+                    <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white font-bold overflow-hidden">
+                      {seller.avatar_url ? <img src={seller.avatar_url} alt="" className="h-full w-full object-cover" /> : (seller.full_name ?? seller.username)?.[0]?.toUpperCase()}
+                    </div>
+                    <PresenceDot userId={seller.id} className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ink-900" />
+                  </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-1.5"><span className="font-semibold text-white">{seller.full_name ?? seller.username}</span>{seller.is_verified && <ShieldCheck size={15} className="text-success-400" />}</div>
                     <div className="flex items-center gap-2 text-xs text-ink-400 mt-0.5"><span className="flex items-center gap-0.5 text-warning-400"><Star size={11} className="fill-warning-400" /> {Number(seller.trust_score).toFixed(1)}</span><span>•</span><span>{seller.total_sales} sales</span></div>
