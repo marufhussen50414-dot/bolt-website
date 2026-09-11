@@ -110,7 +110,7 @@ export default function OrderDetail() {
         {/* Order timeline — left on desktop */}
         <div className="card p-5 border border-ink-800 shadow-lg lg:order-1">
           <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Map size={18} className="text-primary-400" /> Order Timeline</h3>
-          <OrderRoadmap status={order.status} />
+          <OrderRoadmap status={order.status} role={order.role} />
         </div>
 
         {/* Payment + counterparty — right on desktop */}
