@@ -117,10 +117,11 @@ export default function Profile() {
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   const CLOSED_STATUSES = new Set(["completed", "cancelled", "refunded"]);
-  const activeSellOrders = sellOrders.filter((o) => !CLOSED_STATUSES.has(o.status));
-  const activeBuyOrders = buyOrders.filter((o) => !CLOSED_STATUSES.has(o.status));
-  const closedSellOrders = sellOrders.filter((o) => CLOSED_STATUSES.has(o.status));
-  const closedBuyOrders = buyOrders.filter((o) => CLOSED_STATUSES.has(o.status));
+  const isOrderClosed = (o: Order) => CLOSED_STATUSES.has(o.status) || o.workflow_status === "step5_released";
+  const activeSellOrders = sellOrders.filter((o) => !isOrderClosed(o));
+  const activeBuyOrders = buyOrders.filter((o) => !isOrderClosed(o));
+  const closedSellOrders = sellOrders.filter((o) => isOrderClosed(o));
+  const closedBuyOrders = buyOrders.filter((o) => isOrderClosed(o));
 
   const completionFields = [profile?.full_name, profile?.bio, profile?.avatar_url, profile?.location, profile?.phone];
   const filledCount = completionFields.filter(Boolean).length;
@@ -748,20 +749,21 @@ function ClosedOrderRow({ order, role }: { order: Order; role: "buyer" | "seller
       <div className="h-10 w-10 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
       <span className="flex-1 min-w-0 text-sm font-medium text-white line-clamp-1">{order.listing?.title ?? "Account"}</span>
       <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
-      <FinalStatusBadge status={order.status} />
+      <FinalStatusBadge order={order} />
     </div>
   );
 }
 
-function FinalStatusBadge({ status }: { status: string }) {
+function FinalStatusBadge({ order }: { order: Order }) {
   const styles: Record<string, string> = {
     completed: "bg-success-500/15 text-success-400 border-success-500/30",
     cancelled: "bg-ink-800 text-ink-300 border-ink-700",
     refunded: "bg-warning-500/15 text-warning-400 border-warning-500/30",
   };
+  const label = order.workflow_status === "step5_released" && order.status !== "cancelled" && order.status !== "refunded" ? "completed" : order.status;
   return (
-    <span className={classNames("badge border px-2.5 py-0.5 text-xs font-semibold capitalize", styles[status] || "bg-ink-800 text-ink-300 border-ink-700")}>
-      {status}
+    <span className={classNames("badge border px-2.5 py-0.5 text-xs font-semibold capitalize", styles[label] || "bg-ink-800 text-ink-300 border-ink-700")}>
+      {label}
     </span>
   );
 }

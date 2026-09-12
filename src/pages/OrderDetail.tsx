@@ -5,7 +5,8 @@ import {
   Tag, Gavel, Calendar, CheckCircle2, AlertTriangle, Map,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import { formatBDT, timeAgo, statusClass, statusLabel } from "../lib/utils";
+import { formatBDT, timeAgo } from "../lib/utils";
+import { getWorkflowStatusMeta } from "../components/OrderRoadmap";
 import OrderRoadmap from "../components/OrderRoadmap";
 import PresenceDot from "../components/PresenceDot";
 
@@ -96,9 +97,7 @@ export default function OrderDetail() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-display text-lg font-bold text-white">{order.listing_title}</h1>
-              <span className={`badge border px-2.5 py-0.5 text-xs font-semibold capitalize ${statusClass(order.status)}`}>
-                {statusLabel(order.status)}
-              </span>
+              <HeaderStatusBadge status={order.status} workflowStatus={order.workflow_status} role={order.role as "buyer" | "seller"} />
             </div>
             <p className="text-xs text-ink-500 mt-1 flex items-center gap-1.5">
               <Calendar size={13} /> Ordered {timeAgo(order.created_at)}
@@ -183,4 +182,18 @@ export default function OrderDetail() {
       </div>
     </div>
   );
+}
+
+function HeaderStatusBadge({ status, workflowStatus, role }: { status: string; workflowStatus: string | null; role: "buyer" | "seller" }) {
+  if (status === "cancelled" || status === "refunded") {
+    const cls = status === "refunded" ? "bg-warning-500/15 text-warning-400 border-warning-500/30" : "bg-ink-800 text-ink-300 border-ink-700";
+    return <span className={`badge border px-2.5 py-0.5 text-xs font-semibold capitalize ${cls}`}>{status}</span>;
+  }
+  const meta = getWorkflowStatusMeta(workflowStatus, role);
+  const cls = meta.isDisputed
+    ? "bg-error-500/15 text-error-400 border-error-500/30"
+    : meta.isFinal
+    ? "bg-success-500/15 text-success-400 border-success-500/30"
+    : "bg-primary-500/15 text-primary-400 border-primary-500/30";
+  return <span className={`badge border px-2.5 py-0.5 text-xs font-semibold ${cls}`}>{meta.label}</span>;
 }
