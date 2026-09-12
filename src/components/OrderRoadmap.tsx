@@ -66,7 +66,7 @@ const STEP_TITLES: Record<Role, string[]> = {
     "Payment Received",
     "Waiting for Account Info",
     "Account Transfer & Verification",
-    "Payment Processing",
+    "Payment Status",
   ],
 };
 
