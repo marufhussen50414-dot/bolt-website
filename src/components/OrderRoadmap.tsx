@@ -197,7 +197,8 @@ function buildSteps(workflowStatus: string | null | undefined, role: Role): Road
       return { title, label: metaLabel(meta, role), dialogue: metaDialogue(meta, role), state: "completed" };
     }
     if (stepNum === currentStep) {
-      return { title, label: metaLabel(current, role), dialogue: metaDialogue(current, role), state: "active" };
+      const state: StepState = status === "step5_released" ? "completed" : "active";
+      return { title, label: metaLabel(current, role), dialogue: metaDialogue(current, role), state };
     }
     const meta = STATUS_META[START_STATUS_BY_STEP[stepNum]];
     return { title, label: metaLabel(meta, role), dialogue: metaDialogue(meta, role), state: "upcoming" };
