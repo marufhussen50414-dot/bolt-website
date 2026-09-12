@@ -146,3 +146,4 @@ export type Message = {
   image_url: string | null;
   offer?: Offer | null;
 };
+ 
