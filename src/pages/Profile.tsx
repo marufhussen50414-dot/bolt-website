@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import type { GameListing, Order, Review } from "../lib/types";
 import { formatBDT, timeAgo, classNames, IconType } from "../lib/utils";
 import PresenceDot from "../components/PresenceDot";
+import { getWorkflowStatusMeta } from "../components/OrderRoadmap";
 
 type Tab = "overview" | "payment" | "security" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
 
@@ -716,21 +717,21 @@ function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" 
       <div className="h-10 w-10 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
       <span className="flex-1 min-w-0 text-sm font-medium text-white line-clamp-1">{order.listing?.title ?? "Account"}</span>
       <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
-      <StatusBadge status={order.status} />
+      <StatusBadge workflowStatus={order.workflow_status} role={role} />
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    completed: "bg-success-500/15 text-success-400 border-success-500/30",
-    pending: "bg-warning-500/15 text-warning-400 border-warning-500/30",
-    cancelled: "bg-error-500/15 text-error-400 border-error-500/30",
-    processing: "bg-primary-500/15 text-primary-400 border-primary-500/30",
-  };
+function StatusBadge({ workflowStatus, role }: { workflowStatus: string | null; role: "buyer" | "seller" }) {
+  const meta = getWorkflowStatusMeta(workflowStatus, role);
+  const tone = meta.isDisputed
+    ? "bg-error-500/15 text-error-400 border-error-500/30"
+    : meta.isFinal
+    ? "bg-success-500/15 text-success-400 border-success-500/30"
+    : "bg-primary-500/15 text-primary-400 border-primary-500/30";
   return (
-    <span className={classNames("badge border px-2.5 py-0.5 text-xs font-semibold capitalize", styles[status] || "bg-ink-800 text-ink-300 border-ink-700")}>
-      {status}
+    <span className={classNames("badge border px-2.5 py-0.5 text-xs font-semibold", tone)}>
+      {meta.label}
     </span>
   );
 }
