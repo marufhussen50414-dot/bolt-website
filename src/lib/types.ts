@@ -76,6 +76,8 @@ export type Order = {
   payment_number: string | null;
   status: OrderStatus;
   workflow_status: string | null;
+  workflow_completed_at: string | null;
+  order_number: string;
   escrow_released: boolean;
   completed_at: string | null;
   delivery_password: string | null;
