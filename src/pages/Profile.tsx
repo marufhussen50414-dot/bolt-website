@@ -117,7 +117,11 @@ export default function Profile() {
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
   const CLOSED_STATUSES = new Set(["completed", "cancelled", "refunded"]);
-  const isOrderClosed = (o: Order) => CLOSED_STATUSES.has(o.status) || o.workflow_status === "step5_released";
+  const GRACE_HOURS = 72;
+  const isOrderFinished = (o: Order) => o.workflow_status === "step5_released";
+  const hoursSinceCompletion = (o: Order) =>
+    o.workflow_completed_at ? (Date.now() - new Date(o.workflow_completed_at).getTime()) / 3600000 : Infinity;
+  const isOrderClosed = (o: Order) => CLOSED_STATUSES.has(o.status) || (isOrderFinished(o) && hoursSinceCompletion(o) >= GRACE_HOURS);
   const activeSellOrders = sellOrders.filter((o) => !isOrderClosed(o));
   const activeBuyOrders = buyOrders.filter((o) => !isOrderClosed(o));
   const closedSellOrders = sellOrders.filter((o) => isOrderClosed(o));
@@ -778,12 +782,23 @@ function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" 
       <div className="h-10 w-10 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
       <span className="flex-1 min-w-0 text-sm font-medium text-white line-clamp-1">{order.listing?.title ?? "Account"}</span>
       <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
-      <StatusBadge workflowStatus={order.workflow_status} role={role} />
+      <StatusBadge workflowStatus={order.workflow_status} workflowCompletedAt={order.workflow_completed_at} role={role} />
     </div>
   );
 }
 
-function StatusBadge({ workflowStatus, role }: { workflowStatus: string | null; role: "buyer" | "seller" }) {
+function StatusBadge({ workflowStatus, workflowCompletedAt, role }: { workflowStatus: string | null; workflowCompletedAt: string | null; role: "buyer" | "seller" }) {
+  // Once the order reaches its final "released" status it stays here for a
+  // 72h grace window before moving to History — during that window we just
+  // show how long ago it finished, instead of the normal step label.
+  if (workflowStatus === "step5_released" && workflowCompletedAt) {
+    const hours = Math.max(0, Math.floor((Date.now() - new Date(workflowCompletedAt).getTime()) / 3600000));
+    return (
+      <span className="badge border px-2.5 py-0.5 text-xs font-semibold bg-success-500/15 text-success-400 border-success-500/30">
+        Completed {hours < 1 ? "just now" : `${hours}h ago`}
+      </span>
+    );
+  }
   const meta = getWorkflowStatusMeta(workflowStatus, role);
   const tone = meta.isDisputed
     ? "bg-error-500/15 text-error-400 border-error-500/30"

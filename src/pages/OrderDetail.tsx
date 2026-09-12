@@ -18,6 +18,7 @@ type OrderDetailRow = {
   listing_images: string[] | null;
   status: string;
   workflow_status: string | null;
+  order_number: string;
   payment_method: string;
   payment_number: string | null;
   role: "buyer" | "seller";
@@ -119,6 +120,10 @@ export default function OrderDetail() {
           <div className="card p-5 border border-ink-800 shadow-lg">
             <h3 className="font-semibold text-white mb-4 flex items-center gap-2"><Tag size={18} className="text-primary-400" /> Payment</h3>
             <div className="space-y-2.5 text-sm">
+              <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
+                <span className="text-ink-400">Order ID</span>
+                <span className="font-mono font-semibold text-white tracking-wide">#{order.order_number}</span>
+              </div>
               <div className="flex items-center justify-between py-1 border-b border-ink-800/60">
                 <span className="text-ink-400">Listing Price</span>
                 <span className="font-semibold text-white">{formatBDT(order.listing_price)}</span>
