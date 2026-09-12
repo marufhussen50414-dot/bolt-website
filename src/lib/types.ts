@@ -75,6 +75,7 @@ export type Order = {
   payment_method: "bkash" | "nagad" | "card";
   payment_number: string | null;
   status: OrderStatus;
+  workflow_status: string | null;
   escrow_released: boolean;
   completed_at: string | null;
   delivery_password: string | null;
