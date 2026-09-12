@@ -1,125 +1,157 @@
 import { Check, X } from "lucide-react";
 import { classNames } from "../lib/utils";
-import type { OrderStatus } from "../lib/types";
 
 type Role = "buyer" | "seller";
 
 /* =========================================================================
+   The 10 exact workflow statuses written by the Control Room admin panel
+   (see control-room/lib/workflow.ts — this file mirrors it 1:1 so both
+   apps always agree on what each status means).
+   ========================================================================= */
+export type WorkflowStatus =
+  | "step1_checking" | "step1_paid"
+  | "step2_escrow"
+  | "step3_pending" | "step3_submitted"
+  | "step4_checking" | "step4_approved" | "step4_disputed"
+  | "step5_processing" | "step5_released";
+
+const DEFAULT_WORKFLOW_STATUS: WorkflowStatus = "step1_checking";
+
+/* =========================================================================
    ROADMAP DIALOGUE TEXT — SELLER
    Edit the strings below to change what a SELLER sees under each step.
-   Every line is tagged with a comment naming the exact status it belongs
-   to — search for "dialogue for" to jump between them.
    ========================================================================= */
 const SELLER_DIALOGUES = {
-  orderPlacedUnderChecking: "The buyer's payment is under processing.", // dialogue for under checking (seller)
-  orderPlacedPaid: "The buyer's payment was successful.", // dialogue for paid (seller)
-  paymentReceivedInEscrow: "Payment is safely held in escrow until the order is completed.", // dialogue for in escrow (seller)
-  submitInfoPending: "Please submit the account details to continue.", // dialogue for pending (seller)
-  submitInfoSubmitted: "You've submitted the account details.", // dialogue for submitted (seller)
-  transferChecking: "We're verifying the account transfer. This usually finishes within 23:59.", // dialogue for checking (23:59) (seller)
-  transferApproved: "Account transfer verified and approved.", // dialogue for approved (seller)
-  transferDisputed: "This order has been marked as disputed. Our team is reviewing it.", // dialogue for disputed (seller)
-  payoutProcessing: "Your payout is being processed.", // dialogue for processing (seller)
-  payoutReleased: "Your payout has been released to your wallet.", // dialogue for released to wallet (seller)
+  orderPlacedUnderChecking: "The buyer's payment is under processing.",
+  orderPlacedPaid: "The buyer's payment was successful.",
+  paymentReceivedInEscrow: "Payment is safely held in escrow until the order is completed.",
+  submitInfoPending: "Please submit the account details to continue.",
+  submitInfoSubmitted: "You've submitted the account details.",
+  transferChecking: "We're verifying the account transfer. This usually finishes within 23:59.",
+  transferApproved: "Account transfer verified and approved.",
+  transferDisputed: "This order has been marked as disputed. Our team is reviewing it.",
+  payoutProcessing: "Your payout is being processed.",
+  payoutReleased: "Your payout has been released to your wallet.",
 };
 
 /* =========================================================================
    ROADMAP DIALOGUE TEXT — BUYER
-   Edit the strings below to change what a BUYER sees under each step.
-   Every line is tagged with a comment naming the exact status it belongs
-   to — search for "dialogue for" to jump between them.
    ========================================================================= */
 const BUYER_DIALOGUES = {
-  orderPlacedUnderChecking: "Your payment is under processing.", // dialogue for under checking (buyer)
-  orderPlacedPaid: "Your payment was successful.", // dialogue for paid (buyer)
-  paymentReceivedInEscrow: "Your payment is safely held in escrow until the order is completed.", // dialogue for in escrow (buyer)
-  waitingInfoWaiting: "Waiting for the seller to submit the account details.", // dialogue for waiting (buyer)
-  waitingInfoReceived: "The seller has submitted the account details.", // dialogue for received (buyer)
-  transferChecking: "We're verifying the account transfer. This usually finishes within 23:59.", // dialogue for checking (23:59) (buyer)
-  transferApproved: "Account transfer verified and approved.", // dialogue for approved (buyer)
-  transferDisputed: "This order has been marked as disputed. Our team is reviewing it.", // dialogue for disputed (buyer)
-  paymentProcessing: "Your payment is being processed.", // dialogue for processing (buyer)
-  paymentReleased: "Your payment has been released to the seller.", // dialogue for released to seller (buyer)
+  orderPlacedUnderChecking: "Your payment is under processing.",
+  orderPlacedPaid: "Your payment was successful.",
+  paymentReceivedInEscrow: "Your payment is safely held in escrow until the order is completed.",
+  waitingInfoWaiting: "Waiting for the seller to submit the account details.",
+  waitingInfoReceived: "The seller has submitted the account details.",
+  transferChecking: "We're verifying the account transfer. This usually finishes within 23:59.",
+  transferApproved: "Account transfer verified and approved.",
+  transferDisputed: "This order has been marked as disputed. Our team is reviewing it.",
+  paymentProcessing: "Your payment is being processed.",
+  paymentReleased: "Your payment has been released to the seller.",
 };
 
 /* =========================================================================
-   STEP DEFINITIONS — per role
-   Each step has a title, a label + dialogue for its "active" (in-progress)
-   state, and for its "done" (completed) state. Step 4 also has a
-   "disputed" variant. Titles/labels differ slightly between buyer and
-   seller (e.g. "Submit Account Info" vs "Waiting for Account Info").
+   STEP TITLES — per role (title only, doesn't change with sub-status)
    ========================================================================= */
-const STEP_META: Record<Role, { title: string; labels: { active: string; done: string; disputed?: string }; dialogues: { active: string; done: string; disputed?: string } }[]> = {
+const STEP_TITLES: Record<Role, string[]> = {
   seller: [
-    {
-      title: "Order Placed",
-      labels: { active: "Under Checking", done: "Paid" },
-      dialogues: { active: SELLER_DIALOGUES.orderPlacedUnderChecking, done: SELLER_DIALOGUES.orderPlacedPaid },
-    },
-    {
-      title: "Payment Received",
-      labels: { active: "In Escrow", done: "In Escrow" },
-      dialogues: { active: SELLER_DIALOGUES.paymentReceivedInEscrow, done: SELLER_DIALOGUES.paymentReceivedInEscrow },
-    },
-    {
-      title: "Submit Account Info",
-      labels: { active: "Pending", done: "Submitted" },
-      dialogues: { active: SELLER_DIALOGUES.submitInfoPending, done: SELLER_DIALOGUES.submitInfoSubmitted },
-    },
-    {
-      title: "Account Transfer & Verification",
-      labels: { active: "Checking (23:59)", done: "Approved", disputed: "Disputed" },
-      dialogues: { active: SELLER_DIALOGUES.transferChecking, done: SELLER_DIALOGUES.transferApproved, disputed: SELLER_DIALOGUES.transferDisputed },
-    },
-    {
-      title: "Payout Status",
-      labels: { active: "Processing", done: "Released to Wallet" },
-      dialogues: { active: SELLER_DIALOGUES.payoutProcessing, done: SELLER_DIALOGUES.payoutReleased },
-    },
+    "Order Placed",
+    "Payment Received",
+    "Submit Account Info",
+    "Account Transfer & Verification",
+    "Payout Status",
   ],
   buyer: [
-    {
-      title: "Order Placed",
-      labels: { active: "Under Checking", done: "Paid" },
-      dialogues: { active: BUYER_DIALOGUES.orderPlacedUnderChecking, done: BUYER_DIALOGUES.orderPlacedPaid },
-    },
-    {
-      title: "Payment Received",
-      labels: { active: "In Escrow", done: "In Escrow" },
-      dialogues: { active: BUYER_DIALOGUES.paymentReceivedInEscrow, done: BUYER_DIALOGUES.paymentReceivedInEscrow },
-    },
-    {
-      title: "Waiting for Account Info",
-      labels: { active: "Waiting", done: "Received" },
-      dialogues: { active: BUYER_DIALOGUES.waitingInfoWaiting, done: BUYER_DIALOGUES.waitingInfoReceived },
-    },
-    {
-      title: "Account Transfer & Verification",
-      labels: { active: "Checking (23:59)", done: "Approved", disputed: "Disputed" },
-      dialogues: { active: BUYER_DIALOGUES.transferChecking, done: BUYER_DIALOGUES.transferApproved, disputed: BUYER_DIALOGUES.transferDisputed },
-    },
-    {
-      title: "Payment Processing",
-      labels: { active: "Processing", done: "Released to Seller" },
-      dialogues: { active: BUYER_DIALOGUES.paymentProcessing, done: BUYER_DIALOGUES.paymentReleased },
-    },
+    "Order Placed",
+    "Payment Received",
+    "Waiting for Account Info",
+    "Account Transfer & Verification",
+    "Payment Processing",
   ],
 };
 
 /* =========================================================================
-   STATUS -> STEP MAPPING
-   Which step number (1-5) an order.status currently sits on. Edit this if
-   the order flow changes. Same mapping applies to both roles.
+   STATUS META — every one of the 10 exact statuses the Control Room can
+   write, with which step (1-5) it belongs to, the label + dialogue each
+   role sees, and whether it's the "disputed" branch of step 4.
    ========================================================================= */
-const STATUS_TO_STEP: Record<string, number> = {
-  pending: 1,
-  paid: 2,
-  delivering: 4,
-  completed: 5,
-  disputed: 4,
-  cancelled: 1,
-  refunded: 1,
+type StatusMeta = {
+  step: number;
+  sellerLabel: string;
+  buyerLabel: string;
+  sellerDialogue: string;
+  buyerDialogue: string;
+  disputed?: boolean;
 };
+
+const STATUS_META: Record<WorkflowStatus, StatusMeta> = {
+  step1_checking: {
+    step: 1, sellerLabel: "Under Checking", buyerLabel: "Under Checking",
+    sellerDialogue: SELLER_DIALOGUES.orderPlacedUnderChecking, buyerDialogue: BUYER_DIALOGUES.orderPlacedUnderChecking,
+  },
+  step1_paid: {
+    step: 1, sellerLabel: "Paid", buyerLabel: "Paid",
+    sellerDialogue: SELLER_DIALOGUES.orderPlacedPaid, buyerDialogue: BUYER_DIALOGUES.orderPlacedPaid,
+  },
+  step2_escrow: {
+    step: 2, sellerLabel: "In Escrow", buyerLabel: "In Escrow",
+    sellerDialogue: SELLER_DIALOGUES.paymentReceivedInEscrow, buyerDialogue: BUYER_DIALOGUES.paymentReceivedInEscrow,
+  },
+  step3_pending: {
+    step: 3, sellerLabel: "Pending", buyerLabel: "Waiting",
+    sellerDialogue: SELLER_DIALOGUES.submitInfoPending, buyerDialogue: BUYER_DIALOGUES.waitingInfoWaiting,
+  },
+  step3_submitted: {
+    step: 3, sellerLabel: "Submitted", buyerLabel: "Received",
+    sellerDialogue: SELLER_DIALOGUES.submitInfoSubmitted, buyerDialogue: BUYER_DIALOGUES.waitingInfoReceived,
+  },
+  step4_checking: {
+    step: 4, sellerLabel: "Checking (23:59)", buyerLabel: "Checking (23:59)",
+    sellerDialogue: SELLER_DIALOGUES.transferChecking, buyerDialogue: BUYER_DIALOGUES.transferChecking,
+  },
+  step4_approved: {
+    step: 4, sellerLabel: "Approved", buyerLabel: "Approved",
+    sellerDialogue: SELLER_DIALOGUES.transferApproved, buyerDialogue: BUYER_DIALOGUES.transferApproved,
+  },
+  step4_disputed: {
+    step: 4, sellerLabel: "Disputed", buyerLabel: "Disputed",
+    sellerDialogue: SELLER_DIALOGUES.transferDisputed, buyerDialogue: BUYER_DIALOGUES.transferDisputed,
+    disputed: true,
+  },
+  step5_processing: {
+    step: 5, sellerLabel: "Processing", buyerLabel: "Processing",
+    sellerDialogue: SELLER_DIALOGUES.payoutProcessing, buyerDialogue: BUYER_DIALOGUES.paymentProcessing,
+  },
+  step5_released: {
+    step: 5, sellerLabel: "Released to Wallet", buyerLabel: "Released to Seller",
+    sellerDialogue: SELLER_DIALOGUES.payoutReleased, buyerDialogue: BUYER_DIALOGUES.paymentReleased,
+  },
+};
+
+// Once a step is behind the current one, it must have finished via its
+// "advancing" status — this is what a completed step displays.
+const DONE_STATUS_BY_STEP: Record<number, WorkflowStatus> = {
+  1: "step1_paid",
+  2: "step2_escrow",
+  3: "step3_submitted",
+  4: "step4_approved",
+  5: "step5_released",
+};
+
+// The starting (not-yet-advanced) status of each step — only used as a
+// placeholder for "upcoming" steps, whose label/dialogue are never shown.
+const START_STATUS_BY_STEP: Record<number, WorkflowStatus> = {
+  1: "step1_checking",
+  2: "step2_escrow",
+  3: "step3_pending",
+  4: "step4_checking",
+  5: "step5_processing",
+};
+
+function normalizeWorkflowStatus(value: string | null | undefined): WorkflowStatus {
+  if (value && value in STATUS_META) return value as WorkflowStatus;
+  return DEFAULT_WORKFLOW_STATUS;
+}
 
 type StepState = "completed" | "active" | "disputed" | "upcoming";
 
@@ -130,29 +162,40 @@ type RoadmapStep = {
   state: StepState;
 };
 
-function buildSteps(status: OrderStatus | string, role: Role): RoadmapStep[] {
-  const currentStep = STATUS_TO_STEP[status] ?? 1;
-  const isDisputed = status === "disputed";
-  const meta = STEP_META[role];
+function metaLabel(meta: StatusMeta, role: Role) {
+  return role === "seller" ? meta.sellerLabel : meta.buyerLabel;
+}
+function metaDialogue(meta: StatusMeta, role: Role) {
+  return role === "seller" ? meta.sellerDialogue : meta.buyerDialogue;
+}
 
-  return meta.map((m, idx) => {
+function buildSteps(workflowStatus: string | null | undefined, role: Role): RoadmapStep[] {
+  const status = normalizeWorkflowStatus(workflowStatus);
+  const current = STATUS_META[status];
+  const currentStep = current.step;
+  const isDisputed = !!current.disputed;
+  const titles = STEP_TITLES[role];
+
+  return titles.map((title, idx) => {
     const stepNum = idx + 1;
 
     if (isDisputed && stepNum === 4) {
-      return { title: m.title, label: m.labels.disputed ?? m.labels.active, dialogue: m.dialogues.disputed ?? m.dialogues.active, state: "disputed" };
+      return { title, label: metaLabel(current, role), dialogue: metaDialogue(current, role), state: "disputed" };
     }
     if (stepNum < currentStep) {
-      return { title: m.title, label: m.labels.done, dialogue: m.dialogues.done, state: "completed" };
+      const meta = STATUS_META[DONE_STATUS_BY_STEP[stepNum]];
+      return { title, label: metaLabel(meta, role), dialogue: metaDialogue(meta, role), state: "completed" };
     }
     if (stepNum === currentStep) {
-      return { title: m.title, label: m.labels.active, dialogue: m.dialogues.active, state: "active" };
+      return { title, label: metaLabel(current, role), dialogue: metaDialogue(current, role), state: "active" };
     }
-    return { title: m.title, label: m.labels.active, dialogue: m.dialogues.active, state: "upcoming" };
+    const meta = STATUS_META[START_STATUS_BY_STEP[stepNum]];
+    return { title, label: metaLabel(meta, role), dialogue: metaDialogue(meta, role), state: "upcoming" };
   });
 }
 
-export default function OrderRoadmap({ status, role }: { status: OrderStatus | string; role: Role }) {
-  const steps = buildSteps(status, role);
+export default function OrderRoadmap({ workflowStatus, role }: { workflowStatus: string | null | undefined; role: Role }) {
+  const steps = buildSteps(workflowStatus, role);
 
   return (
     <div className="py-1">
@@ -232,4 +275,3 @@ export default function OrderRoadmap({ status, role }: { status: OrderStatus | s
     </div>
   );
 }
- 
