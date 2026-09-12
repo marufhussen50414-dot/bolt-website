@@ -14,7 +14,7 @@ import { formatBDT, timeAgo, classNames, IconType } from "../lib/utils";
 import PresenceDot from "../components/PresenceDot";
 import { getWorkflowStatusMeta } from "../components/OrderRoadmap";
 
-type Tab = "overview" | "payment" | "security" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
+type Tab = "overview" | "payment" | "history" | "security" | "reviews" | "wishlist" | "achievements" | "insights" | "verify";
 
 export default function Profile() {
   const { user, profile, loading: authLoading, refreshProfile, signOut } = useAuth();
@@ -116,6 +116,12 @@ export default function Profile() {
   const activeListings = myListings.filter((l) => l.status === "active" || l.status === "approved");
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
 
+  const CLOSED_STATUSES = new Set(["completed", "cancelled", "refunded"]);
+  const activeSellOrders = sellOrders.filter((o) => !CLOSED_STATUSES.has(o.status));
+  const activeBuyOrders = buyOrders.filter((o) => !CLOSED_STATUSES.has(o.status));
+  const closedSellOrders = sellOrders.filter((o) => CLOSED_STATUSES.has(o.status));
+  const closedBuyOrders = buyOrders.filter((o) => CLOSED_STATUSES.has(o.status));
+
   const completionFields = [profile?.full_name, profile?.bio, profile?.avatar_url, profile?.location, profile?.phone];
   const filledCount = completionFields.filter(Boolean).length;
   const completionPct = Math.round((filledCount / completionFields.length) * 100);
@@ -145,6 +151,7 @@ export default function Profile() {
   const tabs: { id: Tab; label: string; icon: IconType }[] = [
     { id: "overview", label: "Overview", icon: Activity },
     { id: "payment", label: "Payment", icon: CreditCard },
+    { id: "history", label: "History", icon: Clock },
     { id: "achievements", label: "Badges", icon: Trophy },
     { id: "wishlist", label: "Wishlist", icon: Heart },
     { id: "insights", label: "Insights", icon: BarChart3 },
@@ -319,11 +326,11 @@ export default function Profile() {
         <div className="grid sm:grid-cols-2 gap-5 p-5">
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wide text-ink-400 mb-3">Recent Sales</h4>
-            {sellOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{sellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-500 py-2">No sales recorded yet.</p>}
+            {activeSellOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{activeSellOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="seller" />)}</div> : <p className="text-sm text-ink-500 py-2">No active sales.</p>}
           </div>
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wide text-ink-400 mb-3">Recent Purchases</h4>
-            {buyOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{buyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-500 py-2">No purchases recorded yet.</p>}
+            {activeBuyOrders.slice(0, 5).length > 0 ? <div className="space-y-2.5">{activeBuyOrders.slice(0, 5).map((o) => <OrderMiniRow key={o.id} order={o} role="buyer" />)}</div> : <p className="text-sm text-ink-500 py-2">No active purchases.</p>}
           </div>
         </div>
       </div>
@@ -463,6 +470,30 @@ export default function Profile() {
                   {savingPayment ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Payout Info
                 </button>
               </form>
+            </div>
+          )}
+
+          {tab === "history" && (
+            <div className="card p-6 border border-ink-800 shadow-xl">
+              <h3 className="font-semibold text-white mb-5 flex items-center gap-2"><Clock size={18} className="text-primary-400" /> Order History</h3>
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wide text-ink-400 mb-3">Sales History</h4>
+                  {closedSellOrders.length > 0 ? (
+                    <div className="space-y-2.5">{closedSellOrders.map((o) => <ClosedOrderRow key={o.id} order={o} role="seller" />)}</div>
+                  ) : (
+                    <p className="text-sm text-ink-500 py-2">No closed sales yet.</p>
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wide text-ink-400 mb-3">Purchase History</h4>
+                  {closedBuyOrders.length > 0 ? (
+                    <div className="space-y-2.5">{closedBuyOrders.map((o) => <ClosedOrderRow key={o.id} order={o} role="buyer" />)}</div>
+                  ) : (
+                    <p className="text-sm text-ink-500 py-2">No closed purchases yet.</p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -705,6 +736,34 @@ function StatCard({ icon: Icon, value, label, color }: { icon: IconType; value: 
 
 function Row({ icon: Icon, label, value }: { icon: IconType; label: string; value: string }) {
   return <div className="flex items-center justify-between py-1 border-b border-ink-800/60 last:border-0"><span className="flex items-center gap-2 text-ink-400"><Icon size={16} className="text-primary-400" /> {label}</span><span className="font-semibold text-white">{value}</span></div>;
+}
+
+function ClosedOrderRow({ order, role }: { order: Order; role: "buyer" | "seller" }) {
+  const navigate = useNavigate();
+  return (
+    <div
+      onClick={() => navigate(`/order/${order.id}`)}
+      className="card p-3.5 flex items-center gap-3.5 border border-ink-800 shadow-sm hover:border-primary-500/30 hover:bg-ink-800/40 transition-all cursor-pointer"
+    >
+      <div className="h-10 w-10 rounded-xl bg-ink-800 overflow-hidden shrink-0 border border-ink-700/40">{order.listing?.images?.[0] && <img src={order.listing.images[0]} alt="" className="h-full w-full object-cover" />}</div>
+      <span className="flex-1 min-w-0 text-sm font-medium text-white line-clamp-1">{order.listing?.title ?? "Account"}</span>
+      <span className="text-sm font-semibold text-white">{formatBDT(role === "seller" ? order.seller_amount : order.price)}</span>
+      <FinalStatusBadge status={order.status} />
+    </div>
+  );
+}
+
+function FinalStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    completed: "bg-success-500/15 text-success-400 border-success-500/30",
+    cancelled: "bg-ink-800 text-ink-300 border-ink-700",
+    refunded: "bg-warning-500/15 text-warning-400 border-warning-500/30",
+  };
+  return (
+    <span className={classNames("badge border px-2.5 py-0.5 text-xs font-semibold capitalize", styles[status] || "bg-ink-800 text-ink-300 border-ink-700")}>
+      {status}
+    </span>
+  );
 }
 
 function OrderMiniRow({ order, role }: { order: Order; role: "buyer" | "seller" }) {
