@@ -153,6 +153,16 @@ function normalizeWorkflowStatus(value: string | null | undefined): WorkflowStat
   return DEFAULT_WORKFLOW_STATUS;
 }
 
+export function getWorkflowStatusMeta(workflowStatus: string | null | undefined, role: Role) {
+  const status = normalizeWorkflowStatus(workflowStatus);
+  const meta = STATUS_META[status];
+  return {
+    label: metaLabel(meta, role),
+    isFinal: status === "step5_released",
+    isDisputed: !!meta.disputed,
+  };
+}
+
 type StepState = "completed" | "active" | "disputed" | "upcoming";
 
 type RoadmapStep = {
@@ -275,4 +285,3 @@ export default function OrderRoadmap({ workflowStatus, role }: { workflowStatus:
     </div>
   );
 }
- 
