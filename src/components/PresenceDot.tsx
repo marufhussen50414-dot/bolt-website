@@ -10,3 +10,4 @@ export default function PresenceDot({ userId, className }: { userId: string | nu
   const online = useIsOnline(userId);
   return <span className={classNames(className, online ? "bg-success-400" : "bg-ink-500")} />;
 }
+ 
