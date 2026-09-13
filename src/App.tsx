@@ -9,6 +9,7 @@ import ListingDetail from "./pages/ListingDetail";
 import Checkout from "./pages/Checkout";
 import OrderDetail from "./pages/OrderDetail";
 import Profile from "./pages/Profile";
+import ProfileDetails from "./pages/ProfileDetails";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import HowItWorks from "./pages/HowItWorks";
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/order/:id" element={<OrderDetail />} />
           <Route path="/my-listings" element={<MyListings />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/details" element={<ProfileDetails />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/signup" element={<Register />} />
