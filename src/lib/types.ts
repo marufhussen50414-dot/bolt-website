@@ -9,6 +9,9 @@ export type Category = {
 
 export type Profile = {
   id: string;
+  // Fixed, permanent, human-friendly profile code (format "U-XXXXXXXX").
+  // Generated once by a DB trigger — never regenerated, always unique.
+  profile_id: string;
   username: string | null;
   full_name: string | null;
   phone: string | null;
