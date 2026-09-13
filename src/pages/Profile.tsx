@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  MapPin, Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2,
+  Wallet, Star, ShieldCheck, Edit3, Save, X, Loader2,
   TrendingUp, ShoppingBag, Tag, Package, CheckCircle2, CreditCard, Calendar,
   Award, Activity, Lock, Heart, Trophy, Target,
   BarChart3, Clock, Crown, Flame, Sparkles, BadgeCheck, Mail,
@@ -26,11 +26,6 @@ export default function Profile() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [editForm, setEditForm] = useState({ full_name: "", bio: "", phone: "", avatar_url: "" });
-  const [detailsForm, setDetailsForm] = useState({ full_name: "", bio: "", location: "", phone: "", whatsapp: "" });
-  const [detailsEditing, setDetailsEditing] = useState(false);
-  const [savingDetails, setSavingDetails] = useState(false);
-  const [detailsMsg, setDetailsMsg] = useState("");
-  const [fullDetailsOpen, setFullDetailsOpen] = useState(false);
   const [toast, setToast] = useState("");
   
   // Payment payout state
@@ -85,7 +80,6 @@ export default function Profile() {
   useEffect(() => {
     if (profile) {
       setEditForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", phone: profile.phone ?? "", avatar_url: profile.avatar_url ?? "" });
-      setDetailsForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", location: profile.location ?? "", phone: profile.phone ?? "", whatsapp: profile.whatsapp ?? "" });
       setPaymentForm({ bkash_number: profile.bkash_number ?? "", nagad_number: profile.nagad_number ?? "" });
     }
   }, [profile]);
@@ -209,21 +203,6 @@ export default function Profile() {
     setToast("Profile updated successfully!");
   }
 
-  async function handleSaveDetails(e: FormEvent) {
-    e.preventDefault(); setSavingDetails(true); setDetailsMsg("");
-    const { error } = await supabase.from("profiles").update({
-      full_name: detailsForm.full_name.trim(), bio: detailsForm.bio.trim() || null,
-      location: detailsForm.location.trim() || null, phone: detailsForm.phone.trim() || null,
-      whatsapp: detailsForm.whatsapp.trim() || null,
-    }).eq("id", user!.id);
-    setSavingDetails(false);
-    if (error) { setDetailsMsg("Failed to save: " + error.message); return; }
-    await refreshProfile();
-    setDetailsMsg("");
-    setDetailsEditing(false);
-    setToast("Profile updated successfully!");
-  }
-
   async function handleSavePayment(e: FormEvent) {
     e.preventDefault(); setSavingPayment(true); setPaymentMsg("");
     const { error } = await supabase.from("profiles").update({
@@ -292,6 +271,12 @@ export default function Profile() {
         <div className="h-32 sm:h-40 bg-gradient-to-r from-primary-900/70 via-ink-800 to-accent-950/70 relative">
           <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-transparent to-transparent" />
+          <button
+            onClick={() => navigate("/profile/details")}
+            className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full border border-white/15 bg-ink-950/50 backdrop-blur-md px-3.5 py-1.5 text-xs font-semibold text-white shadow-lg hover:bg-ink-950/70 hover:border-primary-400/40 transition-all"
+          >
+            <FileText size={13} className="text-primary-300" /> Full Details
+          </button>
         </div>
 
         <div className="px-6 pb-6 relative">
@@ -326,20 +311,12 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2.5 self-start sm:self-auto w-full sm:w-auto">
-              <button 
-                onClick={() => setEditOpen(true)} 
-                className="btn-primary px-5 py-2.5 shadow-lg flex items-center justify-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02]"
-              >
-                <Edit3 size={16} /> Edit Profile
-              </button>
-              <button
-                onClick={() => setFullDetailsOpen(true)}
-                className="btn-secondary px-5 py-2.5 bg-ink-800 hover:bg-ink-700 text-ink-200 flex items-center justify-center gap-2 text-sm font-semibold"
-              >
-                <FileText size={16} /> Full Details
-              </button>
-            </div>
+            <button 
+              onClick={() => setEditOpen(true)} 
+              className="btn-primary px-5 py-2.5 shadow-lg flex items-center justify-center gap-2 text-sm font-semibold transition-transform hover:scale-[1.02] self-start sm:self-auto w-full sm:w-auto"
+            >
+              <Edit3 size={16} /> Edit Profile
+            </button>
           </div>
 
           <div className="space-y-4 pt-3 border-t border-ink-800/80">
@@ -746,74 +723,6 @@ export default function Profile() {
                 <button type="button" onClick={() => setEditOpen(false)} className="btn-secondary px-5 py-2.5">Cancel</button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {fullDetailsOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/80 backdrop-blur-sm animate-fade-in"
-          onClick={() => { setFullDetailsOpen(false); setDetailsEditing(false); setDetailsMsg(""); }}
-        >
-          <div className="card w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-lg font-bold text-white flex items-center gap-2"><FileText size={18} className="text-primary-400" /> Full Details</h2>
-              <button onClick={() => { setFullDetailsOpen(false); setDetailsEditing(false); setDetailsMsg(""); }} className="text-ink-400 hover:text-white transition-colors"><X size={20} /></button>
-            </div>
-
-            {!detailsEditing ? (
-              <div className="space-y-4">
-                <dl className="space-y-1 text-sm">
-                  <Row icon={BadgeCheck} label="Profile ID" value={profile?.profile_id ?? "—"} />
-                  <Row icon={Edit3} label="Full Name" value={profile?.full_name ?? "—"} />
-                  <Row icon={Mail} label="Email" value={user.email ?? "—"} />
-                  <Row icon={MapPin} label="Location" value={profile?.location ?? "—"} />
-                  <Row icon={CreditCard} label="Phone" value={profile?.phone ?? "—"} />
-                  <Row icon={CreditCard} label="WhatsApp" value={profile?.whatsapp ?? "—"} />
-                  <Row icon={Star} label="Rating" value={`${avgRating.toFixed(1)} / 5`} />
-                  <Row icon={ShieldCheck} label="Verified" value={profile?.is_verified ? "Yes" : "No"} />
-                  <Row
-                    icon={Calendar}
-                    label="Joined"
-                    value={profile?.created_at ? new Date(profile.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "—"}
-                  />
-                </dl>
-                {profile?.bio && (
-                  <div>
-                    <p className="text-xs font-semibold text-ink-400 mb-1.5">Bio</p>
-                    <p className="text-sm text-ink-300 leading-relaxed bg-ink-950/40 p-3 rounded-xl border border-ink-800/60">{profile.bio}</p>
-                  </div>
-                )}
-                <button onClick={() => setDetailsEditing(true)} className="btn-primary w-full py-2.5 font-semibold flex items-center justify-center gap-2">
-                  <Edit3 size={16} /> Edit Details
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSaveDetails} className="space-y-4">
-                {detailsMsg && <div className="flex items-center gap-2 rounded-xl p-3.5 text-sm font-medium shadow-md bg-error-500/10 text-error-400 border border-error-500/20"><X size={16} /> {detailsMsg}</div>}
-                <div><label className="label font-medium text-xs text-ink-300">Full Name</label><input value={detailsForm.full_name} onChange={(e) => setDetailsForm((f) => ({ ...f, full_name: e.target.value }))} className="input mt-1" required /></div>
-                <div><label className="label font-medium text-xs text-ink-300">Bio</label><textarea value={detailsForm.bio} onChange={(e) => setDetailsForm((f) => ({ ...f, bio: e.target.value }))} rows={3} className="input mt-1" placeholder="Tell buyers about yourself..." /></div>
-                <div><label className="label font-medium text-xs text-ink-300">Location</label><input value={detailsForm.location} onChange={(e) => setDetailsForm((f) => ({ ...f, location: e.target.value }))} className="input mt-1" placeholder="Dhaka, Bangladesh" /></div>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div><label className="label font-medium text-xs text-ink-300">Phone</label><input value={detailsForm.phone} onChange={(e) => setDetailsForm((f) => ({ ...f, phone: e.target.value }))} className="input mt-1" placeholder="01XXXXXXXXX" /></div>
-                  <div><label className="label font-medium text-xs text-ink-300">WhatsApp</label><input value={detailsForm.whatsapp} onChange={(e) => setDetailsForm((f) => ({ ...f, whatsapp: e.target.value }))} className="input mt-1" placeholder="01XXXXXXXXX" /></div>
-                </div>
-                <div className="flex gap-3 pt-3">
-                  <button type="submit" disabled={savingDetails} className="btn-primary flex-1 py-2.5 font-semibold">{savingDetails ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />} Save Changes</button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDetailsEditing(false);
-                      setDetailsMsg("");
-                      if (profile) setDetailsForm({ full_name: profile.full_name ?? "", bio: profile.bio ?? "", location: profile.location ?? "", phone: profile.phone ?? "", whatsapp: profile.whatsapp ?? "" });
-                    }}
-                    className="btn-secondary px-5 py-2.5"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
           </div>
         </div>
       )}
