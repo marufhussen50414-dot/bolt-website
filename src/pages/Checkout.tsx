@@ -71,12 +71,12 @@ export default function Checkout() {
     setError("");
     setSubmitting(true);
 
-    const { error: insErr } = await supabase
+    const { data: order, error: insErr } = await supabase
       .from("orders")
       .insert({
         listing_id: listing.id, buyer_id: user.id, seller_id: listing.seller_id,
         price: unitPrice, commission_rate: 0.01, commission_amount: commission, seller_amount: unitPrice - commission,
-        payment_method: method, status: "paid",
+        payment_method: method, status: "pending", workflow_status: "step1_checking",
       })
       .select("id")
       .single();
@@ -88,7 +88,7 @@ export default function Checkout() {
     }
 
     setSubmitting(false);
-    navigate(`/messages?listing=${listing.id}`);
+    navigate(`/checkout/${order.id}/pay?amount=${totalPay}&method=${method}`);
   }
 
   return (
