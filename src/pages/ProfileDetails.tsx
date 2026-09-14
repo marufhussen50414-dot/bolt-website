@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, BadgeCheck, Edit3, Save, X, Loader2, Mail, MapPin,
   CreditCard, ShieldCheck, Calendar, MessageCircle, CheckCircle2, User as UserIcon,
-  Award, Package, ShoppingBag, TrendingUp, LifeBuoy, ChevronRight,
+  Award, Package, ShoppingBag, TrendingUp, LifeBuoy, ChevronRight, LogOut,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -42,10 +42,11 @@ function SectionCard({ title, icon: Icon, children }: { title: string; icon: Ico
 }
 
 export default function ProfileDetails() {
-  const { user, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, loading: authLoading, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [editOpen, setEditOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [toast, setToast] = useState("");
@@ -125,34 +126,37 @@ export default function ProfileDetails() {
 
       <div className="space-y-5">
         {/* Header */}
-        <div className="card border border-ink-800 shadow-xl bg-ink-900 overflow-hidden">
-          <div className="h-16 bg-gradient-to-r from-primary-900/70 via-ink-800 to-accent-950/70 relative">
-            <div className="absolute inset-0 bg-grid-pattern bg-[size:24px_24px] opacity-20" />
+        <div className="card border border-ink-800 shadow-2xl bg-ink-900 overflow-hidden">
+          <div className="h-28 sm:h-32 bg-gradient-to-r from-primary-900/70 via-ink-800 to-accent-950/70 relative">
+            <div className="absolute inset-0 bg-grid-pattern bg-[size:28px_28px] opacity-20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink-950/90 via-transparent to-transparent" />
           </div>
-          <div className="px-6 pb-5 -mt-8 flex items-end justify-between gap-4 flex-wrap">
-            <div className="flex items-end gap-3.5">
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="h-16 w-16 rounded-2xl object-cover border-4 border-ink-900 shadow-xl bg-ink-800" />
-              ) : (
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-xl font-extrabold border-4 border-ink-900 shadow-xl">
-                  {(profile.full_name || "U").trim()[0]?.toUpperCase()}
+          <div className="px-6 pb-6 relative">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-14 mb-1">
+              <div className="flex items-end gap-4">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl object-cover border-4 border-ink-900 shadow-2xl bg-ink-800" />
+                ) : (
+                  <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 grid place-items-center text-white text-3xl font-extrabold border-4 border-ink-900 shadow-2xl">
+                    {(profile.full_name || "U").trim()[0]?.toUpperCase()}
+                  </div>
+                )}
+                <div className="pb-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="font-display text-xl sm:text-2xl font-bold text-white tracking-tight">{profile.full_name || "Player"}</h1>
+                    {profile.is_verified && (
+                      <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-2 py-0.5 text-[10px] flex items-center gap-1 font-semibold">
+                        <ShieldCheck size={11} /> Verified
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-ink-500 font-mono mt-1">{profile.profile_id}</p>
                 </div>
-              )}
-              <div className="pb-0.5">
-                <div className="flex items-center gap-2">
-                  <h1 className="font-display text-lg font-bold text-white">{profile.full_name || "Player"}</h1>
-                  {profile.is_verified && (
-                    <span className="badge bg-success-500/15 text-success-400 border border-success-500/20 px-2 py-0.5 text-[10px] flex items-center gap-1 font-semibold">
-                      <ShieldCheck size={11} /> Verified
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-ink-500 font-mono mt-0.5">{profile.profile_id}</p>
               </div>
+              <button onClick={openEdit} className="btn-primary px-5 py-2.5 text-sm font-semibold flex items-center justify-center gap-2 shadow-lg self-start sm:self-auto w-full sm:w-auto">
+                <Edit3 size={15} /> Edit Details
+              </button>
             </div>
-            <button onClick={openEdit} className="btn-primary px-5 py-2.5 text-sm font-semibold flex items-center gap-2 shadow-lg">
-              <Edit3 size={15} /> Edit Details
-            </button>
           </div>
         </div>
 
@@ -207,7 +211,40 @@ export default function ProfileDetails() {
           </div>
           <ChevronRight size={18} className="text-ink-500 shrink-0" />
         </Link>
+
+        {/* Logout */}
+        <button
+          onClick={() => setLogoutOpen(true)}
+          className="card border border-error-500/20 shadow-lg bg-ink-900 flex items-center justify-between gap-3 p-5 hover:border-error-500/40 hover:bg-error-500/5 transition-all w-full text-left"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-error-500/15 text-error-400 shrink-0">
+              <LogOut size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-error-400">Log Out</p>
+              <p className="text-xs text-ink-500 mt-0.5">Sign out of your account on this device.</p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-ink-500 shrink-0" />
+        </button>
       </div>
+
+      {logoutOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/85 backdrop-blur-sm animate-fade-in" onClick={() => setLogoutOpen(false)}>
+          <div className="card w-full max-w-md p-6 shadow-2xl border border-ink-700 bg-ink-900 animate-scale-in text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto w-12 h-12 rounded-full bg-error-500/15 border border-error-500/30 flex items-center justify-center text-error-400 mb-4">
+              <LogOut size={24} />
+            </div>
+            <h3 className="font-display text-lg font-bold text-white mb-2">Log Out</h3>
+            <p className="text-sm text-ink-300 mb-6">Are you sure you want to log out? Your data is completely safe, and you can see all your data again when you log back in.</p>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setLogoutOpen(false)} className="btn-secondary flex-1 py-2.5 font-semibold bg-ink-800 hover:bg-ink-700 text-ink-200">No</button>
+              <button type="button" onClick={async () => { await signOut(); navigate("/login"); }} className="btn-primary flex-1 py-2.5 font-semibold bg-error-600 hover:bg-error-700 text-white">Yes</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editOpen && (
         <div
