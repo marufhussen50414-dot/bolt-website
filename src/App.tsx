@@ -7,6 +7,7 @@ import Browse from "./pages/Browse";
 import Sell from "./pages/Sell";
 import ListingDetail from "./pages/ListingDetail";
 import Checkout from "./pages/Checkout";
+import PaymentInstructions from "./pages/PaymentInstructions";
 import OrderDetail from "./pages/OrderDetail";
 import Profile from "./pages/Profile";
 import ProfileDetails from "./pages/ProfileDetails";
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/sell" element={<Sell />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
           <Route path="/checkout/:id" element={<Checkout />} />
+          <Route path="/checkout/:orderId/pay" element={<PaymentInstructions />} />
           <Route path="/order/:id" element={<OrderDetail />} />
           <Route path="/my-listings" element={<MyListings />} />
           <Route path="/profile" element={<Profile />} />
